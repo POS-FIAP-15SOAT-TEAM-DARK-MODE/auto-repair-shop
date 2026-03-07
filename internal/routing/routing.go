@@ -6,7 +6,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 )
 
-func SetupRouter(c *container.Container) *gin.Engine {
+func SetupRouter(c *container.HTTP) *gin.Engine {
 	router := gin.Default()
 
 	router.GET("/ping", c.PingHandler.Ping)

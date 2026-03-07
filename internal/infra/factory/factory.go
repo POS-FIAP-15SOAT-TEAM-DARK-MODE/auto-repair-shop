@@ -6,8 +6,8 @@ import (
 	pingSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/ping"
 )
 
-func NewContainer() *container.Container {
-	return &container.Container{
+func HttpContainer() *container.HTTP {
+	return &container.HTTP{
 		PingHandler: newPingHandler(),
 	}
 }

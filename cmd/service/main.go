@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	container := factory.NewContainer()
+	container := factory.HttpContainer()
 	router := routing.SetupRouter(container)
 	router.Run(":8080")
 }
