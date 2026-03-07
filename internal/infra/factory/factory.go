@@ -1,0 +1,18 @@
+package factory
+
+import (
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
+	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
+	pingSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/ping"
+)
+
+func NewContainer() *container.Container {
+	return &container.Container{
+		PingHandler: newPingHandler(),
+	}
+}
+
+func newPingHandler() *pingHandler.Handler {
+	pingService := pingSvc.Service()
+	return pingHandler.NewHandler(pingService)
+}
