@@ -4,47 +4,47 @@ globs: ["**/*"]
 alwaysApply: true
 ---
 
-# Project: Sistema Integrado de Oficina Mecânica
+# Project: Integrated Auto Repair Shop System
 
 ## Domain Context
-This is a **monolithic layered backend** for an auto repair shop (oficina mecânica). The system manages service orders (Ordens de Serviço - OS), clients, vehicles, parts/supplies inventory, and administrative operations.
+This is a **monolithic layered backend** for an auto repair shop. The system manages service orders, customers, vehicles, parts/supplies inventory, and administrative operations.
 
 ## Core Domain Entities
-- **Cliente** — identified uniquely by CPF (individual) or CNPJ (company)
-- **Veiculo** — plate (placa), brand, model, year; always linked to a Cliente
-- **Servico** — available services (oil change, alignment, etc.) with name, description, unit price
-- **Peca / Insumo** — parts and supplies with stock control
-- **OrdemDeServico (OS)** — central aggregate linking Cliente, Veiculo, Servicos, Pecas; has a lifecycle of statuses
-- **Orcamento** — budget auto-generated from services and parts on an OS
-- **User** — system user account; stores nome, e-mail, password hash, and roles (ADMIN, ATENDENTE, MECANICO, CLIENTE)
-- **Customer** — client-specific data (CPF/CNPJ, razão social, telefone), linked 1:1 to a User
+- **Customer** — identified uniquely by CPF (individual) or CNPJ (company)
+- **Vehicle** — license plate, brand, model, year; always linked to a Customer
+- **Service** — available services (oil change, alignment, etc.) with name, description, unit price
+- **Part (Peca)** — parts and supplies with stock control
+- **Service Order (OS)** — central aggregate linking Customer, Vehicle, Services, Parts; has a lifecycle of statuses
+- **Budget** — budget auto-generated from services and parts on a service order
+- **User** — system user account; stores name, email, password hash, and roles (ADMIN, ATTENDANT, MECHANIC, CLIENT)
+- **Customer** — customer-specific data (CPF/CNPJ, company name, phone), linked 1:1 to a User
 
 ## User & Customer Split
-- Creating a Cliente automatically creates a linked User with role `CLIENTE`
-- User entity stores: nome, e-mail, password hash, roles
-- Customer entity stores: CPF/CNPJ, razão social, telefone, FK to User
+- Creating a Customer automatically creates a linked User with role `CLIENT`
+- User entity stores: name, email, password hash, roles
+- Customer entity stores: CPF/CNPJ, company name, phone, FK to User
 - Default password = CPF (individual) or CNPJ (company), hashed with bcrypt
-- Deleting a Cliente must also delete or deactivate the associated User
+- Deleting a Customer must also delete or deactivate the associated User
 
 ## RBAC — Role-Based Access Control
-Four roles: `ADMIN`, `ATENDENTE`, `MECANICO`, `CLIENTE`
+Four roles: `ADMIN`, `ATTENDANT`, `MECHANIC`, `CLIENT`
 - Users may hold multiple roles simultaneously (many-to-many via `USER_ROLE`), **except** `ADMIN` which is exclusive
 - **ADMIN**: unrestricted access to all endpoints, user management, and role assignment
-- **ATENDENTE**: clients, vehicles, OS, budgets, reports — no user management
-- **MECANICO**: read-only OS, add services/parts to OS, OS status transitions only
-- **CLIENTE**: own OS tracking + own budget approve/reject; authenticated by e-mail + password; scoped by `customerId` in JWT
+- **ATTENDANT**: customers, vehicles, service orders, budgets, reports — no user management
+- **MECHANIC**: read-only service orders, add services/parts to service orders, status transitions only
+- **CLIENT**: own service order tracking + own budget approve/reject; authenticated by email + password; scoped by `customerId` in JWT
 - Only `ADMIN` can create other `ADMIN` users or change any user's roles
 - Out-of-scope access → HTTP 403
 
-## OS Status Lifecycle (ordered, no skipping)
-1. `RECEBIDA`
-2. `EM_DIAGNOSTICO`
-3. `AGUARDANDO_APROVACAO`
-4. `EM_EXECUCAO`
-5. `FINALIZADA`
-6. `ENTREGUE`
+## Service Order Status Lifecycle (ordered, no skipping)
+1. `RECEIVED`
+2. `IN_DIAGNOSIS`
+3. `AWAITING_APPROVAL`
+4. `IN_PROGRESS`
+5. `COMPLETED`
+6. `DELIVERED`
 
-A recused budget (`RECUSADA`) closes the OS without execution.
+A rejected budget (`REJECTED`) closes the service order without execution.
 
 ## Architecture
 - Monolithic layered architecture (Controller → Service → Repository)
@@ -55,7 +55,7 @@ A recused budget (`RECUSADA`) closes the OS without execution.
 - Docker + docker-compose for full environment orchestration
 
 ## Non-functional Requirements
-- Minimum 90% test coverage on critical domains: OS, estoque (stock), orcamento (budget)
+- Minimum 90% test coverage on critical domains: service orders, stock, budget
 - Structured logs for OS creation, status transitions, validation errors
 - Sensitive data (CPF, CNPJ) must never appear in logs or error responses
 - Passwords hashed with bcrypt (min cost 12)
@@ -87,7 +87,7 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 - `revert` — revert a previous commit
 
 ### Scopes (domain-aligned)
-`os`, `cliente`, `veiculo`, `servico`, `peca`, `estoque`, `orcamento`, `auth`, `usuario`, `infra`, `db`, `api`
+`service-order`, `customer`, `vehicle`, `service`, `part`, `stock`, `budget`, `auth`, `user`, `infra`, `db`, `api`
 
 ### Rules
 - Subject line max 72 characters, lowercase, no period at end

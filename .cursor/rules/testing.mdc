@@ -7,37 +7,37 @@ alwaysApply: false
 # Testing Standards
 
 ## Coverage Requirements
-- Critical domains (OS, estoque, orcamento) must have minimum 90% test coverage
+- Critical domains (service orders, stock, budget) must have minimum 90% test coverage
 - All other domains require minimum 80% coverage
 - Coverage is measured on: statements, branches, functions, lines
 
 ## What Must Be Tested
 ### Unit Tests
-- OS status transition logic: valid transitions, invalid transitions, RECUSADA terminal state
+- Service order status transition logic: valid transitions, invalid transitions, REJECTED terminal state
 - Budget calculation: services only, parts only, combined, zero items
 - CPF validation: valid CPF, invalid format, invalid digits, edge cases
 - CNPJ validation: valid CNPJ, invalid format, invalid digits, edge cases
-- Placa validation: old format, Mercosul format, invalid formats
+- License plate validation: old format, Mercosul format, invalid formats
 - Stock decrement: success path, out-of-stock error, concurrent access guard
 - JWT generation and validation logic
 - RBAC: ADMIN exclusive role enforcement, multi-role assignment, 403 on out-of-scope access
-- Customer creation triggers User creation with role CLIENTE and hashed default password
-- Cliente deletion triggers User deletion/deactivation
+- Customer creation triggers User creation with role CLIENT and hashed default password
+- Customer deletion triggers User deletion/deactivation
 
 ### Integration Tests
-- POST /os — create OS, verify status is RECEBIDA, verify budget is calculated
-- PATCH /os/:id/status — advance each status step, test invalid transitions return 422
-- POST /os/:id/approve — CLIENTE role approves own budget, verify status moves to EM_EXECUCAO
-- POST /os/:id/reject — CLIENTE role rejects own budget, verify status becomes RECUSADA
-- POST /os/:id/approve — returns 403 when called with ADMIN/ATENDENTE/MECANICO role
+- POST /service-orders — create service order, verify status is RECEIVED, verify budget is calculated
+- PATCH /service-orders/:id/status — advance each status step, test invalid transitions return 422
+- POST /service-orders/:id/approve — CLIENT role approves own budget, verify status moves to IN_PROGRESS
+- POST /service-orders/:id/reject — CLIENT role rejects own budget, verify status becomes REJECTED
+- POST /service-orders/:id/approve — returns 403 when called with ADMIN/ATTENDANT/MECHANIC role
 - Stock decrement on part association: verify DB quantity decreases in same transaction
-- GET /os/:id/status — public endpoint, no auth, returns current status
+- GET /service-orders/:id/status — public endpoint, no auth, returns current status
 - Admin endpoints return 401 without JWT, 200 with valid JWT
-- MECANICO role returns 403 on client/user management endpoints
-- CLIENTE role returns 403 when accessing other clients' OS
-- CLIENTE role filtered by customerId: cannot approve/reject OS of another customer
-- POST /usuarios — only ADMIN can create ADMIN users; ATENDENTE attempt returns 403
-- PUT /usuarios/:id/roles — only ADMIN can change roles; others return 403
+- MECHANIC role returns 403 on customer/user management endpoints
+- CLIENT role returns 403 when accessing other customers' service orders
+- CLIENT role filtered by customerId: cannot approve/reject service orders of another customer
+- POST /users — only ADMIN can create ADMIN users; ATTENDANT attempt returns 403
+- PUT /users/:id/roles — only ADMIN can change roles; others return 403
 
 ## Test Structure
 - Arrange / Act / Assert pattern for all tests
@@ -49,5 +49,5 @@ alwaysApply: false
 ## Naming Convention
 - Test description must clearly state: what is being tested, the input condition, expected outcome
 - Example: `"should throw OUT_OF_STOCK error when part quantity is zero"`
-- Example: `"should return 403 when MECANICO attempts to delete a cliente"`
+- Example: `"should return 403 when MECHANIC attempts to delete a customer"`
 - Group related tests with describe blocks named after the unit under test
