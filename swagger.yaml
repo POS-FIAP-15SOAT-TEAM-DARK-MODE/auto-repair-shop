@@ -4,8 +4,12 @@ info:
   version: "1.0.0"
   description: OpenAPI specification for the project. Contains the currently available route(s).
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:{PORT}
     description: Local development server
+    variables:
+      PORT:
+        default: "8080"
+        description: Port number for the server
 paths:
   /ping:
     get:
