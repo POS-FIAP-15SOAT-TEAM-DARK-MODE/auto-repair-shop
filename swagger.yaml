@@ -1,0 +1,27 @@
+openapi: 3.0.0
+info:
+  title: Auto-Repair-Shop API
+  version: "1.0.0"
+  description: OpenAPI specification for the project. Contains the currently available route(s).
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+paths:
+  /ping:
+    get:
+      summary: Ping the API
+      description: Health check endpoint that returns a simple message.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Successful ping
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: pong
