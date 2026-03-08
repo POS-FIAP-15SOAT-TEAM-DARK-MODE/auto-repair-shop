@@ -14,6 +14,8 @@ func SetupRouter(c *container.HTTP) *gin.Engine {
 	router.Use(middleware.Recovery())
 	router.Use(middleware.ErrorHandler())
 
+	mountSwaggerUI(router)
+
 	router.GET("/ping", c.PingHandler.Ping)
 
 	return router
