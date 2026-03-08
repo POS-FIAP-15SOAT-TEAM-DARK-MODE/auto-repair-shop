@@ -1,0 +1,75 @@
+---
+description: Backend coding conventions and architecture rules
+globs: ["src/**/*", "app/**/*", "**/*.ts", "**/*.js", "**/*.java", "**/*.py", "**/*.go"]
+alwaysApply: false
+---
+
+# Backend Conventions
+
+## Layered Architecture Rules
+- Controllers handle HTTP: parse input, call service, return response — no business logic here
+- Services contain all business logic: validations, state transitions, budget calculation
+- Repositories handle all database access — no raw queries outside repository layer
+- Domain models/entities are plain objects with no framework dependencies
+
+## User & Customer Split
+- Creating a Customer must automatically create a linked User with role `CLIENT`
+- User entity stores: name, email, password hash, roles
+- Customer entity stores: CPF/CNPJ, name, phone, FK to User
+- Default password = CPF (individual) or CNPJ (company), hashed with bcrypt (min cost 12)
+- Deleting a Customer must also delete or deactivate the associated User
+
+## RBAC — Role-Based Access Control
+- Four roles: `ADMIN`, `ATTENDANT`, `MECHANIC`, `CLIENT`
+- Users may hold multiple roles (many-to-many via `USER_ROLE`), except `ADMIN` which is exclusive
+- **ADMIN**: unrestricted, including user management and role assignment
+- **ATTENDANT**: customers, vehicles, service orders, budgets, reports — no user management
+- **MECHANIC**: read-only service orders, add services/parts to service orders, status transitions only
+- **CLIENT**: own service order status + own budget approve/reject; scoped by `customerId` in JWT
+- Only `ADMIN` can create other `ADMIN` users
+- Only `ADMIN` can change any user's roles
+- Out-of-scope access must return HTTP 403
+- Authorization middleware reads `roles` and `customerId` from JWT — must not make additional DB calls
+
+## Service Order Status Transitions
+- Status must only advance in the defined order: RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
+- Rejecting a budget sets status to REJECTED and prevents any further transitions
+- Always validate the current status before applying a transition; throw a domain error if invalid
+- Log every status transition with structured fields: service_order_id, from_status, to_status, timestamp
+
+## Stock Rules
+- Always decrement stock inside a database transaction when associating a Part (Peca) to a service order (OS)
+- Before decrementing, check quantity > 0; throw a domain error if out of stock
+- Use SELECT FOR UPDATE (or equivalent pessimistic lock) to prevent race conditions on concurrent stock updates
+- Never expose negative stock values; treat them as a data integrity violation
+
+## Budget Calculation
+- Budget = sum(service.unit_price) + sum(part.unit_price × quantity)
+- Recalculate automatically whenever services or parts are added/removed from a service order
+- The budget is read-only after the service order reaches IN_PROGRESS
+
+## Validation Rules
+- CPF: validate format (###.###.###-##) and digit verification algorithm
+- CNPJ: validate format (##.###.###/####-##) and alphanumeric verification algorithm
+- License plate: support both old format (ABC-1234) and Mercosul format (ABC1D23)
+- All monetary values must be positive and stored as decimal/numeric (never float)
+- Validate all input at the controller layer before passing to the service
+
+## Authentication & Security
+- All admin endpoints require a valid JWT Bearer token in the Authorization header
+- Public endpoints: `POST /auth/login`, `GET /service-orders/:id/status` — no auth required
+- CLIENT endpoints require JWT with role `CLIENT`; filter data by `customerId` from JWT
+- Store passwords using bcrypt with a minimum cost factor of 12
+- Never log CPF, CNPJ, passwords, or JWT tokens
+- JWT expiry must be configurable via environment variable
+- JWT payload must include `roles` (array) and `customerId` (when applicable)
+
+## Error Handling
+- Return structured error responses: `{ "error": "...", "code": "..." }`
+- Use HTTP status codes correctly: 400 (validation), 401 (auth), 403 (forbidden), 404 (not found), 409 (conflict/stock), 422 (business rule), 500 (unexpected)
+- Never expose stack traces or internal details in production responses
+
+## Logging
+- Use structured (JSON) logs with fields: timestamp, level, operation, entity_id
+- Log levels: INFO for normal operations, WARN for business rule violations, ERROR for unexpected failures
+- Mask or omit sensitive fields (CPF, CNPJ) in all log entries
