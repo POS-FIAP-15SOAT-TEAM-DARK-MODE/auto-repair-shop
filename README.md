@@ -46,7 +46,10 @@ internal/
 ## Getting Started
 
 ```bash
-# Run the application
+# Run the application with Docker
+make docker-up
+
+# Run the application locally
 make run
 
 # Run tests
@@ -54,6 +57,9 @@ make test
 
 # Generate coverage report
 make coverage
+
+# Stop Docker containers
+make docker-down
 ```
 
 The server starts on port `8080`.
