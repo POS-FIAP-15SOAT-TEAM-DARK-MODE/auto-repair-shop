@@ -58,6 +58,14 @@ make coverage
 
 The server starts on port `8080`.
 
+## Swagger UI
+
+You can access the service Swagger UI in your browser to view and test the available endpoints:
+
+http://localhost:8080/swagger/index.html
+
+The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute requests directly against the running server.
+
 ## Environment Variables
 
 | Variable       | Description                  |
