@@ -46,7 +46,10 @@ internal/
 ## Getting Started
 
 ```bash
-# Run the application
+# Run the application with Docker
+make docker-up
+
+# Run the application locally
 make run
 
 # Run tests
@@ -54,9 +57,12 @@ make test
 
 # Generate coverage report
 make coverage
+
+# Stop Docker containers
+make docker-down
 ```
 
-The server starts on port `8080`.
+The server starts on port `${PORT:-8080}` (default: 8080).
 
 ## Swagger UI
 
@@ -70,6 +76,7 @@ The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute
 
 | Variable       | Description                  |
 |----------------|------------------------------|
+| `PORT`         | Server port (default: 8080)  |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `JWT_SECRET`   | Secret key for JWT signing   |
 | `JWT_EXPIRY`   | Token expiration duration    |
