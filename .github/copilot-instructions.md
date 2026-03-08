@@ -1,18 +1,18 @@
-# GitHub Copilot Instructions — Sistema Integrado de Oficina Mecânica
+# GitHub Copilot Instructions — Integrated Auto Repair Shop System
 
 ## Project Overview
-Monolithic layered backend for an auto repair shop. Manages service orders (OS), clients, vehicles, parts/stock, and administrative operations. Database: PostgreSQL. Auth: JWT. API: RESTful + Swagger/OpenAPI.
+Monolithic layered backend for an auto repair shop. Manages service orders, customers, vehicles, parts/stock, and administrative operations. Database: PostgreSQL. Auth: JWT. API: RESTful + Swagger/OpenAPI.
 
 ## Domain Language
-- **OS / Ordem de Serviço** — service order, the central aggregate of the system
-- **Cliente** — client, uniquely identified by CPF (individual) or CNPJ (company)
-- **Veiculo** — vehicle with placa, marca, modelo, ano; always linked to a Cliente
-- **Servico** — billable service (oil change, alignment, etc.) with name, description, unit price
-- **Peca / Insumo** — part or supply with stock quantity and unit price
-- **Orcamento** — budget auto-calculated from services and parts on an OS
-- **Estoque** — stock/inventory control for Pecas
-- **User** — system user account; stores nome, e-mail, password hash, and roles
-- **Customer** — client-specific data (CPF/CNPJ, razão social, telefone), linked 1:1 to a User
+- **Service Order (SO)** — service order, the central aggregate of the system
+- **Customer** — customer, uniquely identified by CPF (individual) or CNPJ (company)
+- **Vehicle** — vehicle with license plate, brand, model, year; always linked to a Customer
+- **Service** — billable service (oil change, alignment, etc.) with name, description, unit price
+- **Part (Peca)** — part or supply with stock quantity and unit price
+- **Budget** — budget auto-calculated from services and parts on a service order
+- **Stock** — stock/inventory control for Parts
+- **User** — system user account; stores name, email, password hash, and roles
+- **Customer** — customer-specific data (CPF/CNPJ, company name, phone), linked 1:1 to a User
 
 ## Architecture
 Layered monolith: **Controller → Service → Repository**
@@ -21,55 +21,55 @@ Layered monolith: **Controller → Service → Repository**
 - Repositories: all DB access — no raw queries outside this layer
 - Domain models: plain objects, no framework dependencies
 
-## OS Status Lifecycle
+## Service Order Status Lifecycle
 Transitions must follow this exact order — never skip, never reverse:
 ```
-RECEBIDA → EM_DIAGNOSTICO → AGUARDANDO_APROVACAO → EM_EXECUCAO → FINALIZADA → ENTREGUE
+RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
 ```
-`RECUSADA` is a terminal state set when the client rejects the budget (only from `AGUARDANDO_APROVACAO`).
+`REJECTED` is a terminal state set when the customer rejects the budget (only from `AWAITING_APPROVAL`).
 Any out-of-order transition must throw a domain error → HTTP 422.
 
 ## Critical Business Rules
 
 ### User & Customer Split
-- Creating a Cliente automatically creates a linked User with role `CLIENTE`
-- User entity stores: nome, e-mail, password hash, roles
-- Customer entity stores: CPF/CNPJ, razão social, telefone, FK to User
+- Creating a Customer automatically creates a linked User with role `CLIENT`
+- User entity stores: name, email, password hash, roles
+- Customer entity stores: CPF/CNPJ, company name, phone, FK to User
 - Default password = CPF (individual) or CNPJ (company), hashed with bcrypt
-- Deleting a Cliente must also delete or deactivate the associated User
+- Deleting a Customer must also delete or deactivate the associated User
 
 ### RBAC — Role-Based Access Control
-Four roles: `ADMIN`, `ATENDENTE`, `MECANICO`, `CLIENTE`
+Four roles: `ADMIN`, `ATTENDANT`, `MECHANIC`, `CLIENT`
 - Users may hold multiple roles simultaneously (many-to-many via `USER_ROLE`), **except** `ADMIN` which is exclusive
 - **ADMIN**: unrestricted access to all endpoints, including user management and role assignment
-- **ATENDENTE**: clients, vehicles, OS, budgets, reports — no user management
-- **MECANICO**: read-only OS, add services/parts to OS, OS status transitions only
-- **CLIENTE**: own OS tracking + own budget approve/reject only; authenticated by e-mail + password; access filtered by `customerId` in JWT
+- **ATTENDANT**: customers, vehicles, service orders, budgets, reports — no user management
+- **MECHANIC**: read-only service orders, add services/parts to service orders, status transitions only
+- **CLIENT**: own service order tracking + own budget approve/reject only; authenticated by email + password; access filtered by `customerId` in JWT
 - Only `ADMIN` can create other `ADMIN` users
 - Only `ADMIN` can change any user's roles
 - Out-of-scope access → HTTP 403
 
 ### Stock
-- Always decrement stock inside a DB transaction when associating a Peca to an OS
-- Check `quantidade > 0` before decrementing; throw `OUT_OF_STOCK` error if zero
+- Always decrement stock inside a DB transaction when associating a Part (Peca) to a service order (OS)
+- Check `quantity > 0` before decrementing; throw `OUT_OF_STOCK` error if zero
 - Use `SELECT FOR UPDATE` to prevent race conditions on concurrent decrements
 
 ### Budget
-- `total = Σ servico.valor_unitario + Σ (peca.valor_unitario × quantidade)`
-- Recalculate automatically whenever services or parts change on the OS
-- Budget is immutable once OS status reaches `EM_EXECUCAO`
+- `total = Σ service.unit_price + Σ (part.unit_price × quantity)`
+- Recalculate automatically whenever services or parts change on the service order
+- Budget is immutable once service order status reaches `IN_PROGRESS`
 
 ### Input Validation
 - CPF: validate format `###.###.###-##` AND check digit algorithm
 - CNPJ: validate format `##.###.###/####-##` AND check digit algorithm
-- Placa: accept old format `ABC-1234` and Mercosul format `ABC1D23`
+- License plate: accept old format `ABC-1234` and Mercosul format `ABC1D23`
 - Monetary values: `NUMERIC(10,2)` — never `float` or `double`
 - Validate all input at controller layer before passing to service
 
 ### Security
 - All admin endpoints require `Authorization: Bearer <JWT>` — return 401 if absent or invalid
-- Public endpoints (no auth): `POST /auth/login`, `GET /os/:id/status`
-- Cliente endpoints require JWT with role `CLIENTE`; access scoped to `customerId` in JWT payload
+- Public endpoints (no auth): `POST /auth/login`, `GET /service-orders/:id/status`
+- CLIENT endpoints require JWT with role `CLIENT`; access scoped to `customerId` in JWT payload
 - Hash passwords with bcrypt, minimum cost factor 12
 - Never log or expose CPF, CNPJ, passwords, or tokens in any response or log
 - JWT expiry must be configurable via environment variable
@@ -77,43 +77,43 @@ Four roles: `ADMIN`, `ATENDENTE`, `MECANICO`, `CLIENTE`
 
 ## API Endpoints
 ```
-POST   /auth/login                  public
-GET    /os/:id/status               public — client tracking
+POST   /auth/login                        public
+GET    /service-orders/:id/status         public — customer tracking
 
-POST   /clientes                    ADMIN, ATENDENTE
-GET    /clientes                    ADMIN, ATENDENTE
-GET    /clientes/:id                ADMIN, ATENDENTE
-PUT    /clientes/:id                ADMIN, ATENDENTE
-DELETE /clientes/:id                ADMIN
+POST   /customers                         ADMIN, ATTENDANT
+GET    /customers                         ADMIN, ATTENDANT
+GET    /customers/:id                     ADMIN, ATTENDANT
+PUT    /customers/:id                     ADMIN, ATTENDANT
+DELETE /customers/:id                     ADMIN
 
-(same CRUD pattern for /veiculos, /servicos, /pecas)
+(same CRUD pattern for /vehicles, /services, /parts)
 
-POST   /os                          ADMIN, ATENDENTE — creates OS, sets RECEBIDA, calculates budget
-GET    /os                          ADMIN, ATENDENTE, MECANICO — filter by ?status=&cliente_id=&veiculo_id=
-GET    /os/:id                      ADMIN, ATENDENTE, MECANICO — full detail: services, parts, values, history
-PATCH  /os/:id/status               ADMIN, ATENDENTE, MECANICO — advance status
-POST   /os/:id/approve              CLIENTE — own OS only → advances to EM_EXECUCAO
-POST   /os/:id/reject               CLIENTE — own OS only → sets RECUSADA
-GET    /relatorios/tempo-medio      ADMIN, ATENDENTE — average service execution time
+POST   /service-orders                    ADMIN, ATTENDANT — creates service order, sets RECEIVED, calculates budget
+GET    /service-orders                    ADMIN, ATTENDANT, MECHANIC — filter by ?status=&customer_id=&vehicle_id=
+GET    /service-orders/:id                ADMIN, ATTENDANT, MECHANIC — full detail: services, parts, values, history
+PATCH  /service-orders/:id/status         ADMIN, ATTENDANT, MECHANIC — advance status
+POST   /service-orders/:id/approve        CLIENT — own service order only → advances to IN_PROGRESS
+POST   /service-orders/:id/reject         CLIENT — own service order only → sets REJECTED
+GET    /reports/average-time              ADMIN, ATTENDANT — average service execution time
 
-POST   /usuarios                    ADMIN only — create user
-PUT    /usuarios/:id/roles          ADMIN only — update user roles
+POST   /users                             ADMIN only — create user
+PUT    /users/:id/roles                   ADMIN only — update user roles
 ```
 
 ## Database Conventions
 - Monetary columns: `NUMERIC(10,2)` always
-- OS status column: ENUM or CHECK constraint; valid values: RECEBIDA, EM_DIAGNOSTICO, AGUARDANDO_APROVACAO, EM_EXECUCAO, FINALIZADA, ENTREGUE, RECUSADA
-- Required foreign keys: veiculo→cliente, os→cliente, os→veiculo, os_servico→(os, servico), os_peca→(os, peca), customer→user
+- Service order status column: ENUM or CHECK constraint; valid values: RECEIVED, IN_DIAGNOSIS, AWAITING_APPROVAL, IN_PROGRESS, COMPLETED, DELIVERED, REJECTED
+- Required foreign keys: vehicle→customer, service_order→customer, service_order→vehicle, service_order_service→(service_order, service), service_order_part→(service_order, part), customer→user
 - Many-to-many: `USER_ROLE` table linking user↔role
-- Required indexes: `customer.cpf`, `customer.cnpj`, `veiculo.placa`, `os.status`, `os.cliente_id`, `user.email`
+- Required indexes: `customer.cpf`, `customer.cnpj`, `vehicle.plate`, `service_order.status`, `service_order.customer_id`, `user.email`
 - IDs: UUID; timestamps: UTC ISO 8601
 - Schema changes only via versioned migration files — never alter schema manually
 
 ## Testing Requirements
-- Critical domains (OS, estoque, orcamento): **90% minimum coverage**
+- Critical domains (service orders, stock, budget): **90% minimum coverage**
 - All other domains: **80% minimum coverage**
-- Unit test: status transitions (valid + invalid paths), budget calculation, CPF/CNPJ/placa validators, stock decrement (success, out-of-stock, concurrent), RBAC role checks (403 for out-of-scope)
-- Integration test: full OS creation flow, each status transition, approve/reject budget (CLIENTE role), public status endpoint (no auth), 401 on admin endpoints without token, 403 on wrong role, CLIENTE filtered by customerId
+- Unit test: status transitions (valid + invalid paths), budget calculation, CPF/CNPJ/license plate validators, stock decrement (success, out-of-stock, concurrent), RBAC role checks (403 for out-of-scope)
+- Integration test: full service order creation flow, each status transition, approve/reject budget (CLIENT role), public status endpoint (no auth), 401 on admin endpoints without token, 403 on wrong role, CLIENT filtered by customerId
 - Pattern: Arrange / Act / Assert; tests must be independent (no shared mutable state)
 - Integration tests run against a real test DB, rolled back after each test
 
@@ -159,7 +159,7 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 - `revert` — revert a previous commit
 
 ### Scopes (domain-aligned)
-`os`, `cliente`, `veiculo`, `servico`, `peca`, `estoque`, `orcamento`, `auth`, `usuario`, `infra`, `db`, `api`
+`service-order`, `customer`, `vehicle`, `service`, `part`, `stock`, `budget`, `auth`, `user`, `infra`, `db`, `api`
 
 ### Rules
 - Subject line max 72 characters, lowercase, no period at end
