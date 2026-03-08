@@ -12,7 +12,8 @@ func main() {
 	defer logger.Sync()
 
 	container := factory.HttpContainer()
-	router := routing.SetupRouter(container)
+	middlewares := factory.MiddlewaresContainer()
+	router := routing.SetupRouter(container, middlewares)
 
 	port := env.GetString("PORT", "8080")
 	if err := router.Run(":" + port); err != nil {
