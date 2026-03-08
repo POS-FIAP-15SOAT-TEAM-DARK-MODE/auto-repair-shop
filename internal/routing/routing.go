@@ -2,8 +2,6 @@ package routing
 
 import (
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/middleware"
@@ -21,9 +19,4 @@ func SetupRouter(c *container.HTTP) *gin.Engine {
 	router.GET("/ping", c.PingHandler.Ping)
 
 	return router
-}
-
-func mountSwaggerUI(router *gin.Engine) {
-	router.StaticFile("/swagger.yaml", "../../swagger.yaml")
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger.yaml")))
 }
