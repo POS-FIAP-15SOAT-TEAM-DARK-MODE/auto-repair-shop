@@ -50,7 +50,7 @@ alwaysApply: false
 
 ## Validation Rules
 - CPF: validate format (###.###.###-##) and digit verification algorithm
-- CNPJ: validate format (##.###.###/####-##) and digit verification algorithm
+- CNPJ: validate format (##.###.###/####-##) and alphanumeric verification algorithm
 - Placa (vehicle plate): support both old format (ABC-1234) and Mercosul format (ABC1D23)
 - All monetary values must be positive and stored as decimal/numeric (never float)
 - Validate all input at the controller layer before passing to the service
