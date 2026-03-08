@@ -71,39 +71,39 @@ The server starts on port `8080`.
 
 ### Public
 
-| Method | Path              | Description         |
-|--------|-------------------|---------------------|
-| POST   | `/auth/login`     | Get JWT             |
-| GET    | `/so/:id/status`  | Client SO tracking  |
+| Method | Path                 | Description         |
+|--------|----------------------|---------------------|
+| POST   | `/v1/auth/login`     | Get JWT             |
+| GET    | `/v1/so/:id/status`  | Client SO tracking  |
 
 ### Clients
 
-| Method | Path            | Roles               |
-|--------|-----------------|----------------------|
-| POST   | `/clients`      | ADMIN, ATTENDANT     |
-| GET    | `/clients`      | ADMIN, ATTENDANT     |
-| GET    | `/clients/:id`  | ADMIN, ATTENDANT     |
-| PUT    | `/clients/:id`  | ADMIN, ATTENDANT     |
-| DELETE | `/clients/:id`  | ADMIN                |
+| Method | Path               | Roles               |
+|--------|--------------------|----------------------|
+| POST   | `/v1/clients`      | ADMIN, ATTENDANT     |
+| GET    | `/v1/clients`      | ADMIN, ATTENDANT     |
+| GET    | `/v1/clients/:id`  | ADMIN, ATTENDANT     |
+| PUT    | `/v1/clients/:id`  | ADMIN, ATTENDANT     |
+| DELETE | `/v1/clients/:id`  | ADMIN                |
 
 ### Service Orders (SO)
 
-| Method | Path                 | Roles                          |
-|--------|----------------------|--------------------------------|
-| POST   | `/so`                | ADMIN, ATTENDANT               |
-| GET    | `/so`                | ADMIN, ATTENDANT, MECHANIC     |
-| GET    | `/so/:id`            | ADMIN, ATTENDANT, MECHANIC     |
-| PATCH  | `/so/:id/status`     | ADMIN, ATTENDANT, MECHANIC     |
-| POST   | `/so/:id/approve`    | CLIENT (own SO only)           |
-| POST   | `/so/:id/reject`     | CLIENT (own SO only)           |
+| Method | Path                    | Roles                          |
+|--------|-------------------------|--------------------------------|
+| POST   | `/v1/so`                | ADMIN, ATTENDANT               |
+| GET    | `/v1/so`                | ADMIN, ATTENDANT, MECHANIC     |
+| GET    | `/v1/so/:id`            | ADMIN, ATTENDANT, MECHANIC     |
+| PATCH  | `/v1/so/:id/status`     | ADMIN, ATTENDANT, MECHANIC     |
+| POST   | `/v1/so/:id/approve`    | CLIENT (own SO only)           |
+| POST   | `/v1/so/:id/reject`     | CLIENT (own SO only)           |
 
 ### Admin
 
-| Method | Path                        | Roles              |
-|--------|-----------------------------|---------------------|
-| POST   | `/users`                    | ADMIN               |
-| PUT    | `/users/:id/roles`          | ADMIN               |
-| GET    | `/reports/average-time`     | ADMIN, ATTENDANT    |
+| Method | Path                           | Roles              |
+|--------|--------------------------------|---------------------|
+| POST   | `/v1/users`                    | ADMIN               |
+| PUT    | `/v1/users/:id/roles`          | ADMIN               |
+| GET    | `/v1/reports/average-time`     | ADMIN, ATTENDANT    |
 
 ## RBAC Roles
 
@@ -117,3 +117,11 @@ The server starts on port `8080`.
 ## License
 
 This project is part of the FIAP 15SOAT postgraduate program.
+
+## Members
+
+- Caetano Agostinho de Freitas - RM371006
+- Emanuel Jesus Santos - RM371184
+- Diogo Estevão Ferreira - RM371059
+- Giusier Ferreira Soares - RM371064
+- Guilherme Ferreira Santos - RM374002
