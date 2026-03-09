@@ -45,10 +45,25 @@ internal/
 
 ## Getting Started
 
+### Setup with Docker
+
 ```bash
-# Run the application with Docker
+# 1. Start the database
 make docker-up
 
+# 2. Install migration tool (first time only)
+make migrate-install
+
+# 3. Run all pending migrations
+make migrate-up
+
+# 4. Start the application locally
+make run
+```
+
+### Local Development
+
+```bash
 # Run the application locally
 make run
 
@@ -72,6 +87,36 @@ http://localhost:8080/swagger/index.html
 
 The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute requests directly against the running server.
 
+## Database Migrations
+
+Migrations are managed using `golang-migrate` and stored in the `/migrations` directory. Each migration consists of `.up.sql` (apply) and `.down.sql` (rollback) files.
+
+### Migration Commands
+
+```bash
+# Install golang-migrate CLI (first time only)
+make migrate-install
+
+# Apply all pending migrations
+make migrate-up
+
+# Rollback the last applied migration
+make migrate-down
+
+# Check current migration version
+make migrate-status
+```
+
+### Adding New Migrations
+
+When adding schema changes, create migration files following the naming convention:
+```
+NNNNNN_description.up.sql
+NNNNNN_description.down.sql
+```
+
+Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status.up.sql`).
+
 ## Environment Variables
 
 | Variable       | Description                  |
@@ -81,6 +126,8 @@ The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute
 | `JWT_SECRET`   | Secret key for JWT signing   |
 | `JWT_EXPIRY`   | Token expiration duration    |
 | `BCRYPT_COST`  | bcrypt hashing cost factor   |
+| `POSTGRES_USER` | PostgreSQL username (for migrations) |
+| `POSTGRES_PASSWORD` | PostgreSQL password (for migrations) |
 
 ## API Endpoints
 
