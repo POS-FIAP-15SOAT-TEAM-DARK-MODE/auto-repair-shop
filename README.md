@@ -107,6 +107,9 @@ make migrate-down
 make migrate-status
 ```
 
+### Metodo de Criptografia
+Senhas de usuários são criptografadas com algorítimo sha256
+
 ### Adding New Migrations
 
 When adding schema changes, create migration files following the naming convention:
