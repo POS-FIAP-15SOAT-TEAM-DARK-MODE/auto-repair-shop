@@ -1,0 +1,12 @@
+-- Drop all tables in reverse order of creation
+DROP TABLE IF EXISTS service_order_status_history CASCADE;
+DROP TABLE IF EXISTS service_order_part CASCADE;
+DROP TABLE IF EXISTS service_order_service CASCADE;
+DROP TABLE IF EXISTS service_order CASCADE;
+DROP TABLE IF EXISTS part CASCADE;
+DROP TABLE IF EXISTS service CASCADE;
+DROP TABLE IF EXISTS vehicle CASCADE;
+DROP TABLE IF EXISTS customer CASCADE;
+DROP TABLE IF EXISTS user_role CASCADE;
+DROP TABLE IF EXISTS "role" CASCADE;
+DROP TABLE IF EXISTS "user" CASCADE;
