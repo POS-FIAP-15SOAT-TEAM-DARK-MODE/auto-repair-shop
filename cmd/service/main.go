@@ -19,4 +19,5 @@ func main() {
 	if err := router.Run(":" + port); err != nil {
 		logger.Error("Fail to start application", zap.String("port", port), zap.Error(err))
 	}
+
 }
