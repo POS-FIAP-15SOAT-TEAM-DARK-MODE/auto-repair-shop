@@ -10,10 +10,15 @@ import (
 
 func Error(c *gin.Context, err error) {
 	var badRequestError domain.BadRequestError
+	var conflictError domain.ConflictError
 
 	switch {
 	case errors.As(err, &badRequestError):
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": badRequestError.Message})
+		return
+
+	case errors.As(err, &conflictError):
+		c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": conflictError.Message})
 		return
 
 	default:

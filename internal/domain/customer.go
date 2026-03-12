@@ -5,52 +5,46 @@ import (
 )
 
 const (
-	individualCustomerType = "INDIVIDUAL"
-	companyCustomerType    = "COMPANY"
+	IndividualCustomerType = "INDIVIDUAL"
+	CompanyCustomerType    = "COMPANY"
 )
 
 type (
-	CustomerService interface {
-		Create(body dto.CreateCustomerRequest) (Customer, error)
-	}
-
-	CustomerRepository interface {
-	}
-
-	user struct {
-		ID       string
-		Name     string
-		Email    string
-		Password string
-	}
-
 	Customer struct {
-		user
 		ID          string
-		userID      string
+		UserID      string
+		User        *User
 		Type        string
 		CPF         string
 		CNPJ        string
 		CompanyName string
 		Phone       string
 	}
+
+	CustomerService interface {
+		Create(body dto.CreateCustomerRequest) (Customer, error)
+	}
+
+	CustomerRepository interface {
+		Create(customer Customer) error
+	}
 )
 
 func (c *Customer) ToResponse() dto.CreateCustomerResponse {
 	var document string
 
-	if c.Type == individualCustomerType {
+	if c.Type == IndividualCustomerType {
 		document = c.CPF
 	}
 
-	if c.Type == companyCustomerType {
+	if c.Type == CompanyCustomerType {
 		document = c.CNPJ
 	}
 
 	return dto.CreateCustomerResponse{
 		ID:          c.ID,
-		Name:        c.Name,
-		Email:       c.Email,
+		Name:        c.User.Name,
+		Email:       c.User.Email,
 		Type:        c.Type,
 		Document:    document,
 		CompanyName: c.CompanyName,
@@ -60,7 +54,7 @@ func (c *Customer) ToResponse() dto.CreateCustomerResponse {
 
 func CreateCustomerToDomain(body dto.CreateCustomerRequest) Customer {
 	customer := Customer{
-		user: user{
+		User: &User{
 			Name:     body.Name,
 			Email:    body.Email,
 			Password: body.Password,
@@ -70,11 +64,11 @@ func CreateCustomerToDomain(body dto.CreateCustomerRequest) Customer {
 		Phone:       body.Phone,
 	}
 
-	if body.Type == individualCustomerType {
+	if body.Type == IndividualCustomerType {
 		customer.CPF = body.Document
 	}
 
-	if body.Type == companyCustomerType {
+	if body.Type == CompanyCustomerType {
 		customer.CNPJ = body.Document
 	}
 
