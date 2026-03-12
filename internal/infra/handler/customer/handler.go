@@ -1,15 +1,35 @@
 package customer
 
-import "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-
-type (
-	Handler struct {
-		service domain.CustomerService
-	}
+import (
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer/dto"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
+	"github.com/gin-gonic/gin"
 )
+
+type Handler struct {
+	service domain.CustomerService
+}
 
 func NewHandler(service domain.CustomerService) *Handler {
 	return &Handler{
 		service: service,
 	}
+}
+
+func (h *Handler) Create(c *gin.Context) {
+	var body dto.CreateCustomerRequest
+
+	if err := web.ValidateAndDecodeJSON(c.Request, &body); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()}) // TODO: add custom error handling
+		return
+	}
+
+	customer, err := h.service.Create(body)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()}) // TODO: add custom error handling
+		return
+	}
+
+	c.JSON(201, customer.ToResponse())
 }

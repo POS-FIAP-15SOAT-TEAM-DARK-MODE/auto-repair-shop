@@ -133,4 +133,4 @@ CREATE INDEX idx_user_role_role_id ON user_role(role_id);
 INSERT INTO "role" (id, name) VALUES ('1', 'ADMIN');
 INSERT INTO "role" (id, name) VALUES ('2', 'MECHANIC');
 INSERT INTO "role" (id, name) VALUES ('3', 'ATTENDANT');
-INSERT INTO "role" (id, name) VALUES ('4', 'CLIENT');
+INSERT INTO "role" (id, name) VALUES ('4', 'CUSTOMER');
