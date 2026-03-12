@@ -6,18 +6,36 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/go-playground/validator/v10"
 	"github.com/goccy/go-json"
 )
 
+const (
+	contentTypeHeader       = "Content-Type"
+	applicationJSON         = "application/json"
+	contentTypeErrorMessage = "Content-Type must be application/json"
+	invalidJSONMessage      = "Invalid JSON payload"
+)
+
 func ValidateAndDecodeJSON[T any](r *http.Request, ptr *T) error {
 
+	if r.Header.Get(contentTypeHeader) != applicationJSON {
+		return domain.BadRequestError{
+			Message: contentTypeErrorMessage,
+		}
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(ptr); err != nil {
-		return err //TODO: add custom error handling
+		return domain.BadRequestError{
+			Message: invalidJSONMessage,
+		}
 	}
 
 	if err := validate.Struct(*ptr); err != nil {
-		return errors.New(formatValidationError(err)) //TODO: add custom error handling
+		return domain.BadRequestError{
+			Message: formatValidationError(err),
+		}
 	}
 
 	return nil

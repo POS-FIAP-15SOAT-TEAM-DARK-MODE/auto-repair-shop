@@ -21,7 +21,7 @@ func (h *Handler) Create(c *gin.Context) {
 	var body dto.CreateCustomerRequest
 
 	if err := web.ValidateAndDecodeJSON(c.Request, &body); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()}) // TODO: add custom error handling
+		web.Error(c, err)
 		return
 	}
 
