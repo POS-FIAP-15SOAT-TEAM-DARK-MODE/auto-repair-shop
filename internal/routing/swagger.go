@@ -7,6 +7,6 @@ import (
 )
 
 func mountSwaggerUI(router *gin.Engine) {
-	router.Static("/api", "./api")
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/api/swagger.yaml")))
+	router.Static("/docs", "./docs")
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs/swagger.yaml")))
 }

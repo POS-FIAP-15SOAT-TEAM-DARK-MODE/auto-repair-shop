@@ -13,6 +13,7 @@ coverage:
 
 docker-up:
 	docker-compose up --build
+	docker compose --env-file .env up
 
 docker-down:
 	docker-compose down

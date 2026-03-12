@@ -2,16 +2,15 @@ package domain
 
 import (
 	"errors"
-	"time"
+
+	"github.com/google/uuid"
 )
 
 type User struct {
-	Id        string
-	Name      string
-	Email     string
-	Password  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Id       string
+	Name     string
+	Email    string
+	Password string
 }
 
 type UserRepository interface {
@@ -19,22 +18,15 @@ type UserRepository interface {
 	FindByEmail(email string) (*User, error)
 }
 
-// É uma função construtora para criar um novo usuário,
-// garantindo que as regras de negócio sejam respeitadas
-// (ex: nome, email e senha não podem ser vazios).
-func NewUser(id, name, email, password string) (*User, error) {
+func NewUser(name, email, password string) (*User, error) {
 	if name == "" || email == "" || password == "" {
 		return nil, errors.New("name, email and password hash cannot be empty")
 	}
 
-	now := time.Now()
-	// Aqui a gente cria o Obj User, e já retorna ele pronto pra ser inserido no banco de dados;
 	return &User{
-		Id:        id,
-		Name:      name,
-		Email:     email,
-		Password:  password,
-		CreatedAt: now,
-		UpdatedAt: now,
+		Id:       uuid.New().String(),
+		Name:     name,
+		Email:    email,
+		Password: password,
 	}, nil
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/docs/config"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/factory"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
@@ -11,7 +13,10 @@ import (
 func main() {
 	defer logger.Sync()
 
-	container := factory.HttpContainer()
+	cfg := config.LoadConfig()
+	dbConn := db.Connect(cfg)
+
+	container := factory.HttpContainer(dbConn)
 	middlewares := factory.MiddlewaresContainer()
 	router := routing.SetupRouter(container, middlewares)
 

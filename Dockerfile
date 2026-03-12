@@ -17,8 +17,6 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-COPY api ./api
-
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build \
   -ldflags="-s -w -extldflags '-static'" \
@@ -40,7 +38,6 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 # Set working directory and copy binary
 WORKDIR /app
 COPY --from=builder /app/main .
-COPY --from=builder /app/api ./api
 
 # Drop to non-root user
 USER appuser

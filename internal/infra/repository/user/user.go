@@ -13,17 +13,15 @@ type SqlxUserRepository struct {
 	db *sqlx.DB
 }
 
-// Construtor
 func NewSqlxUserRepository(db *sqlx.DB) *SqlxUserRepository {
 	return &SqlxUserRepository{db: db}
 }
 
 func (r *SqlxUserRepository) FindByEmail(email string) (*domain.User, error) {
 	user := &domain.User{}
-	query := `SELECT email FROM "user" WHERE email = $1`
-	err := r.db.Get(user, query, email)
+	err := r.db.Get(user, GetUserByEmail, email)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find user by email: %w", err)
 	}
 	return user, nil
 }
@@ -37,9 +35,7 @@ func (u *SqlxUserRepository) CreateUser(c *domain.User) (*domain.User, error) {
 	if emailExists != nil {
 		return nil, fmt.Errorf("user with email %s already exists", c.Email)
 	}
-
-	query := `INSERT INTO "user" (id, name, email, password_hash) VALUES ($1, $2, $3, $4)`
-	_, err = u.db.Exec(query, c.Id, c.Name, c.Email, c.Password)
+	_, err = u.db.Exec(CreateUser, c.Id, c.Name, c.Email, c.Password)
 	if err != nil {
 		return nil, err
 	}
