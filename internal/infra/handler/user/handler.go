@@ -1,32 +1,38 @@
 package user
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user/dto"
-	services "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
 )
 
 type Handler struct {
-	Service services.UserService
+	service domain.UserService
 }
 
-func NewHandler(service services.UserService) *Handler {
-	return &Handler{Service: service}
+func NewHandler(service domain.UserService) *Handler {
+	return &Handler{service: service}
 }
 
 func (h *Handler) CreateUser(c *gin.Context) {
-	var req dto.UserRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	user, err := h.Service.CreateUser(req)
+	req, err := dto.MapBodyToUserRequestDTO(c)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := req.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	user := dto.MapUserRequestDTOToDomain(req)
+	user, err = h.service.Create(user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{"user": dto.UserResponse{Id: user.Id, Name: user.Name, Email: user.Email}})
+	c.JSON(http.StatusCreated, gin.H{"user": dto.MapUserToResponseDTO(user)})
 }
