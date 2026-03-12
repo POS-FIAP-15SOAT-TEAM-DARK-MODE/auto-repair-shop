@@ -26,7 +26,7 @@ type (
 	}
 
 	CustomerRepository interface {
-		Create(customer Customer) error
+		Create(customer *Customer) error
 	}
 )
 

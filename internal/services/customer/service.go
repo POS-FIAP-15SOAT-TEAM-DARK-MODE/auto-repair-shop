@@ -26,7 +26,8 @@ func (s *service) Create(body dto.CreateCustomerRequest) (domain.Customer, error
 	id := uuid.New().String()
 	customer.User.ID = id
 
-	if err := s.userRepository.Create(customer.User); err != nil {
+	_, err := s.userRepository.Create(customer.User)
+	if err != nil {
 		//TODO handle error: if user already exists, return conflict error, otherwise return internal server error
 		return domain.Customer{}, err
 	}
@@ -34,7 +35,7 @@ func (s *service) Create(body dto.CreateCustomerRequest) (domain.Customer, error
 	customer.ID = id
 	customer.UserID = id
 
-	if err := s.customerRepository.Create(customer); err != nil {
+	if err := s.customerRepository.Create(&customer); err != nil {
 		//TODO handle error: if customer already exists, return conflict error, otherwise return internal server error
 		return domain.Customer{}, err
 	}
