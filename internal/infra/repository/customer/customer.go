@@ -3,9 +3,12 @@ package customer
 import (
 	"context"
 
+	"go.uber.org/zap"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	pkgdb "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 )
 
 type repository struct {
@@ -35,6 +38,11 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 		customer.Phone,
 	)
 	if err != nil {
+		logger.Error("customer repository: failed to create customer",
+			zap.String("operation", "create_customer"),
+			zap.String("entity_id", customer.ID),
+			zap.Error(err),
+		)
 		return postgres.Error(err)
 	}
 
@@ -43,7 +51,7 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 
 // nullableString converts an empty string to nil so the DB receives NULL
 // instead of an empty string, preserving CHECK and IS NULL constraints.
-func nullableString(s string) interface{} {
+func nullableString(s string) any {
 	if s == "" {
 		return nil
 	}

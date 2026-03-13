@@ -2,8 +2,10 @@ package customer
 
 import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
@@ -20,12 +22,20 @@ func (h *Handler) Create(c *gin.Context) {
 	var body CreateCustomerRequest
 
 	if err := web.ValidateAndDecodeJSON(c.Request, &body); err != nil {
+		logger.Warn("create customer: invalid request body",
+			zap.String("operation", "create_customer"),
+			zap.String("error", err.Error()),
+		)
 		web.Error(c, err)
 		return
 	}
 
 	customer, err := body.toDomain()
 	if err != nil {
+		logger.Warn("create customer: validation failed",
+			zap.String("operation", "create_customer"),
+			zap.String("error", err.Error()),
+		)
 		web.Error(c, err)
 		return
 	}
