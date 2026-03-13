@@ -7,6 +7,8 @@ import "context"
 type TxFunc func(userRepo UserRepository, customerRepo CustomerRepository) error
 
 // Transactor manages database transactions without leaking DB concerns into the domain.
+//
+//go:generate mockery --name=Transactor --with-expecter
 type Transactor interface {
 	WithTransaction(ctx context.Context, fn TxFunc) error
 }

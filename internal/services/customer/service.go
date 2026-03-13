@@ -22,7 +22,7 @@ func (s *service) Create(body dto.CreateCustomerRequest) (domain.Customer, error
 	}
 
 	err = s.transactor.WithTransaction(context.Background(), func(userRepo domain.UserRepository, customerRepo domain.CustomerRepository) error {
-		if _, err := userRepo.Create(customer.User); err != nil {
+		if err := userRepo.Create(customer.User); err != nil {
 			return err
 		}
 		return customerRepo.Create(&customer)

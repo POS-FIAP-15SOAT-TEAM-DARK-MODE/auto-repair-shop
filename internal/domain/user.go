@@ -21,9 +21,12 @@ type (
 	}
 
 	UserRepository interface {
-		Create(c *User) (*User, error)
+		Create(u *User) error
 	}
 )
+
+//go:generate mockery --name=UserService --with-expecter
+//go:generate mockery --name=UserRepository --with-expecter
 
 func NewUser(name, email, password string) *User {
 	return &User{

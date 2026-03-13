@@ -20,5 +20,8 @@ func (s *UserService) Create(user *domain.User) (*domain.User, error) {
 		return nil, err
 	}
 
-	return s.repo.Create(user)
+	if err := s.repo.Create(user); err != nil {
+		return nil, err
+	}
+	return user, nil
 }

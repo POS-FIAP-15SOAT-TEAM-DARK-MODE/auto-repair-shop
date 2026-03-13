@@ -13,10 +13,10 @@ func NewUserRepository(ex pkgdb.Executor) *SqlxUserRepository {
 	return &SqlxUserRepository{db: ex}
 }
 
-func (u *SqlxUserRepository) Create(c *domain.User) (*domain.User, error) {
+func (u *SqlxUserRepository) Create(c *domain.User) error {
 	_, err := u.db.Exec(CreateUser, c.ID, c.Name, c.Email, c.Password)
 	if err != nil {
-		return nil, pkgdb.Error(err)
+		return pkgdb.Error(err)
 	}
-	return c, nil
+	return nil
 }
