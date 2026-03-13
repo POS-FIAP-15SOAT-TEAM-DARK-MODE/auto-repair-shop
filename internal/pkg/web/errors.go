@@ -9,9 +9,9 @@ import (
 )
 
 func Error(c *gin.Context, err error) {
-	var badRequestError domain.BadRequestError
+	var badRequestError domain.ValidationError
 	var conflictError domain.ConflictError
-	var unprocessableError domain.UnprocessableEntityError
+	var unprocessableError domain.BusinessRuleError
 
 	switch {
 	case errors.As(err, &badRequestError):

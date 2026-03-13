@@ -1,7 +1,7 @@
 package domain
 
 type (
-	BadRequestError struct {
+	ValidationError struct {
 		Message string `json:"message"`
 	}
 
@@ -9,12 +9,12 @@ type (
 		Message string `json:"message"`
 	}
 
-	UnprocessableEntityError struct {
+	BusinessRuleError struct {
 		Message string `json:"message"`
 	}
 )
 
-func (e BadRequestError) Error() string {
+func (e ValidationError) Error() string {
 	return e.Message
 }
 
@@ -22,6 +22,6 @@ func (e ConflictError) Error() string {
 	return e.Message
 }
 
-func (e UnprocessableEntityError) Error() string {
+func (e BusinessRuleError) Error() string {
 	return e.Message
 }

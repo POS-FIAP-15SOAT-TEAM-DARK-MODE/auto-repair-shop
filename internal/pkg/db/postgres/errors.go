@@ -1,4 +1,4 @@
-package db
+package postgres
 
 import (
 	"errors"
@@ -23,8 +23,9 @@ var constraintMessages = map[string]string{
 	"customer_cnpj_key": "CNPJ already registered",
 }
 
-// Error maps PostgreSQL errors to domain errors.
+// Error maps PostgreSQL-specific errors to domain errors.
 // Any unmapped error is returned as-is so the transactor can still rollback.
+// If the database changes (e.g. MySQL), this package must be replaced or adapted.
 func Error(err error) error {
 	var pgErr *pq.Error
 	if !errors.As(err, &pgErr) {
@@ -39,13 +40,13 @@ func Error(err error) error {
 		return domain.ConflictError{Message: "resource already exists"}
 
 	case pgCheckViolation:
-		return domain.UnprocessableEntityError{Message: "data violates business constraints"}
+		return domain.BusinessRuleError{Message: "data violates business constraints"}
 
 	case pgNotNullViolation:
-		return domain.UnprocessableEntityError{Message: "required field is missing"}
+		return domain.BusinessRuleError{Message: "required field is missing"}
 
 	case pgForeignKeyViolation:
-		return domain.UnprocessableEntityError{Message: "referenced resource does not exist"}
+		return domain.BusinessRuleError{Message: "referenced resource does not exist"}
 
 	default:
 		return err

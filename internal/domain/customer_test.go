@@ -54,9 +54,9 @@ func TestCreateCustomerToDomain_CPF_InvalidCheckDigit(t *testing.T) {
 		t.Fatal("expected error for invalid CPF check digit")
 	}
 
-	var badReq domain.BadRequestError
-	if !asBadRequest(err, &badReq) {
-		t.Errorf("expected BadRequestError, got %T", err)
+	var validationErr domain.ValidationError
+	if !asValidationError(err, &validationErr) {
+		t.Errorf("expected ValidationError, got %T", err)
 	}
 }
 
@@ -199,12 +199,12 @@ func TestCreateCustomerToDomain_COMPANY_MissingCompanyName(t *testing.T) {
 		t.Fatal("expected error when company_name is missing for COMPANY type")
 	}
 
-	var badReq domain.BadRequestError
-	if !asBadRequest(err, &badReq) {
-		t.Errorf("expected BadRequestError, got %T", err)
+	var validationErr domain.ValidationError
+	if !asValidationError(err, &validationErr) {
+		t.Errorf("expected ValidationError, got %T", err)
 	}
-	if !strings.Contains(badReq.Message, "company_name") {
-		t.Errorf("expected error message to mention 'company_name', got: %s", badReq.Message)
+	if !strings.Contains(validationErr.Message, "company_name") {
+		t.Errorf("expected error message to mention 'company_name', got: %s", validationErr.Message)
 	}
 }
 
@@ -247,8 +247,8 @@ func TestCreateCustomerToDomain_InvalidType(t *testing.T) {
 
 // ── helper ────────────────────────────────────────────────────────────────────
 
-func asBadRequest(err error, target *domain.BadRequestError) bool {
-	if br, ok := err.(domain.BadRequestError); ok {
+func asValidationError(err error, target *domain.ValidationError) bool {
+	if br, ok := err.(domain.ValidationError); ok {
 		*target = br
 		return true
 	}

@@ -44,7 +44,7 @@ func CreateCustomerToDomain(name, email, password, customerType, document, compa
 	if customerType == IndividualCustomerType {
 		cpf := sanitizeCPF(document)
 		if err := validateCPF(cpf); err != nil {
-			return Customer{}, BadRequestError{Message: err.Error()}
+			return Customer{}, ValidationError{Message: err.Error()}
 		}
 
 		id := uuid.New().String()
@@ -65,12 +65,12 @@ func CreateCustomerToDomain(name, email, password, customerType, document, compa
 
 	if customerType == CompanyCustomerType {
 		if strings.TrimSpace(companyName) == "" {
-			return Customer{}, BadRequestError{Message: "company_name is required for COMPANY type"}
+			return Customer{}, ValidationError{Message: "company_name is required for COMPANY type"}
 		}
 
 		cnpj := sanitizeCNPJ(document)
 		if err := validateCNPJ(cnpj); err != nil {
-			return Customer{}, BadRequestError{Message: err.Error()}
+			return Customer{}, ValidationError{Message: err.Error()}
 		}
 
 		id := uuid.New().String()
@@ -90,7 +90,7 @@ func CreateCustomerToDomain(name, email, password, customerType, document, compa
 		}, nil
 	}
 
-	return Customer{}, BadRequestError{Message: "invalid customer type"}
+	return Customer{}, ValidationError{Message: "invalid customer type"}
 }
 
 // sanitizeCPF removes all non-digit characters (e.g. '.', '-') from a CPF string.

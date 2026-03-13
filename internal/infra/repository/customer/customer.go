@@ -5,6 +5,7 @@ import (
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	pkgdb "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 )
 
 type repository struct {
@@ -34,7 +35,7 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 		customer.Phone,
 	)
 	if err != nil {
-		return pkgdb.Error(err)
+		return postgres.Error(err)
 	}
 
 	return nil

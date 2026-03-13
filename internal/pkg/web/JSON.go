@@ -21,19 +21,19 @@ const (
 func ValidateAndDecodeJSON[T any](r *http.Request, ptr *T) error {
 
 	if r.Header.Get(contentTypeHeader) != applicationJSON {
-		return domain.BadRequestError{
+		return domain.ValidationError{
 			Message: contentTypeErrorMessage,
 		}
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(ptr); err != nil {
-		return domain.BadRequestError{
+		return domain.ValidationError{
 			Message: invalidJSONMessage,
 		}
 	}
 
 	if err := validate.Struct(*ptr); err != nil {
-		return domain.BadRequestError{
+		return domain.ValidationError{
 			Message: formatValidationError(err),
 		}
 	}
