@@ -6,7 +6,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer/dto"
 	"github.com/google/uuid"
 )
 
@@ -30,7 +29,7 @@ type (
 	}
 
 	CustomerService interface {
-		Create(ctx context.Context, body dto.CreateCustomerRequest) (Customer, error)
+		Create(ctx context.Context, customer Customer) error
 	}
 
 	CustomerRepository interface {
@@ -41,31 +40,9 @@ type (
 //go:generate mockery --name=CustomerService --with-expecter
 //go:generate mockery --name=CustomerRepository --with-expecter
 
-func (c *Customer) ToResponse() dto.CreateCustomerResponse {
-	var document string
-
-	if c.Type == IndividualCustomerType {
-		document = c.CPF
-	}
-
-	if c.Type == CompanyCustomerType {
-		document = c.CNPJ
-	}
-
-	return dto.CreateCustomerResponse{
-		ID:          c.ID,
-		Name:        c.User.Name,
-		Email:       c.User.Email,
-		Type:        c.Type,
-		Document:    document,
-		CompanyName: c.CompanyName,
-		Phone:       c.Phone,
-	}
-}
-
-func CreateCustomerToDomain(body dto.CreateCustomerRequest) (Customer, error) {
-	if body.Type == IndividualCustomerType {
-		cpf := sanitizeCPF(body.Document)
+func CreateCustomerToDomain(name, email, password, customerType, document, companyName, phone string) (Customer, error) {
+	if customerType == IndividualCustomerType {
+		cpf := sanitizeCPF(document)
 		if err := validateCPF(cpf); err != nil {
 			return Customer{}, BadRequestError{Message: err.Error()}
 		}
@@ -74,24 +51,24 @@ func CreateCustomerToDomain(body dto.CreateCustomerRequest) (Customer, error) {
 		return Customer{
 			ID:     id,
 			UserID: id,
-			Type:   body.Type,
+			Type:   customerType,
 			CPF:    cpf,
-			Phone:  body.Phone,
+			Phone:  phone,
 			User: &User{
 				ID:       id,
-				Name:     body.Name,
-				Email:    body.Email,
-				Password: body.Password,
+				Name:     name,
+				Email:    email,
+				Password: password,
 			},
 		}, nil
 	}
 
-	if body.Type == CompanyCustomerType {
-		if strings.TrimSpace(body.CompanyName) == "" {
+	if customerType == CompanyCustomerType {
+		if strings.TrimSpace(companyName) == "" {
 			return Customer{}, BadRequestError{Message: "company_name is required for COMPANY type"}
 		}
 
-		cnpj := sanitizeCNPJ(body.Document)
+		cnpj := sanitizeCNPJ(document)
 		if err := validateCNPJ(cnpj); err != nil {
 			return Customer{}, BadRequestError{Message: err.Error()}
 		}
@@ -100,15 +77,15 @@ func CreateCustomerToDomain(body dto.CreateCustomerRequest) (Customer, error) {
 		return Customer{
 			ID:          id,
 			UserID:      id,
-			Type:        body.Type,
+			Type:        customerType,
 			CNPJ:        cnpj,
-			CompanyName: body.CompanyName,
-			Phone:       body.Phone,
+			CompanyName: companyName,
+			Phone:       phone,
 			User: &User{
 				ID:       id,
-				Name:     body.Name,
-				Email:    body.Email,
-				Password: body.Password,
+				Name:     name,
+				Email:    email,
+				Password: password,
 			},
 		}, nil
 	}

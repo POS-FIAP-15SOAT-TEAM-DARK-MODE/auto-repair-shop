@@ -6,8 +6,6 @@ import (
 	context "context"
 
 	domain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	dto "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer/dto"
-
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -24,32 +22,22 @@ func (_m *CustomerService) EXPECT() *CustomerService_Expecter {
 	return &CustomerService_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: ctx, body
-func (_m *CustomerService) Create(ctx context.Context, body dto.CreateCustomerRequest) (domain.Customer, error) {
-	ret := _m.Called(ctx, body)
+// Create provides a mock function with given fields: ctx, customer
+func (_m *CustomerService) Create(ctx context.Context, customer domain.Customer) error {
+	ret := _m.Called(ctx, customer)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 domain.Customer
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, dto.CreateCustomerRequest) (domain.Customer, error)); ok {
-		return rf(ctx, body)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, dto.CreateCustomerRequest) domain.Customer); ok {
-		r0 = rf(ctx, body)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, domain.Customer) error); ok {
+		r0 = rf(ctx, customer)
 	} else {
-		r0 = ret.Get(0).(domain.Customer)
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, dto.CreateCustomerRequest) error); ok {
-		r1 = rf(ctx, body)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // CustomerService_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -59,24 +47,24 @@ type CustomerService_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - body dto.CreateCustomerRequest
-func (_e *CustomerService_Expecter) Create(ctx interface{}, body interface{}) *CustomerService_Create_Call {
-	return &CustomerService_Create_Call{Call: _e.mock.On("Create", ctx, body)}
+//   - customer domain.Customer
+func (_e *CustomerService_Expecter) Create(ctx interface{}, customer interface{}) *CustomerService_Create_Call {
+	return &CustomerService_Create_Call{Call: _e.mock.On("Create", ctx, customer)}
 }
 
-func (_c *CustomerService_Create_Call) Run(run func(ctx context.Context, body dto.CreateCustomerRequest)) *CustomerService_Create_Call {
+func (_c *CustomerService_Create_Call) Run(run func(ctx context.Context, customer domain.Customer)) *CustomerService_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(dto.CreateCustomerRequest))
+		run(args[0].(context.Context), args[1].(domain.Customer))
 	})
 	return _c
 }
 
-func (_c *CustomerService_Create_Call) Return(_a0 domain.Customer, _a1 error) *CustomerService_Create_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *CustomerService_Create_Call) Return(_a0 error) *CustomerService_Create_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *CustomerService_Create_Call) RunAndReturn(run func(context.Context, dto.CreateCustomerRequest) (domain.Customer, error)) *CustomerService_Create_Call {
+func (_c *CustomerService_Create_Call) RunAndReturn(run func(context.Context, domain.Customer) error) *CustomerService_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

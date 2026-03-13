@@ -2,7 +2,6 @@ package customer
 
 import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer/dto"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 	"github.com/gin-gonic/gin"
 )
@@ -18,18 +17,23 @@ func NewHandler(service domain.CustomerService) *Handler {
 }
 
 func (h *Handler) Create(c *gin.Context) {
-	var body dto.CreateCustomerRequest
+	var body CreateCustomerRequest
 
 	if err := web.ValidateAndDecodeJSON(c.Request, &body); err != nil {
 		web.Error(c, err)
 		return
 	}
 
-	customer, err := h.service.Create(c.Request.Context(), body)
+	customer, err := body.toDomain()
 	if err != nil {
 		web.Error(c, err)
 		return
 	}
 
-	c.JSON(201, customer.ToResponse())
+	if err = h.service.Create(c.Request.Context(), customer); err != nil {
+		web.Error(c, err)
+		return
+	}
+
+	c.JSON(201, toResponse(customer))
 }

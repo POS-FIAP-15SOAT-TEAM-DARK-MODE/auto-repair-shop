@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer/dto"
 )
 
 type service struct {
@@ -21,21 +20,11 @@ func Service(transactor domain.Transactor, userRepo domain.UserRepository, custo
 	}
 }
 
-func (s *service) Create(ctx context.Context, body dto.CreateCustomerRequest) (domain.Customer, error) {
-	customer, err := domain.CreateCustomerToDomain(body)
-	if err != nil {
-		return domain.Customer{}, err
-	}
-
-	err = s.transactor.WithTransaction(ctx, func(ctx context.Context) error {
+func (s *service) Create(ctx context.Context, customer domain.Customer) error {
+	return s.transactor.WithTransaction(ctx, func(ctx context.Context) error {
 		if err := s.userRepo.Create(ctx, customer.User); err != nil {
 			return err
 		}
 		return s.customerRepo.Create(ctx, &customer)
 	})
-	if err != nil {
-		return domain.Customer{}, err
-	}
-
-	return customer, nil
 }

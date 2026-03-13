@@ -5,22 +5,15 @@ import (
 	"testing"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer/dto"
 )
 
 // ── CPF ──────────────────────────────────────────────────────────────────────
 
 func TestCreateCustomerToDomain_CPF_Valid(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name:     "João Silva",
-		Email:    "joao@example.com",
-		Password: "secret123",
-		Type:     domain.IndividualCustomerType,
-		Document: "111.444.777-35", // formatted — must be accepted
-		Phone:    "11999999999",
-	}
-
-	customer, err := domain.CreateCustomerToDomain(body)
+	customer, err := domain.CreateCustomerToDomain(
+		"João Silva", "joao@example.com", "secret123",
+		domain.IndividualCustomerType, "111.444.777-35", "", "11999999999",
+	)
 
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -43,32 +36,20 @@ func TestCreateCustomerToDomain_CPF_Valid(t *testing.T) {
 }
 
 func TestCreateCustomerToDomain_CPF_PlainDigits(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name:     "Maria",
-		Email:    "maria@example.com",
-		Password: "secret123",
-		Type:     domain.IndividualCustomerType,
-		Document: "11144477735",
-		Phone:    "11999999999",
-	}
-
-	_, err := domain.CreateCustomerToDomain(body)
+	_, err := domain.CreateCustomerToDomain(
+		"Maria", "maria@example.com", "secret123",
+		domain.IndividualCustomerType, "11144477735", "", "11999999999",
+	)
 	if err != nil {
 		t.Fatalf("expected no error for plain CPF, got: %v", err)
 	}
 }
 
 func TestCreateCustomerToDomain_CPF_InvalidCheckDigit(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name:     "Test",
-		Email:    "test@example.com",
-		Password: "secret123",
-		Type:     domain.IndividualCustomerType,
-		Document: "111.444.777-36", // last digit wrong
-		Phone:    "11999999999",
-	}
-
-	_, err := domain.CreateCustomerToDomain(body)
+	_, err := domain.CreateCustomerToDomain(
+		"Test", "test@example.com", "secret123",
+		domain.IndividualCustomerType, "111.444.777-36", "", "11999999999",
+	)
 	if err == nil {
 		t.Fatal("expected error for invalid CPF check digit")
 	}
@@ -80,18 +61,13 @@ func TestCreateCustomerToDomain_CPF_InvalidCheckDigit(t *testing.T) {
 }
 
 func TestCreateCustomerToDomain_CPF_AllSameDigits(t *testing.T) {
-	cases := []string{
-		"111.111.111-11",
-		"000.000.000-00",
-		"99999999999",
-	}
+	cases := []string{"111.111.111-11", "000.000.000-00", "99999999999"}
 
 	for _, doc := range cases {
-		body := dto.CreateCustomerRequest{
-			Name: "Test", Email: "t@e.com", Password: "secret123",
-			Type: domain.IndividualCustomerType, Document: doc, Phone: "11999999999",
-		}
-		_, err := domain.CreateCustomerToDomain(body)
+		_, err := domain.CreateCustomerToDomain(
+			"Test", "t@e.com", "secret123",
+			domain.IndividualCustomerType, doc, "", "11999999999",
+		)
 		if err == nil {
 			t.Errorf("expected error for all-same CPF %q", doc)
 		}
@@ -102,11 +78,10 @@ func TestCreateCustomerToDomain_CPF_WrongLength(t *testing.T) {
 	cases := []string{"1234567890", "123456789012"} // 10 and 12 digits
 
 	for _, doc := range cases {
-		body := dto.CreateCustomerRequest{
-			Name: "Test", Email: "t@e.com", Password: "secret123",
-			Type: domain.IndividualCustomerType, Document: doc, Phone: "11999999999",
-		}
-		_, err := domain.CreateCustomerToDomain(body)
+		_, err := domain.CreateCustomerToDomain(
+			"Test", "t@e.com", "secret123",
+			domain.IndividualCustomerType, doc, "", "11999999999",
+		)
 		if err == nil {
 			t.Errorf("expected error for CPF with wrong length %q", doc)
 		}
@@ -116,17 +91,10 @@ func TestCreateCustomerToDomain_CPF_WrongLength(t *testing.T) {
 // ── CNPJ (numeric) ───────────────────────────────────────────────────────────
 
 func TestCreateCustomerToDomain_CNPJ_NumericValid(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name:        "Empresa SA",
-		Email:       "empresa@example.com",
-		Password:    "secret123",
-		Type:        domain.CompanyCustomerType,
-		Document:    "11.222.333/0001-81", // formatted
-		CompanyName: "Empresa SA",
-		Phone:       "11999999999",
-	}
-
-	customer, err := domain.CreateCustomerToDomain(body)
+	customer, err := domain.CreateCustomerToDomain(
+		"Empresa SA", "empresa@example.com", "secret123",
+		domain.CompanyCustomerType, "11.222.333/0001-81", "Empresa SA", "11999999999",
+	)
 
 	if err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -143,33 +111,23 @@ func TestCreateCustomerToDomain_CNPJ_NumericValid(t *testing.T) {
 }
 
 func TestCreateCustomerToDomain_CNPJ_NumericInvalidCheckDigit(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name: "Empresa", Email: "e@e.com", Password: "secret123",
-		Type:        domain.CompanyCustomerType,
-		Document:    "11.222.333/0001-82", // last digit wrong
-		CompanyName: "Empresa",
-		Phone:       "11999999999",
-	}
-
-	_, err := domain.CreateCustomerToDomain(body)
+	_, err := domain.CreateCustomerToDomain(
+		"Empresa", "e@e.com", "secret123",
+		domain.CompanyCustomerType, "11.222.333/0001-82", "Empresa", "11999999999",
+	)
 	if err == nil {
 		t.Fatal("expected error for invalid CNPJ check digit")
 	}
 }
 
 func TestCreateCustomerToDomain_CNPJ_AllSame(t *testing.T) {
-	cases := []string{
-		"11.111.111/1111-11",
-		"00000000000000",
-	}
+	cases := []string{"11.111.111/1111-11", "00000000000000"}
 
 	for _, doc := range cases {
-		body := dto.CreateCustomerRequest{
-			Name: "Test", Email: "t@e.com", Password: "secret123",
-			Type: domain.CompanyCustomerType, Document: doc,
-			CompanyName: "Test", Phone: "11999999999",
-		}
-		_, err := domain.CreateCustomerToDomain(body)
+		_, err := domain.CreateCustomerToDomain(
+			"Test", "t@e.com", "secret123",
+			domain.CompanyCustomerType, doc, "Test", "11999999999",
+		)
 		if err == nil {
 			t.Errorf("expected error for all-same CNPJ %q", doc)
 		}
@@ -179,18 +137,10 @@ func TestCreateCustomerToDomain_CNPJ_AllSame(t *testing.T) {
 // ── CNPJ (alphanumeric — RFB 2243/2024) ──────────────────────────────────────
 
 func TestCreateCustomerToDomain_CNPJ_AlphanumericValid(t *testing.T) {
-	// ABCDEFGH000195 — check digits: d1=9, d2=5 (pre-calculated)
-	body := dto.CreateCustomerRequest{
-		Name:        "Tech Ltda",
-		Email:       "tech@example.com",
-		Password:    "secret123",
-		Type:        domain.CompanyCustomerType,
-		Document:    "AB.CDE.FGH/0001-95", // formatted alphanumeric
-		CompanyName: "Tech Ltda",
-		Phone:       "11999999999",
-	}
-
-	customer, err := domain.CreateCustomerToDomain(body)
+	customer, err := domain.CreateCustomerToDomain(
+		"Tech Ltda", "tech@example.com", "secret123",
+		domain.CompanyCustomerType, "AB.CDE.FGH/0001-95", "Tech Ltda", "11999999999",
+	)
 
 	if err != nil {
 		t.Fatalf("expected no error for alphanumeric CNPJ, got: %v", err)
@@ -201,18 +151,10 @@ func TestCreateCustomerToDomain_CNPJ_AlphanumericValid(t *testing.T) {
 }
 
 func TestCreateCustomerToDomain_CNPJ_AlphanumericLowercase(t *testing.T) {
-	// Lowercase input must be accepted and normalized to uppercase
-	body := dto.CreateCustomerRequest{
-		Name:        "Tech Ltda",
-		Email:       "tech@example.com",
-		Password:    "secret123",
-		Type:        domain.CompanyCustomerType,
-		Document:    "ab.cde.fgh/0001-95",
-		CompanyName: "Tech Ltda",
-		Phone:       "11999999999",
-	}
-
-	customer, err := domain.CreateCustomerToDomain(body)
+	customer, err := domain.CreateCustomerToDomain(
+		"Tech Ltda", "tech@example.com", "secret123",
+		domain.CompanyCustomerType, "ab.cde.fgh/0001-95", "Tech Ltda", "11999999999",
+	)
 
 	if err != nil {
 		t.Fatalf("expected no error for lowercase alphanumeric CNPJ, got: %v", err)
@@ -223,16 +165,10 @@ func TestCreateCustomerToDomain_CNPJ_AlphanumericLowercase(t *testing.T) {
 }
 
 func TestCreateCustomerToDomain_CNPJ_AlphanumericInvalidCheckDigit(t *testing.T) {
-	// Change last digit to make it invalid
-	body := dto.CreateCustomerRequest{
-		Name: "Test", Email: "t@e.com", Password: "secret123",
-		Type:        domain.CompanyCustomerType,
-		Document:    "AB.CDE.FGH/0001-96", // wrong check digit
-		CompanyName: "Test",
-		Phone:       "11999999999",
-	}
-
-	_, err := domain.CreateCustomerToDomain(body)
+	_, err := domain.CreateCustomerToDomain(
+		"Test", "t@e.com", "secret123",
+		domain.CompanyCustomerType, "AB.CDE.FGH/0001-96", "Test", "11999999999",
+	)
 	if err == nil {
 		t.Fatal("expected error for invalid alphanumeric CNPJ check digit")
 	}
@@ -242,12 +178,10 @@ func TestCreateCustomerToDomain_CNPJ_WrongLength(t *testing.T) {
 	cases := []string{"1234567890123", "123456789012345"} // 13 and 15 chars
 
 	for _, doc := range cases {
-		body := dto.CreateCustomerRequest{
-			Name: "Test", Email: "t@e.com", Password: "secret123",
-			Type: domain.CompanyCustomerType, Document: doc,
-			CompanyName: "Test", Phone: "11999999999",
-		}
-		_, err := domain.CreateCustomerToDomain(body)
+		_, err := domain.CreateCustomerToDomain(
+			"Test", "t@e.com", "secret123",
+			domain.CompanyCustomerType, doc, "Test", "11999999999",
+		)
 		if err == nil {
 			t.Errorf("expected error for CNPJ with wrong length %q", doc)
 		}
@@ -257,17 +191,10 @@ func TestCreateCustomerToDomain_CNPJ_WrongLength(t *testing.T) {
 // ── Business rules ────────────────────────────────────────────────────────────
 
 func TestCreateCustomerToDomain_COMPANY_MissingCompanyName(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name:     "Test",
-		Email:    "t@e.com",
-		Password: "secret123",
-		Type:     domain.CompanyCustomerType,
-		Document: "11.222.333/0001-81",
-		Phone:    "11999999999",
-		// CompanyName intentionally absent
-	}
-
-	_, err := domain.CreateCustomerToDomain(body)
+	_, err := domain.CreateCustomerToDomain(
+		"Test", "t@e.com", "secret123",
+		domain.CompanyCustomerType, "11.222.333/0001-81", "", "11999999999",
+	)
 	if err == nil {
 		t.Fatal("expected error when company_name is missing for COMPANY type")
 	}
@@ -282,30 +209,20 @@ func TestCreateCustomerToDomain_COMPANY_MissingCompanyName(t *testing.T) {
 }
 
 func TestCreateCustomerToDomain_COMPANY_BlankCompanyName(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name: "Test", Email: "t@e.com", Password: "secret123",
-		Type: domain.CompanyCustomerType, Document: "11.222.333/0001-81",
-		CompanyName: "   ", // whitespace only
-		Phone:       "11999999999",
-	}
-
-	_, err := domain.CreateCustomerToDomain(body)
+	_, err := domain.CreateCustomerToDomain(
+		"Test", "t@e.com", "secret123",
+		domain.CompanyCustomerType, "11.222.333/0001-81", "   ", "11999999999",
+	)
 	if err == nil {
 		t.Fatal("expected error when company_name is blank")
 	}
 }
 
 func TestCreateCustomerToDomain_SetsCorrectIDs(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name:     "Test",
-		Email:    "t@e.com",
-		Password: "secret123",
-		Type:     domain.IndividualCustomerType,
-		Document: "11144477735",
-		Phone:    "11999999999",
-	}
-
-	c, _ := domain.CreateCustomerToDomain(body)
+	c, _ := domain.CreateCustomerToDomain(
+		"Test", "t@e.com", "secret123",
+		domain.IndividualCustomerType, "11144477735", "", "11999999999",
+	)
 
 	if c.ID == "" || c.UserID == "" {
 		t.Error("expected non-empty ID and UserID")
@@ -319,12 +236,10 @@ func TestCreateCustomerToDomain_SetsCorrectIDs(t *testing.T) {
 }
 
 func TestCreateCustomerToDomain_InvalidType(t *testing.T) {
-	body := dto.CreateCustomerRequest{
-		Name: "Test", Email: "t@e.com", Password: "secret123",
-		Type: "UNKNOWN", Document: "11144477735", Phone: "11999999999",
-	}
-
-	_, err := domain.CreateCustomerToDomain(body)
+	_, err := domain.CreateCustomerToDomain(
+		"Test", "t@e.com", "secret123",
+		"UNKNOWN", "11144477735", "", "11999999999",
+	)
 	if err == nil {
 		t.Fatal("expected error for invalid customer type")
 	}
