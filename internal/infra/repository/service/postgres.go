@@ -22,18 +22,9 @@ func (r *pg_repo) Save(ctx context.Context, svc *domain.Service) error {
 	}
 
 	logger.Of(ctx).Debug("Executing query", zap.String("query", upsertQuery), zap.Any("params", svc))
-	stmt, err := tx.PrepareContext(ctx, upsertQuery)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if cerr := stmt.Close(); cerr != nil {
-			logger.Of(ctx).Warn("failed to close statement", zap.Error(cerr))
-		}
-	}()
-
-	if _, err = stmt.ExecContext(
+	if _, err = tx.ExecContext(
 		ctx,
+		upsertQuery,
 		svc.ID,
 		svc.Name,
 		svc.Description,
