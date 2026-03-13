@@ -16,7 +16,6 @@ func Logger() gin.HandlerFunc {
 		ctx, reqId := logger.Request(ctx)
 		c.Request = c.Request.WithContext(ctx)
 
-		// Write request ID into response headers
 		c.Writer.Header().Set("X-Request-ID", reqId)
 
 		start := time.Now()
