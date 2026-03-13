@@ -5,45 +5,34 @@ import (
 	"log"
 	"sync"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
-type Config struct {
-	PostgresUser     string
-	PostgresPassword string
-	PostgresHost     string
-	PostgresPort     string
-	PostgresDB       string
-}
-
 var (
-	db   *sqlx.DB
-	once sync.Once
+	instance *sqlx.DB
+	once     sync.Once
 )
 
-func Connect(cfg *Config) *sqlx.DB {
+func Connect() *sqlx.DB {
 	once.Do(func() {
-		db = connectDB(cfg)
+		dsn := fmt.Sprintf(
+			"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			env.GetString("POSTGRES_USER", "postgres"),
+			env.GetString("POSTGRES_PASSWORD", "postgres"),
+			env.GetString("POSTGRES_HOST", "localhost"),
+			env.GetString("POSTGRES_PORT", "5432"),
+			env.GetString("POSTGRES_DB", "autorepairshop"),
+		)
+
+		conn, err := sqlx.Connect("postgres", dsn)
+		if err != nil {
+			log.Fatal("failed to connect to database: ", err)
+		}
+
+		instance = conn
 	})
 
-	return db
-}
-
-func connectDB(cfg *Config) *sqlx.DB {
-	dataDb := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		cfg.PostgresUser,
-		cfg.PostgresPassword,
-		cfg.PostgresHost,
-		cfg.PostgresPort,
-		cfg.PostgresDB,
-	)
-
-	db, err := sqlx.Connect("postgres", dataDb)
-	if err != nil {
-		log.Fatal("Fail to connect to database", err)
-	}
-
-	return db
+	return instance
 }
