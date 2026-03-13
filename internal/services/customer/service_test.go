@@ -14,10 +14,10 @@ import (
 	svc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
 )
 
-// executes fn with the provided repos — simulates a real transaction
-func runFn(userRepo domain.UserRepository, customerRepo domain.CustomerRepository) func(context.Context, domain.TxFunc) error {
-	return func(_ context.Context, fn domain.TxFunc) error {
-		return fn(userRepo, customerRepo)
+// executes fn with the provided context — simulates a real transaction
+func runFn() func(context.Context, domain.TxFunc) error {
+	return func(ctx context.Context, fn domain.TxFunc) error {
+		return fn(ctx)
 	}
 }
 
@@ -49,12 +49,12 @@ func TestService_Create_Individual_Success(t *testing.T) {
 	customerRepo := domainmocks.NewCustomerRepository(t)
 	transactor := domainmocks.NewTransactor(t)
 
-	userRepo.EXPECT().Create(mock.AnythingOfType("*domain.User")).Return(nil)
-	customerRepo.EXPECT().Create(mock.AnythingOfType("*domain.Customer")).Return(nil)
+	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
 	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).
-		RunAndReturn(runFn(userRepo, customerRepo))
+		RunAndReturn(runFn())
 
-	customer, err := svc.Service(transactor).Create(validIndividualRequest())
+	customer, err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validIndividualRequest())
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, customer.ID)
@@ -69,12 +69,12 @@ func TestService_Create_Company_Success(t *testing.T) {
 	customerRepo := domainmocks.NewCustomerRepository(t)
 	transactor := domainmocks.NewTransactor(t)
 
-	userRepo.EXPECT().Create(mock.AnythingOfType("*domain.User")).Return(nil)
-	customerRepo.EXPECT().Create(mock.AnythingOfType("*domain.Customer")).Return(nil)
+	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
 	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).
-		RunAndReturn(runFn(userRepo, customerRepo))
+		RunAndReturn(runFn())
 
-	customer, err := svc.Service(transactor).Create(validCompanyRequest())
+	customer, err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validCompanyRequest())
 
 	assert.NoError(t, err)
 	assert.Equal(t, "11222333000181", customer.CNPJ)
@@ -87,7 +87,7 @@ func TestService_Create_InvalidCPF_ReturnsBadRequest(t *testing.T) {
 	req := validIndividualRequest()
 	req.Document = "11111111111" // all-same
 
-	_, err := svc.Service(transactor).Create(req)
+	_, err := svc.Service(transactor, nil, nil).Create(context.Background(), req)
 
 	var badReq domain.BadRequestError
 	assert.ErrorAs(t, err, &badReq)
@@ -99,7 +99,7 @@ func TestService_Create_InvalidCNPJ_ReturnsBadRequest(t *testing.T) {
 	req := validCompanyRequest()
 	req.Document = "11222333000182" // wrong check digit
 
-	_, err := svc.Service(transactor).Create(req)
+	_, err := svc.Service(transactor, nil, nil).Create(context.Background(), req)
 
 	var badReq domain.BadRequestError
 	assert.ErrorAs(t, err, &badReq)
@@ -111,7 +111,7 @@ func TestService_Create_MissingCompanyName_ReturnsBadRequest(t *testing.T) {
 	req := validCompanyRequest()
 	req.CompanyName = ""
 
-	_, err := svc.Service(transactor).Create(req)
+	_, err := svc.Service(transactor, nil, nil).Create(context.Background(), req)
 
 	var badReq domain.BadRequestError
 	assert.ErrorAs(t, err, &badReq)
@@ -124,11 +124,11 @@ func TestService_Create_DuplicateEmail_ReturnsConflict(t *testing.T) {
 	customerRepo := domainmocks.NewCustomerRepository(t) // Create must NOT be called
 	transactor := domainmocks.NewTransactor(t)
 
-	userRepo.EXPECT().Create(mock.AnythingOfType("*domain.User")).Return(conflictErr)
+	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(conflictErr)
 	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).
-		RunAndReturn(runFn(userRepo, customerRepo))
+		RunAndReturn(runFn())
 
-	_, err := svc.Service(transactor).Create(validIndividualRequest())
+	_, err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validIndividualRequest())
 
 	var conflictError domain.ConflictError
 	assert.ErrorAs(t, err, &conflictError)
@@ -142,12 +142,12 @@ func TestService_Create_DuplicateCPF_ReturnsConflict(t *testing.T) {
 	customerRepo := domainmocks.NewCustomerRepository(t)
 	transactor := domainmocks.NewTransactor(t)
 
-	userRepo.EXPECT().Create(mock.AnythingOfType("*domain.User")).Return(nil)
-	customerRepo.EXPECT().Create(mock.AnythingOfType("*domain.Customer")).Return(conflictErr)
+	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(conflictErr)
 	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).
-		RunAndReturn(runFn(userRepo, customerRepo))
+		RunAndReturn(runFn())
 
-	_, err := svc.Service(transactor).Create(validIndividualRequest())
+	_, err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validIndividualRequest())
 
 	var conflictError domain.ConflictError
 	assert.ErrorAs(t, err, &conflictError)
@@ -158,7 +158,7 @@ func TestService_Create_TransactionFailure_ReturnsError(t *testing.T) {
 	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).
 		Return(errors.New("db connection lost"))
 
-	_, err := svc.Service(transactor).Create(validIndividualRequest())
+	_, err := svc.Service(transactor, nil, nil).Create(context.Background(), validIndividualRequest())
 
 	assert.Error(t, err)
 }
@@ -169,7 +169,7 @@ func TestService_Create_ValidationRunsBeforeTransaction(t *testing.T) {
 	req := validIndividualRequest()
 	req.Document = "00000000000"
 
-	_, err := svc.Service(transactor).Create(req)
+	_, err := svc.Service(transactor, nil, nil).Create(context.Background(), req)
 
 	var badReq domain.BadRequestError
 	assert.ErrorAs(t, err, &badReq)

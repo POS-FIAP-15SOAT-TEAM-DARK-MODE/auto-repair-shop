@@ -8,24 +8,30 @@ import (
 )
 
 type service struct {
-	transactor domain.Transactor
+	transactor   domain.Transactor
+	userRepo     domain.UserRepository
+	customerRepo domain.CustomerRepository
 }
 
-func Service(transactor domain.Transactor) *service {
-	return &service{transactor: transactor}
+func Service(transactor domain.Transactor, userRepo domain.UserRepository, customerRepo domain.CustomerRepository) *service {
+	return &service{
+		transactor:   transactor,
+		userRepo:     userRepo,
+		customerRepo: customerRepo,
+	}
 }
 
-func (s *service) Create(body dto.CreateCustomerRequest) (domain.Customer, error) {
+func (s *service) Create(ctx context.Context, body dto.CreateCustomerRequest) (domain.Customer, error) {
 	customer, err := domain.CreateCustomerToDomain(body)
 	if err != nil {
-		return domain.Customer{}, domain.BadRequestError{Message: err.Error()}
+		return domain.Customer{}, err
 	}
 
-	err = s.transactor.WithTransaction(context.Background(), func(userRepo domain.UserRepository, customerRepo domain.CustomerRepository) error {
-		if err := userRepo.Create(customer.User); err != nil {
+	err = s.transactor.WithTransaction(ctx, func(ctx context.Context) error {
+		if err := s.userRepo.Create(ctx, customer.User); err != nil {
 			return err
 		}
-		return customerRepo.Create(&customer)
+		return s.customerRepo.Create(ctx, &customer)
 	})
 	if err != nil {
 		return domain.Customer{}, err

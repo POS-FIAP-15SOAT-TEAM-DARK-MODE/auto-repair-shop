@@ -1,7 +1,6 @@
 package factory
 
 import (
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db"
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
@@ -9,7 +8,6 @@ import (
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
 	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
-	pkgdb "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
 	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
 	pingSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/ping"
 	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
@@ -36,15 +34,9 @@ func newUserHandler(dbConn *sqlx.DB) *userHandler.Handler {
 }
 
 func newCustomerHandler(dbConn *sqlx.DB) *customerHandler.Handler {
-	transactor := db.NewTransactor(
-		dbConn,
-		func(ex pkgdb.Executor) domain.UserRepository {
-			return userRepo.NewUserRepository(ex)
-		},
-		func(ex pkgdb.Executor) domain.CustomerRepository {
-			return customerRepo.Repository(ex)
-		},
-	)
+	transactor := db.NewTransactor(dbConn)
+	userRepository := userRepo.NewUserRepository(dbConn)
+	customerRepository := customerRepo.Repository(dbConn)
 
-	return customerHandler.NewHandler(customerSvc.Service(transactor))
+	return customerHandler.NewHandler(customerSvc.Service(transactor, userRepository, customerRepository))
 }

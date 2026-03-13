@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	domain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -20,17 +22,17 @@ func (_m *CustomerRepository) EXPECT() *CustomerRepository_Expecter {
 	return &CustomerRepository_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: customer
-func (_m *CustomerRepository) Create(customer *domain.Customer) error {
-	ret := _m.Called(customer)
+// Create provides a mock function with given fields: ctx, customer
+func (_m *CustomerRepository) Create(ctx context.Context, customer *domain.Customer) error {
+	ret := _m.Called(ctx, customer)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*domain.Customer) error); ok {
-		r0 = rf(customer)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Customer) error); ok {
+		r0 = rf(ctx, customer)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -44,14 +46,15 @@ type CustomerRepository_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
+//   - ctx context.Context
 //   - customer *domain.Customer
-func (_e *CustomerRepository_Expecter) Create(customer interface{}) *CustomerRepository_Create_Call {
-	return &CustomerRepository_Create_Call{Call: _e.mock.On("Create", customer)}
+func (_e *CustomerRepository_Expecter) Create(ctx interface{}, customer interface{}) *CustomerRepository_Create_Call {
+	return &CustomerRepository_Create_Call{Call: _e.mock.On("Create", ctx, customer)}
 }
 
-func (_c *CustomerRepository_Create_Call) Run(run func(customer *domain.Customer)) *CustomerRepository_Create_Call {
+func (_c *CustomerRepository_Create_Call) Run(run func(ctx context.Context, customer *domain.Customer)) *CustomerRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*domain.Customer))
+		run(args[0].(context.Context), args[1].(*domain.Customer))
 	})
 	return _c
 }
@@ -61,7 +64,7 @@ func (_c *CustomerRepository_Create_Call) Return(_a0 error) *CustomerRepository_
 	return _c
 }
 
-func (_c *CustomerRepository_Create_Call) RunAndReturn(run func(*domain.Customer) error) *CustomerRepository_Create_Call {
+func (_c *CustomerRepository_Create_Call) RunAndReturn(run func(context.Context, *domain.Customer) error) *CustomerRepository_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

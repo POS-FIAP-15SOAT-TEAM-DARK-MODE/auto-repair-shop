@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"unicode"
@@ -29,11 +30,11 @@ type (
 	}
 
 	CustomerService interface {
-		Create(body dto.CreateCustomerRequest) (Customer, error)
+		Create(ctx context.Context, body dto.CreateCustomerRequest) (Customer, error)
 	}
 
 	CustomerRepository interface {
-		Create(customer *Customer) error
+		Create(ctx context.Context, customer *Customer) error
 	}
 )
 

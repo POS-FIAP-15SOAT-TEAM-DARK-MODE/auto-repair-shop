@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -17,11 +18,11 @@ type (
 	}
 
 	UserService interface {
-		Create(user *User) (*User, error)
+		Create(ctx context.Context, user *User) (*User, error)
 	}
 
 	UserRepository interface {
-		Create(u *User) error
+		Create(ctx context.Context, u *User) error
 	}
 )
 

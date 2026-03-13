@@ -28,7 +28,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		return
 	}
 	user := dto.MapUserRequestDTOToDomain(req)
-	user, err = h.service.Create(user)
+	user, err = h.service.Create(c.Request.Context(), user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -25,7 +25,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	customer, err := h.service.Create(body)
+	customer, err := h.service.Create(c.Request.Context(), body)
 	if err != nil {
 		web.Error(c, err)
 		return

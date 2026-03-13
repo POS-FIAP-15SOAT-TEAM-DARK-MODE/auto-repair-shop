@@ -9,21 +9,11 @@ import (
 )
 
 type transactor struct {
-	db              *sqlx.DB
-	newUserRepo     func(pkgdb.Executor) domain.UserRepository
-	newCustomerRepo func(pkgdb.Executor) domain.CustomerRepository
+	db *sqlx.DB
 }
 
-func NewTransactor(
-	db *sqlx.DB,
-	newUserRepo func(pkgdb.Executor) domain.UserRepository,
-	newCustomerRepo func(pkgdb.Executor) domain.CustomerRepository,
-) domain.Transactor {
-	return &transactor{
-		db:              db,
-		newUserRepo:     newUserRepo,
-		newCustomerRepo: newCustomerRepo,
-	}
+func NewTransactor(db *sqlx.DB) domain.Transactor {
+	return &transactor{db: db}
 }
 
 func (t *transactor) WithTransaction(ctx context.Context, fn domain.TxFunc) error {
@@ -39,7 +29,8 @@ func (t *transactor) WithTransaction(ctx context.Context, fn domain.TxFunc) erro
 		}
 	}()
 
-	if err := fn(t.newUserRepo(tx), t.newCustomerRepo(tx)); err != nil {
+	txCtx := pkgdb.WithTx(ctx, tx)
+	if err := fn(txCtx); err != nil {
 		_ = tx.Rollback()
 		return err
 	}

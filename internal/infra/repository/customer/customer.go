@@ -15,8 +15,10 @@ func Repository(ex pkgdb.Executor) *repository {
 	return &repository{db: ex}
 }
 
-func (r *repository) Create(customer *domain.Customer) error {
-	stmt, err := r.db.PrepareContext(context.Background(), createCustomerQuery)
+func (r *repository) Create(ctx context.Context, customer *domain.Customer) error {
+	exec := pkgdb.ExtractExecutor(ctx, r.db)
+
+	stmt, err := exec.PrepareContext(ctx, createCustomerQuery)
 	if err != nil {
 		return err
 	}
@@ -38,6 +40,8 @@ func (r *repository) Create(customer *domain.Customer) error {
 	return nil
 }
 
+// nullableString converts an empty string to nil so the DB receives NULL
+// instead of an empty string, preserving CHECK and IS NULL constraints.
 func nullableString(s string) interface{} {
 	if s == "" {
 		return nil

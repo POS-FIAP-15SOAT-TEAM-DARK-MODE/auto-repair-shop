@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	domain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -20,9 +22,9 @@ func (_m *UserService) EXPECT() *UserService_Expecter {
 	return &UserService_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: user
-func (_m *UserService) Create(user *domain.User) (*domain.User, error) {
-	ret := _m.Called(user)
+// Create provides a mock function with given fields: ctx, user
+func (_m *UserService) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
+	ret := _m.Called(ctx, user)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -30,19 +32,19 @@ func (_m *UserService) Create(user *domain.User) (*domain.User, error) {
 
 	var r0 *domain.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(*domain.User) (*domain.User, error)); ok {
-		return rf(user)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) (*domain.User, error)); ok {
+		return rf(ctx, user)
 	}
-	if rf, ok := ret.Get(0).(func(*domain.User) *domain.User); ok {
-		r0 = rf(user)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) *domain.User); ok {
+		r0 = rf(ctx, user)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(*domain.User) error); ok {
-		r1 = rf(user)
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.User) error); ok {
+		r1 = rf(ctx, user)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -56,14 +58,15 @@ type UserService_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
+//   - ctx context.Context
 //   - user *domain.User
-func (_e *UserService_Expecter) Create(user interface{}) *UserService_Create_Call {
-	return &UserService_Create_Call{Call: _e.mock.On("Create", user)}
+func (_e *UserService_Expecter) Create(ctx interface{}, user interface{}) *UserService_Create_Call {
+	return &UserService_Create_Call{Call: _e.mock.On("Create", ctx, user)}
 }
 
-func (_c *UserService_Create_Call) Run(run func(user *domain.User)) *UserService_Create_Call {
+func (_c *UserService_Create_Call) Run(run func(ctx context.Context, user *domain.User)) *UserService_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*domain.User))
+		run(args[0].(context.Context), args[1].(*domain.User))
 	})
 	return _c
 }
@@ -73,7 +76,7 @@ func (_c *UserService_Create_Call) Return(_a0 *domain.User, _a1 error) *UserServ
 	return _c
 }
 
-func (_c *UserService_Create_Call) RunAndReturn(run func(*domain.User) (*domain.User, error)) *UserService_Create_Call {
+func (_c *UserService_Create_Call) RunAndReturn(run func(context.Context, *domain.User) (*domain.User, error)) *UserService_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
