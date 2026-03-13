@@ -20,6 +20,6 @@ func NewHandler(uc domain.PingService) *Handler {
 
 func (h *Handler) Ping(c *gin.Context) {
 	result := h.svc.Execute()
-	logger.Info("ping called", zap.String("response", result.Message))
+	logger.Of(c).Info("ping called", zap.String("response", result.Message))
 	c.JSON(http.StatusOK, gin.H{"message": result.Message})
 }

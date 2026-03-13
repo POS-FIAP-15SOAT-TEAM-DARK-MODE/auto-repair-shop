@@ -1,14 +1,22 @@
 package domain
 
 import (
+	"context"
 	"errors"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
+//go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceService --with-expecter
+type ServiceService interface {
+	Create(context.Context, *Service) (*Service, error)
+}
+
+//go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceRepository --with-expecter
 type ServiceRepository interface {
-	Save(*Service) error
+	Save(context.Context, *Service) error
 }
 
 const (
@@ -22,8 +30,24 @@ var (
 	ErrEmptyDescription               = errors.New("service description can't be empty")
 	ErrDescriptionShorterThenRequired = errors.New("service description should have at least 10 characters")
 	ErrPriceLessThenOrEqualZero       = errors.New("service price should be bigger then 0")
+	ErrInvalidPriceValue              = errors.New("invalid price value")
 	ErrInvalidStatusValue             = errors.New("service status should be ACTIVE or INACTIVE")
 )
+
+func NewService(name, description, rawPrice string, status ServiceStatus) (*Service, error) {
+	price, err := decimal.NewFromString(rawPrice)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Service{
+		ID:          uuid.New().String(),
+		Name:        name,
+		Description: description,
+		Price:       price,
+		Status:      status,
+	}, nil
+}
 
 type Service struct {
 	ID          string

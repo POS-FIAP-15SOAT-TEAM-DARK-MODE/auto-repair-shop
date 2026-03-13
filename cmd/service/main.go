@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/factory"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
@@ -9,7 +11,7 @@ import (
 )
 
 func main() {
-	defer logger.Sync()
+	defer logger.Global().Sync()
 
 	container := factory.HttpContainer()
 	middlewares := factory.MiddlewaresContainer()
@@ -17,6 +19,7 @@ func main() {
 
 	port := env.GetString("PORT", "8080")
 	if err := router.Run(":" + port); err != nil {
-		logger.Error("Fail to start application", zap.String("port", port), zap.Error(err))
+		err = fmt.Errorf("fail to start application: %w", err)
+		logger.Global().Error(err, zap.String("port", port))
 	}
 }

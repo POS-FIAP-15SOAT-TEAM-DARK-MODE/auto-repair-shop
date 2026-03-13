@@ -16,8 +16,8 @@ func Recovery() gin.HandlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				stack := debug.Stack()
-				logger.Error("[PANIC RECOVERED]",
-					zap.Any("error", err),
+				logger.Of(c).Error(err.(error),
+					zap.String("behavior", "[PANIC RECOVERED]"),
 					zap.String("stack", string(stack)),
 				)
 
@@ -41,9 +41,6 @@ func ErrorHandler() gin.HandlerFunc {
 		}
 
 		errs := c.Errors.Errors()
-		for _, e := range errs {
-			logger.Error("[ERROR]", zap.String("error", e))
-		}
 
 		status := c.Writer.Status()
 		if status == http.StatusOK {
