@@ -27,7 +27,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	customer, err := h.service.Create(body)
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()}) // TODO: add custom error handling
+		web.Error(c, err)
 		return
 	}
 

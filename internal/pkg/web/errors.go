@@ -11,18 +11,19 @@ import (
 func Error(c *gin.Context, err error) {
 	var badRequestError domain.BadRequestError
 	var conflictError domain.ConflictError
+	var unprocessableError domain.UnprocessableEntityError
 
 	switch {
 	case errors.As(err, &badRequestError):
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": badRequestError.Message})
-		return
 
 	case errors.As(err, &conflictError):
 		c.AbortWithStatusJSON(http.StatusConflict, gin.H{"error": conflictError.Message})
-		return
+
+	case errors.As(err, &unprocessableError):
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{"error": unprocessableError.Message})
 
 	default:
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 	}
-
 }

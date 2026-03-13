@@ -8,6 +8,10 @@ type (
 	ConflictError struct {
 		Message string `json:"message"`
 	}
+
+	UnprocessableEntityError struct {
+		Message string `json:"message"`
+	}
 )
 
 func (e BadRequestError) Error() string {
@@ -15,5 +19,9 @@ func (e BadRequestError) Error() string {
 }
 
 func (e ConflictError) Error() string {
+	return e.Message
+}
+
+func (e UnprocessableEntityError) Error() string {
 	return e.Message
 }
