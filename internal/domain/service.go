@@ -7,10 +7,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type ServiceService interface {
-	Create(*Service) (*Service, error)
-}
-
 type ServiceRepository interface {
 	Save(*Service) error
 }
@@ -101,7 +97,7 @@ func (s *Service) Validate() error {
 		return ErrDescriptionShorterThenRequired
 	}
 
-	if decimal.Zero.LessThanOrEqual(s.Price) {
+	if s.Price.LessThanOrEqual(decimal.Zero) {
 		return ErrPriceLessThenOrEqualZero
 	}
 
