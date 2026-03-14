@@ -23,6 +23,12 @@ type UserRepository interface {
 	Create(c *User) (*User, error)
 }
 
+var (
+	ErrEmptyName     = errors.New("name cannot be empty")
+	ErrEmptyEmail    = errors.New("email cannot be empty")
+	ErrEmptyPassword = errors.New("password cannot be empty")
+)
+
 func NewUser(name, email, password string) *User {
 	return &User{
 		Id:       uuid.New().String(),
@@ -33,10 +39,20 @@ func NewUser(name, email, password string) *User {
 }
 
 func (u *User) Validate() error {
-	if strings.TrimSpace(u.Name) == "" || strings.TrimSpace(u.Email) == "" || strings.TrimSpace(u.Password) == "" {
-		return errors.New("name, email and password hash cannot be empty")
+	if strings.TrimSpace(u.Name) == "" {
+		return ErrEmptyName
 	}
+
+	if strings.TrimSpace(u.Email) == "" {
+		return ErrEmptyEmail
+	}
+
+	if strings.TrimSpace(u.Password) == "" {
+		return ErrEmptyPassword
+	}
+
 	return nil
+
 }
 
 func (u *User) HashPassword() error {
