@@ -32,6 +32,6 @@ func newUserHandler() *userHandler.Handler {
 		PostgresDB:       env.GetString("POSTGRES_DB", "auto_repair_shop"),
 	})
 	userRepository := userRepo.NewSqlxUserRepository(dbConn)
-	userService := userSvc.NewUserService(userRepository)
+	userService := userSvc.Service(userRepository)
 	return userHandler.NewHandler(userService)
 }

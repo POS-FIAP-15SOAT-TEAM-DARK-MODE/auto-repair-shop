@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -14,9 +15,10 @@ func NewSqlxUserRepository(db *sqlx.DB) *SqlxUserRepository {
 }
 
 func (u *SqlxUserRepository) Create(c *domain.User) (*domain.User, error) {
+	// TODO: add logging
 	_, err := u.db.Exec(CreateUser, c.Id, c.Name, c.Email, c.Password)
 	if err != nil {
-		return nil, err
+		return nil, postgres.Error(err)
 	}
 	return c, nil
 }
