@@ -173,3 +173,40 @@ func TestValidServiceStatusStringValue(t *testing.T) {
 		})
 	}
 }
+
+func TestNewService(t *testing.T) {
+	t.Run("valid inputs create service with uuid", func(t *testing.T) {
+		svc, err := domain.NewService("Oil Change", "Complete oil change", "49.99", domain.ACTIVE)
+		assert.NoError(t, err)
+		assert.NotNil(t, svc)
+		assert.NotEmpty(t, svc.ID)
+		assert.Equal(t, "Oil Change", svc.Name)
+		assert.Equal(t, "Complete oil change", svc.Description)
+		assert.Equal(t, domain.ACTIVE, svc.Status)
+		assert.True(t, svc.Price.IsPositive())
+	})
+
+	t.Run("invalid price returns error", func(t *testing.T) {
+		svc, err := domain.NewService("Oil Change", "Complete oil change", "not-a-number", domain.ACTIVE)
+		assert.Error(t, err)
+		assert.Nil(t, svc)
+	})
+}
+
+func TestListServiceParams_SearchServiceParams(t *testing.T) {
+	t.Run("maps limit offset and status correctly", func(t *testing.T) {
+		params := domain.ListServiceParams{Page: 3, PageSize: 20, Status: "ACTIVE"}
+		sp := params.SearchServiceParams()
+		assert.Equal(t, int64(20), sp.Limit)
+		assert.Equal(t, int64(40), sp.Offset)
+		assert.Equal(t, "ACTIVE", sp.Status)
+	})
+
+	t.Run("page 1 produces zero offset", func(t *testing.T) {
+		params := domain.ListServiceParams{Page: 1, PageSize: 10, Status: ""}
+		sp := params.SearchServiceParams()
+		assert.Equal(t, int64(10), sp.Limit)
+		assert.Equal(t, int64(0), sp.Offset)
+		assert.Equal(t, "", sp.Status)
+	})
+}

@@ -417,3 +417,139 @@ func TestCreateServiceHandler_Unit_ServiceError(t *testing.T) {
 		t.Fatalf("expected error %q, got %q", expectedErr.Error(), resp.Error)
 	}
 }
+
+func TestListServiceHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mockSvc := domainmocks.NewServiceService(t)
+
+	expectedResponse := &domain.PaginatorResponse[domain.Service]{
+		Items: []domain.Service{
+			{ID: "1", Name: "Oil Change", Description: "Complete oil change", Status: domain.ACTIVE},
+		},
+		TotalItems: 1,
+		TotalPages: 1,
+		Page:       1,
+		PageSize:   10,
+	}
+
+	mockSvc.EXPECT().
+		List(mock.Anything, mock.AnythingOfType("*domain.ListServiceParams")).
+		Return(expectedResponse, nil)
+
+	h := handler.Handler(mockSvc)
+
+	router := gin.New()
+	router.GET("/services", h.List)
+
+	req := httptest.NewRequest(http.MethodGet, "/services?page=1&pageSize=10", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, rec.Code)
+	}
+
+	var resp domain.PaginatorResponse[map[string]any]
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response body: %v", err)
+	}
+
+	if resp.TotalItems != expectedResponse.TotalItems {
+		t.Fatalf("expected total items %d, got %d", expectedResponse.TotalItems, resp.TotalItems)
+	}
+
+	if resp.Page != expectedResponse.Page {
+		t.Fatalf("expected page %d, got %d", expectedResponse.Page, resp.Page)
+	}
+
+	if len(resp.Items) != len(expectedResponse.Items) {
+		t.Fatalf("expected %d items, got %d", len(expectedResponse.Items), len(resp.Items))
+	}
+}
+
+func TestListServiceHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	mockSvc := domainmocks.NewServiceService(t)
+	expectedErr := errors.New("list service failed")
+
+	mockSvc.EXPECT().
+		List(mock.Anything, mock.AnythingOfType("*domain.ListServiceParams")).
+		Return(nil, expectedErr)
+
+	h := handler.Handler(mockSvc)
+
+	router := gin.New()
+	router.GET("/services", h.List)
+
+	req := httptest.NewRequest(http.MethodGet, "/services", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status %d, got %d", http.StatusInternalServerError, rec.Code)
+	}
+
+	var resp struct {
+		Error string `json:"error"`
+	}
+
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal error response: %v", err)
+	}
+
+	if resp.Error != expectedErr.Error() {
+		t.Fatalf("expected error %q, got %q", expectedErr.Error(), resp.Error)
+	}
+}
+
+func TestListServiceHandler_Integration(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	uow := inmemoryuow.NewInMemoryUoW()
+	repo := memrepo.MemoryRepository()
+	srvc := appservice.Service(uow, repo)
+	h := handler.Handler(srvc)
+
+	router := gin.New()
+	router.POST("/services", h.Create)
+	router.GET("/services", h.List)
+
+	createBody := map[string]any{
+		"name":        "Oil Change",
+		"description": "Complete synthetic oil change",
+		"price":       "199.90",
+		"status":      "ACTIVE",
+	}
+	payload, _ := json.Marshal(createBody)
+	createReq := httptest.NewRequest(http.MethodPost, "/services", bytes.NewReader(payload))
+	createReq.Header.Set("Content-Type", "application/json")
+	createRec := httptest.NewRecorder()
+	router.ServeHTTP(createRec, createReq)
+
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("setup: expected status %d, got %d", http.StatusCreated, createRec.Code)
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, "/services?page=1&pageSize=10&status=ACTIVE", nil)
+	listRec := httptest.NewRecorder()
+	router.ServeHTTP(listRec, listReq)
+
+	if listRec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, listRec.Code)
+	}
+
+	var resp domain.PaginatorResponse[map[string]any]
+	if err := json.Unmarshal(listRec.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resp.TotalItems != 1 {
+		t.Fatalf("expected 1 total item, got %d", resp.TotalItems)
+	}
+
+	if len(resp.Items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(resp.Items))
+	}
+}

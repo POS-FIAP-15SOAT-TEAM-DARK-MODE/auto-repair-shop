@@ -223,3 +223,219 @@ func TestService_SaveRepositoryStep_RepositoryError(t *testing.T) {
 		t.Fatalf("expected error to wrap repo error %v, got %v", expectedRepoErr, err)
 	}
 }
+
+func TestService_List_Success(t *testing.T) {
+	ctx := context.Background()
+
+	uow := domainmocks.NewExecutor(t)
+	repo := domainmocks.NewServiceRepository(t)
+
+	params := &domain.ListServiceParams{
+		Page:     1,
+		PageSize: 10,
+		Status:   "",
+	}
+
+	expectedItems := []domain.Service{
+		{ID: "1", Name: "Oil Change", Description: "Complete oil change", Status: domain.ACTIVE},
+	}
+	var expectedTotal int64 = 1
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return(expectedTotal, nil)
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return(expectedItems, nil)
+
+	uow.EXPECT().
+		Execute(ctx, mock.AnythingOfType("domain.Step")).
+		RunAndReturn(func(_ context.Context, steps ...domain.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(uow, repo)
+
+	got, err := appService.List(ctx, params)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if got == nil {
+		t.Fatalf("expected non-nil response")
+	}
+
+	if got.TotalItems != expectedTotal {
+		t.Fatalf("expected total %d, got %d", expectedTotal, got.TotalItems)
+	}
+
+	if len(got.Items) != len(expectedItems) {
+		t.Fatalf("expected %d items, got %d", len(expectedItems), len(got.Items))
+	}
+
+	if got.Page != params.Page {
+		t.Fatalf("expected page %d, got %d", params.Page, got.Page)
+	}
+
+	if got.PageSize != params.PageSize {
+		t.Fatalf("expected page size %d, got %d", params.PageSize, got.PageSize)
+	}
+
+	if got.TotalPages != 1 {
+		t.Fatalf("expected 1 total page, got %d", got.TotalPages)
+	}
+}
+
+func TestService_List_UoWError(t *testing.T) {
+	ctx := context.Background()
+
+	uow := domainmocks.NewExecutor(t)
+	repo := domainmocks.NewServiceRepository(t)
+
+	params := &domain.ListServiceParams{Page: 1, PageSize: 10}
+	expectedErr := errors.New("uow execute failed")
+
+	uow.EXPECT().
+		Execute(ctx, mock.AnythingOfType("domain.Step")).
+		Return(expectedErr)
+
+	appService := Service(uow, repo)
+
+	got, err := appService.List(ctx, params)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	if got != nil {
+		t.Fatalf("expected nil response on error")
+	}
+}
+
+func TestService_List_CountError(t *testing.T) {
+	ctx := context.Background()
+
+	uow := domainmocks.NewExecutor(t)
+	repo := domainmocks.NewServiceRepository(t)
+
+	params := &domain.ListServiceParams{Page: 1, PageSize: 10}
+	expectedErr := errors.New("count db error")
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return(int64(0), expectedErr).Maybe()
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return([]domain.Service{}, nil).Maybe()
+
+	uow.EXPECT().
+		Execute(ctx, mock.AnythingOfType("domain.Step")).
+		RunAndReturn(func(_ context.Context, steps ...domain.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(uow, repo)
+
+	got, err := appService.List(ctx, params)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to wrap %v, got %v", expectedErr, err)
+	}
+
+	if got != nil {
+		t.Fatalf("expected nil response on error")
+	}
+}
+
+func TestService_List_SearchError(t *testing.T) {
+	ctx := context.Background()
+
+	uow := domainmocks.NewExecutor(t)
+	repo := domainmocks.NewServiceRepository(t)
+
+	params := &domain.ListServiceParams{Page: 1, PageSize: 10}
+	expectedErr := errors.New("search db error")
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return(int64(0), nil).Maybe()
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return(nil, expectedErr).Maybe()
+
+	uow.EXPECT().
+		Execute(ctx, mock.AnythingOfType("domain.Step")).
+		RunAndReturn(func(_ context.Context, steps ...domain.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(uow, repo)
+
+	got, err := appService.List(ctx, params)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to wrap %v, got %v", expectedErr, err)
+	}
+
+	if got != nil {
+		t.Fatalf("expected nil response on error")
+	}
+}
+
+func TestService_List_EmptyResult(t *testing.T) {
+	ctx := context.Background()
+
+	uow := domainmocks.NewExecutor(t)
+	repo := domainmocks.NewServiceRepository(t)
+
+	params := &domain.ListServiceParams{Page: 1, PageSize: 10}
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return(int64(0), nil)
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchServiceParams")).
+		Return([]domain.Service{}, nil)
+
+	uow.EXPECT().
+		Execute(ctx, mock.AnythingOfType("domain.Step")).
+		RunAndReturn(func(_ context.Context, steps ...domain.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(uow, repo)
+
+	got, err := appService.List(ctx, params)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if got == nil {
+		t.Fatalf("expected non-nil response")
+	}
+
+	if got.TotalItems != 0 {
+		t.Fatalf("expected total 0, got %d", got.TotalItems)
+	}
+
+	if len(got.Items) != 0 {
+		t.Fatalf("expected 0 items, got %d", len(got.Items))
+	}
+
+	if got.TotalPages != 0 {
+		t.Fatalf("expected 0 total pages, got %d", got.TotalPages)
+	}
+}
