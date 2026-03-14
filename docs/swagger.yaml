@@ -29,3 +29,64 @@ paths:
                     type: string
                 example:
                   message: pong
+  /v1/auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account in the system.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: Diogo Ferreira
+                email:
+                  type: string
+                  format: email
+                  example: diogo@email.com
+                password:
+                  type: string
+                  example: "123456"
+                confirm_password:
+                  type: string
+                  example: "123456"
+      responses:
+        "201":
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  email:
+                    type: string
+              example:
+                id: 1
+                name: Diogo Ferreira
+                email: diogo@email.com
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+              example:
+                error: invalid request body
+        "500":
+          description: Internal server error
