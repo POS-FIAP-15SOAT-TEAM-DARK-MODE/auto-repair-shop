@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -46,4 +47,33 @@ func (c *createServiceReqDTO) Validate() error {
 
 func (c *createServiceReqDTO) MapToDomain() (*domain.Service, error) {
 	return domain.NewService(c.Name, c.Description, c.Price, domain.StringToServiceStatus(c.Status))
+}
+
+func mapListParamsToDomain(c *gin.Context) *domain.ListServiceParams {
+	page := int64(1)
+	pageSize := int64(10)
+	var status string
+
+	if p := c.Query("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = int64(v)
+		}
+	}
+
+	if ps := c.Query("pageSize"); ps != "" {
+		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
+			pageSize = int64(v)
+		}
+	}
+
+	status = c.Query("status")
+	if err := domain.ValidServiceStatusStringValue(status); status != "" && err != nil {
+		status = ""
+	}
+
+	return &domain.ListServiceParams{
+		Page:     page,
+		PageSize: pageSize,
+		Status:   status,
+	}
 }

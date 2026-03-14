@@ -12,4 +12,11 @@ const (
 			status      = EXCLUDED.status,
 			updated_at  = NOW();
 	`
+
+	countQuery = `SELECT COUNT(s.id) FROM "service" s`
+
+	searchQuery = `
+		SELECT s.id, s.name, s.description, s.unit_price, s.status
+		FROM "service" s
+	`
 )

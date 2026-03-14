@@ -22,6 +22,63 @@ func (_m *ServiceRepository) EXPECT() *ServiceRepository_Expecter {
 	return &ServiceRepository_Expecter{mock: &_m.Mock}
 }
 
+// Count provides a mock function with given fields: _a0, _a1
+func (_m *ServiceRepository) Count(_a0 context.Context, _a1 *domain.SearchServiceParams) (int64, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Count")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceParams) (int64, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceParams) int64); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.SearchServiceParams) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceRepository_Count_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Count'
+type ServiceRepository_Count_Call struct {
+	*mock.Call
+}
+
+// Count is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *domain.SearchServiceParams
+func (_e *ServiceRepository_Expecter) Count(_a0 interface{}, _a1 interface{}) *ServiceRepository_Count_Call {
+	return &ServiceRepository_Count_Call{Call: _e.mock.On("Count", _a0, _a1)}
+}
+
+func (_c *ServiceRepository_Count_Call) Run(run func(_a0 context.Context, _a1 *domain.SearchServiceParams)) *ServiceRepository_Count_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SearchServiceParams))
+	})
+	return _c
+}
+
+func (_c *ServiceRepository_Count_Call) Return(_a0 int64, _a1 error) *ServiceRepository_Count_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.SearchServiceParams) (int64, error)) *ServiceRepository_Count_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Save provides a mock function with given fields: _a0, _a1
 func (_m *ServiceRepository) Save(_a0 context.Context, _a1 *domain.Service) error {
 	ret := _m.Called(_a0, _a1)
@@ -65,6 +122,65 @@ func (_c *ServiceRepository_Save_Call) Return(_a0 error) *ServiceRepository_Save
 }
 
 func (_c *ServiceRepository_Save_Call) RunAndReturn(run func(context.Context, *domain.Service) error) *ServiceRepository_Save_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Search provides a mock function with given fields: _a0, _a1
+func (_m *ServiceRepository) Search(_a0 context.Context, _a1 *domain.SearchServiceParams) ([]domain.Service, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Search")
+	}
+
+	var r0 []domain.Service
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceParams) ([]domain.Service, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceParams) []domain.Service); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Service)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.SearchServiceParams) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceRepository_Search_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Search'
+type ServiceRepository_Search_Call struct {
+	*mock.Call
+}
+
+// Search is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *domain.SearchServiceParams
+func (_e *ServiceRepository_Expecter) Search(_a0 interface{}, _a1 interface{}) *ServiceRepository_Search_Call {
+	return &ServiceRepository_Search_Call{Call: _e.mock.On("Search", _a0, _a1)}
+}
+
+func (_c *ServiceRepository_Search_Call) Run(run func(_a0 context.Context, _a1 *domain.SearchServiceParams)) *ServiceRepository_Search_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SearchServiceParams))
+	})
+	return _c
+}
+
+func (_c *ServiceRepository_Search_Call) Return(_a0 []domain.Service, _a1 error) *ServiceRepository_Search_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.SearchServiceParams) ([]domain.Service, error)) *ServiceRepository_Search_Call {
 	_c.Call.Return(run)
 	return _c
 }

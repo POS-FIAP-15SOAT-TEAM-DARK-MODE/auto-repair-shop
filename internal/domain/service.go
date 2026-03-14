@@ -12,11 +12,34 @@ import (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceService --with-expecter
 type ServiceService interface {
 	Create(context.Context, *Service) (*Service, error)
+	List(context.Context, *ListServiceParams) (*PaginatorResponse[Service], error)
+}
+
+type ListServiceParams struct {
+	PageSize int64
+	Page     int64
+	Status   string
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceRepository --with-expecter
 type ServiceRepository interface {
 	Save(context.Context, *Service) error
+	Search(context.Context, *SearchServiceParams) ([]Service, error)
+	Count(context.Context, *SearchServiceParams) (int64, error)
+}
+
+type SearchServiceParams struct {
+	Limit  int64
+	Offset int64
+	Status string
+}
+
+func (l ListServiceParams) SearchServiceParams() *SearchServiceParams {
+	return &SearchServiceParams{
+		Limit:  l.PageSize,
+		Offset: (l.Page - 1) * l.PageSize,
+		Status: l.Status,
+	}
 }
 
 const (

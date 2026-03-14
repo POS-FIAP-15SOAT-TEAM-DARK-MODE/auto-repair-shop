@@ -53,3 +53,21 @@ func (h *HttpHandler) Create(c *gin.Context) {
 	// TODO: replace by custom way to deal with response handling
 	c.JSON(http.StatusCreated, resp)
 }
+
+func (h *HttpHandler) List(c *gin.Context) {
+	params := mapListParamsToDomain(c)
+	ctx := c.Request.Context()
+
+	logger.Of(ctx).Debug("list request", zap.Any("params", params))
+	response, err := h.svc.List(ctx, params)
+	if err != nil {
+		logger.Of(ctx).Error(err)
+		// TODO: replace by custom way to deal with error handling
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	logger.Of(ctx).Debug("list response", zap.Any("service", response))
+	// TODO: replace by custom way to deal with response handling
+	c.JSON(http.StatusCreated, response)
+}
