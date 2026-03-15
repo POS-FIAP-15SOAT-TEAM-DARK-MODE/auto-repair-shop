@@ -29,7 +29,7 @@ func onStart(db *sql.DB) func(context.Context) (context.Context, error) {
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
 			logger.Global().Debug("failed to begin transaction", zap.String("operation", "uow_onStart"), zap.Error(err))
-			return ctx, pglib.Error(fmt.Errorf("begin tx: %w", err))
+			return ctx, pglib.Error(ctx, fmt.Errorf("begin tx: %w", err))
 		}
 		logger.Global().Debug("transaction started", zap.String("operation", "uow_onStart"))
 		return withTx(ctx, tx), nil

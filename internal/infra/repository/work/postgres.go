@@ -32,7 +32,7 @@ func (r *pg_repo) Save(ctx context.Context, w *domain.Work) error {
 		w.Price,
 		w.Status.Bool(),
 	); err != nil {
-		return pgPkg.Error(err)
+		return pgPkg.Error(ctx, err)
 	}
 
 	return nil

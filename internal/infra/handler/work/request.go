@@ -19,7 +19,6 @@ type createWorkReqDTO struct {
 func mapBodyToRequestDTO(body *gin.Context) (*createWorkReqDTO, error) {
 	req := new(createWorkReqDTO)
 
-	// TODO: replace by a performant alternative, build a custom serializer
 	if err := body.ShouldBindJSON(req); err != nil {
 		return nil, err
 	}
