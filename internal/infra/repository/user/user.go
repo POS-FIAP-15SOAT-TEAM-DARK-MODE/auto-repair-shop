@@ -14,6 +14,14 @@ func NewSqlxUserRepository(db *sqlx.DB) *SqlxUserRepository {
 	return &SqlxUserRepository{db: db}
 }
 
+func (u *SqlxUserRepository) GetByEmail(email string) (*domain.User, error) {
+	return nil, nil
+}
+
+func (u *SqlxUserRepository) GetRolesById(id string) ([]string, error) {
+	return nil, nil
+}
+
 func (u *SqlxUserRepository) Create(c *domain.User) (*domain.User, error) {
 	// TODO: add logging
 	_, err := u.db.Exec(CreateUser, c.Id, c.Name, c.Email, c.Password)

@@ -1,6 +1,8 @@
 package factory
 
 import (
+	"time"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
@@ -31,7 +33,9 @@ func newUserHandler() *userHandler.Handler {
 		PostgresPort:     env.GetString("POSTGRES_PORT", "5432"),
 		PostgresDB:       env.GetString("POSTGRES_DB", "auto_repair_shop"),
 	})
+	expiresIn := env.GetTimeDuration("JWT_EXPIRES_IN", 24*time.Hour)
+	secretKey := env.GetString("JWT_SECRET", "")
 	userRepository := userRepo.NewSqlxUserRepository(dbConn)
-	userService := userSvc.Service(userRepository)
+	userService := userSvc.Service(userRepository, expiresIn, secretKey)
 	return userHandler.NewHandler(userService)
 }
