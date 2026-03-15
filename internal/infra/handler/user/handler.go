@@ -44,13 +44,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		return
 	}
 
-	user, err := req.dtoToDomain()
-	if err != nil {
-		status, response := web.Error(err)
-		// TODO: add logging
-		c.JSON(status, response)
-		return
-	}
+	user := req.dtoToDomain()
 
 	response, err := h.service.Login(user)
 	if err != nil {
@@ -104,15 +98,9 @@ func (l *loginRequestDTO) validate() error {
 	return nil
 }
 
-func (l *loginRequestDTO) dtoToDomain() (*domain.User, error) {
-	user := &domain.User{
+func (l *loginRequestDTO) dtoToDomain() *domain.User {
+	return &domain.User{
 		Email:    l.Email,
 		Password: l.Password,
 	}
-
-	if err := user.HashPassword(); err != nil {
-		return nil, err
-	}
-
-	return user, nil
 }

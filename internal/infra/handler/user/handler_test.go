@@ -42,11 +42,6 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "Should fail gracefully when parsing dto to domain fails",
-			requestBody:    `{"email": "test@example.com", "password": "password12345678901234567890123456789012345678901234567890123456789012345678901234567890"}`,
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
 			name:           "Should fail gracefully when service fails",
 			requestBody:    `{"email": "test@example.com", "password": "password"}`,
 			expectedStatus: http.StatusInternalServerError,
