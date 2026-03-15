@@ -45,6 +45,17 @@ func NewUser(name, email, password string) *User {
 	}
 }
 
+func CreateUserToDomain(name, email, password string) (*User, error) {
+	u := NewUser(name, email, password)
+	if err := u.Validate(); err != nil {
+		return nil, err
+	}
+	if err := u.HashPassword(); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 func (u *User) Validate() error {
 	if strings.TrimSpace(u.Name) == "" {
 		return ErrEmptyName

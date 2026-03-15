@@ -9,5 +9,5 @@ import (
 // to work transparently inside or outside a transaction.
 type Executor interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
-	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }

@@ -22,13 +22,7 @@ func Repository(ex pkgdb.Executor) *repository {
 func (r *repository) Create(ctx context.Context, customer *domain.Customer) error {
 	exec := pkgdb.ExtractExecutor(ctx, r.db)
 
-	stmt, err := exec.PrepareContext(ctx, createCustomerQuery)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = stmt.Close() }()
-
-	_, err = stmt.Exec(
+	_, err := exec.ExecContext(ctx, createCustomerQuery,
 		customer.ID,
 		customer.UserID,
 		customer.Type,

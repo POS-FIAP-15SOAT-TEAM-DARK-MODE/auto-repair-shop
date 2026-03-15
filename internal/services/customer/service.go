@@ -24,11 +24,11 @@ func Service(transactor domain.Transactor, userRepo domain.UserRepository, custo
 }
 
 func (s *service) Create(ctx context.Context, customer domain.Customer) error {
-	err := s.transactor.WithTransaction(ctx, func(ctx context.Context) error {
-		if err := s.userRepo.Create(ctx, customer.User); err != nil {
+	err := s.transactor.WithTransaction(ctx, func(txCtx context.Context) error {
+		if err := s.userRepo.Create(txCtx, customer.User); err != nil {
 			return err
 		}
-		return s.customerRepo.Create(ctx, &customer)
+		return s.customerRepo.Create(txCtx, &customer)
 	})
 
 	if err != nil {

@@ -16,9 +16,9 @@ type CreateCustomerRequest struct {
 	Phone       string `json:"phone"`
 }
 
-// Validate checks DTO-specific required fields that have no direct equivalent in the domain.
+// validate checks DTO-specific required fields that have no direct equivalent in the domain.
 // document is validated here because the domain only knows CPF and CNPJ, not a raw document field.
-func (r *CreateCustomerRequest) Validate() error {
+func (r *CreateCustomerRequest) validate() error {
 	if strings.TrimSpace(r.Document) == "" {
 		return domain.ValidationError{Message: "document is required"}
 	}
@@ -26,5 +26,9 @@ func (r *CreateCustomerRequest) Validate() error {
 }
 
 func (r *CreateCustomerRequest) toDomain() (domain.Customer, error) {
-	return domain.CreateCustomerToDomain(r.Name, r.Email, r.Password, r.Type, r.Document, r.CompanyName, r.Phone)
+	customer, err := domain.CreateCustomerToDomain(r.Name, r.Email, r.Password, r.Type, r.Document, r.CompanyName, r.Phone)
+	if err != nil {
+		return domain.Customer{}, domain.ValidationError{Message: err.Error()}
+	}
+	return customer, nil
 }

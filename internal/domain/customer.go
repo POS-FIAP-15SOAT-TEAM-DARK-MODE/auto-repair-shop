@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strings"
 	"unicode"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -40,70 +38,69 @@ type (
 //go:generate mockery --name=CustomerService --with-expecter
 //go:generate mockery --name=CustomerRepository --with-expecter
 
+var (
+	ErrPhoneRequired       = errors.New("phone is required")
+	ErrCompanyNameRequired = errors.New("company_name is required for COMPANY type")
+	ErrInvalidCustomerType = errors.New("invalid customer type")
+)
+
 func CreateCustomerToDomain(name, email, password, customerType, document, companyName, phone string) (Customer, error) {
-	if strings.TrimSpace(name) == "" {
-		return Customer{}, ValidationError{Message: "name is required"}
-	}
-	if strings.TrimSpace(email) == "" {
-		return Customer{}, ValidationError{Message: "email is required"}
-	}
-	if len(strings.TrimSpace(password)) < 6 {
-		return Customer{}, ValidationError{Message: "password must be at least 6 characters"}
-	}
-	if strings.TrimSpace(phone) == "" {
-		return Customer{}, ValidationError{Message: "phone is required"}
+	user, err := CreateUserToDomain(name, email, password)
+	if err != nil {
+		return Customer{}, err
 	}
 
-	if customerType == IndividualCustomerType {
-		cpf := sanitizeCPF(document)
-		if err := validateCPF(cpf); err != nil {
-			return Customer{}, ValidationError{Message: err.Error()}
+	c := Customer{
+		ID:          user.ID,
+		UserID:      user.ID,
+		Type:        customerType,
+		CompanyName: companyName,
+		Phone:       phone,
+		User:        user,
+	}
+
+	c.applyDocument(document)
+
+	if err := c.Validate(); err != nil {
+		return Customer{}, err
+	}
+
+	return c, nil
+}
+
+func (c *Customer) applyDocument(document string) {
+	switch c.Type {
+	case IndividualCustomerType:
+		c.CPF = sanitizeCPF(document)
+	case CompanyCustomerType:
+		c.CNPJ = sanitizeCNPJ(document)
+	}
+}
+
+func (c *Customer) Validate() error {
+	var errs []error
+
+	if strings.TrimSpace(c.Phone) == "" {
+		errs = append(errs, ErrPhoneRequired)
+	}
+
+	switch c.Type {
+	case IndividualCustomerType:
+		if err := validateCPF(c.CPF); err != nil {
+			errs = append(errs, err)
 		}
-
-		id := uuid.New().String()
-		return Customer{
-			ID:     id,
-			UserID: id,
-			Type:   customerType,
-			CPF:    cpf,
-			Phone:  phone,
-			User: &User{
-				ID:       id,
-				Name:     name,
-				Email:    email,
-				Password: password,
-			},
-		}, nil
+	case CompanyCustomerType:
+		if strings.TrimSpace(c.CompanyName) == "" {
+			errs = append(errs, ErrCompanyNameRequired)
+		}
+		if err := validateCNPJ(c.CNPJ); err != nil {
+			errs = append(errs, err)
+		}
+	default:
+		errs = append(errs, ErrInvalidCustomerType)
 	}
 
-	if customerType == CompanyCustomerType {
-		if strings.TrimSpace(companyName) == "" {
-			return Customer{}, ValidationError{Message: "company_name is required for COMPANY type"}
-		}
-
-		cnpj := sanitizeCNPJ(document)
-		if err := validateCNPJ(cnpj); err != nil {
-			return Customer{}, ValidationError{Message: err.Error()}
-		}
-
-		id := uuid.New().String()
-		return Customer{
-			ID:          id,
-			UserID:      id,
-			Type:        customerType,
-			CNPJ:        cnpj,
-			CompanyName: companyName,
-			Phone:       phone,
-			User: &User{
-				ID:       id,
-				Name:     name,
-				Email:    email,
-				Password: password,
-			},
-		}, nil
-	}
-
-	return Customer{}, ValidationError{Message: "invalid customer type"}
+	return errors.Join(errs...)
 }
 
 // sanitizeCPF removes all non-digit characters (e.g. '.', '-') from a CPF string.

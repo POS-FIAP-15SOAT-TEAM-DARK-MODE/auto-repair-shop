@@ -53,11 +53,6 @@ func TestCreateCustomerToDomain_CPF_InvalidCheckDigit(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for invalid CPF check digit")
 	}
-
-	var validationErr domain.ValidationError
-	if !asValidationError(err, &validationErr) {
-		t.Errorf("expected ValidationError, got %T", err)
-	}
 }
 
 func TestCreateCustomerToDomain_CPF_AllSameDigits(t *testing.T) {
@@ -198,13 +193,8 @@ func TestCreateCustomerToDomain_COMPANY_MissingCompanyName(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when company_name is missing for COMPANY type")
 	}
-
-	var validationErr domain.ValidationError
-	if !asValidationError(err, &validationErr) {
-		t.Errorf("expected ValidationError, got %T", err)
-	}
-	if !strings.Contains(validationErr.Message, "company_name") {
-		t.Errorf("expected error message to mention 'company_name', got: %s", validationErr.Message)
+	if !strings.Contains(err.Error(), "company_name") {
+		t.Errorf("expected error message to mention 'company_name', got: %s", err.Error())
 	}
 }
 

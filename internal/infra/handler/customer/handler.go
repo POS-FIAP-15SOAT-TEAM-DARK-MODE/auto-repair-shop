@@ -1,6 +1,8 @@
 package customer
 
 import (
+	"net/http"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	pkgjson "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
@@ -33,7 +35,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := body.Validate(); err != nil {
+	if err := body.validate(); err != nil {
 		logger.Warn("create customer: validation failed",
 			zap.String("operation", "create_customer"),
 			zap.String("error", err.Error()),
@@ -60,5 +62,5 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(201, toResponse(customer))
+	c.JSON(http.StatusCreated, toResponse(customer))
 }
