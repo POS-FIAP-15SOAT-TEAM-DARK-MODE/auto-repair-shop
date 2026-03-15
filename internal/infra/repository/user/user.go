@@ -15,11 +15,22 @@ func NewSqlxUserRepository(db *sqlx.DB) *SqlxUserRepository {
 }
 
 func (u *SqlxUserRepository) GetByEmail(email string) (*domain.User, error) {
-	return nil, nil
+	var user domain.User
+	err := u.db.QueryRowx(GetUserByEmail, email).Scan(&user.Id, &user.Name, &user.Email, &user.Password)
+	if err != nil {
+		return nil, postgres.Error(err)
+	}
+
+	return &user, nil
 }
 
 func (u *SqlxUserRepository) GetRolesById(id string) ([]string, error) {
-	return nil, nil
+	var roles []string
+	err := u.db.Select(&roles, GetRolesById, id)
+	if err != nil {
+		return nil, postgres.Error(err)
+	}
+	return roles, nil
 }
 
 func (u *SqlxUserRepository) Create(c *domain.User) (*domain.User, error) {
