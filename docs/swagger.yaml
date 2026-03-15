@@ -30,6 +30,43 @@ paths:
               example:
                 message: pong
 
+  /v1/auth/login:
+    post:
+      summary: Login a user
+      description: Logs in a user and returns a JWT token. Requires email and password.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLoginRequest"
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expires_in:
+                    type: integer
+        "400":
+          description: Invalid request body or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  
   /v1/auth/register:
     post:
       summary: Register a new user
@@ -90,6 +127,33 @@ components:
           type: string
           format: password
           description: Password confirmation (must match password)
+
+    UserLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          format: password
+          description: User password
+
+    UserLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+        expires_in:
+          type: integer
+          description: Token expiration duration
+        user:
+          $ref: "#/components/schemas/UserResponse"
 
     UserResponse:
       type: object
