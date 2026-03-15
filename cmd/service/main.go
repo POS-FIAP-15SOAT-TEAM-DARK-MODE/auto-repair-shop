@@ -10,7 +10,6 @@ import (
 
 func main() {
 	defer logger.Sync()
-
 	container := factory.HttpContainer()
 	middlewares := factory.MiddlewaresContainer()
 	router := routing.SetupRouter(container, middlewares)
