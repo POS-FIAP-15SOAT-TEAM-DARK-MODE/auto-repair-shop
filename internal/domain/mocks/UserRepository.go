@@ -42,6 +42,66 @@ func (_m *UserRepository) Create(c *domain.User) (*domain.User, error) {
 	return r0, r1
 }
 
+// GetByEmail provides a mock function with given fields: email
+func (_m *UserRepository) GetByEmail(email string) (*domain.User, error) {
+	ret := _m.Called(email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByEmail")
+	}
+
+	var r0 *domain.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*domain.User, error)); ok {
+		return rf(email)
+	}
+	if rf, ok := ret.Get(0).(func(string) *domain.User); ok {
+		r0 = rf(email)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(email)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetRolesById provides a mock function with given fields: id
+func (_m *UserRepository) GetRolesById(id string) ([]string, error) {
+	ret := _m.Called(id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRolesById")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) ([]string, error)); ok {
+		return rf(id)
+	}
+	if rf, ok := ret.Get(0).(func(string) []string); ok {
+		r0 = rf(id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewUserRepository creates a new instance of UserRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserRepository(t interface {
