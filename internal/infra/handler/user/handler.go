@@ -9,6 +9,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user/dto"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/bind"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 )
 
@@ -30,7 +31,7 @@ func NewHandler(service domain.UserService) *Handler {
 func (h *Handler) LoginUser(c *gin.Context) {
 	req, err := bind.BindGenericJSON[loginRequestDTO](c)
 	if err != nil {
-		status, response := web.Error(err)
+		status, response := web.Error(json.CheckJsonError(err))
 		// TODO: add logging
 		c.JSON(status, response)
 		return
