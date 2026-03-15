@@ -3,23 +3,18 @@ package ping
 import (
 	"net/http"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 )
 
-type Handler struct {
-	svc domain.PingService
+type httpHandler struct{}
+
+func HttpHandler() container.PingHttpHandler {
+	return &httpHandler{}
 }
 
-func NewHandler(uc domain.PingService) *Handler {
-	return &Handler{svc: uc}
-}
-
-func (h *Handler) Ping(c *gin.Context) {
-	result := h.svc.Execute()
-	logger.Of(c).Info("ping called", zap.String("response", result.Message))
-	c.JSON(http.StatusOK, gin.H{"message": result.Message})
+func (h *httpHandler) Ping() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	}
 }

@@ -42,6 +42,8 @@ func Connect() *sql.DB {
 			logger.Global().Fatal("failed to ping database: ", zap.Error(pingErr))
 		}
 
+		// TODO: Define pool configuration
+
 		instance = conn
 	})
 

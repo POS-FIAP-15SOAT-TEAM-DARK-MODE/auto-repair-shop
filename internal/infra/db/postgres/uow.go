@@ -6,15 +6,18 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	pglib "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	"go.uber.org/zap"
 )
 
 type txKey struct{}
 
 var ErrMissingPostgresTransaction = errors.New("transaction not found")
 
-func NewTransactionalUoW(db *sql.DB) domain.Executor {
-	return &domain.UnitOfWork{
+func NewTransactionalUoW(db *sql.DB) uow.Executor {
+	return &uow.UnitOfWork{
 		OnStart:   onStart(db),
 		OnSuccess: onSuccess,
 		OnFailure: onFailure,
@@ -25,8 +28,10 @@ func onStart(db *sql.DB) func(context.Context) (context.Context, error) {
 	return func(ctx context.Context) (context.Context, error) {
 		tx, err := db.BeginTx(ctx, nil)
 		if err != nil {
-			return ctx, fmt.Errorf("begin tx: %w", err)
+			logger.Global().Debug("failed to begin transaction", zap.String("operation", "uow_onStart"), zap.Error(err))
+			return ctx, pglib.Error(ctx, fmt.Errorf("begin tx: %w", err))
 		}
+		logger.Global().Debug("transaction started", zap.String("operation", "uow_onStart"))
 		return withTx(ctx, tx), nil
 	}
 }
@@ -34,17 +39,29 @@ func onStart(db *sql.DB) func(context.Context) (context.Context, error) {
 func onSuccess(ctx context.Context) error {
 	tx, found := txFrom(ctx)
 	if !found {
+		logger.Global().Debug("postgres transaction not found on success", zap.String("operation", "uow_onSuccess"))
 		return ErrMissingPostgresTransaction
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		logger.Global().Debug("failed to commit transaction", zap.String("operation", "uow_onSuccess"), zap.Error(err))
+		return err
+	}
+	logger.Global().Debug("transaction committed successfully", zap.String("operation", "uow_onSuccess"))
+	return nil
 }
 
 func onFailure(ctx context.Context, cause error) error {
 	tx, found := txFrom(ctx)
 	if !found {
+		logger.Global().Debug("postgres transaction not found on failure", zap.String("operation", "uow_onFailure"))
 		return ErrMissingPostgresTransaction
 	}
-	return tx.Rollback()
+	if err := tx.Rollback(); err != nil {
+		logger.Global().Debug("failed to rollback transaction", zap.String("operation", "uow_onFailure"), zap.Error(err))
+		return err
+	}
+	logger.Global().Debug("transaction rolled back", zap.String("operation", "uow_onFailure"))
+	return nil
 }
 
 func withTx(ctx context.Context, tx *sql.Tx) context.Context {
@@ -59,6 +76,7 @@ func txFrom(ctx context.Context) (*sql.Tx, bool) {
 func GetTransaction(ctx context.Context) (*sql.Tx, error) {
 	tx, found := txFrom(ctx)
 	if !found {
+		logger.Global().Debug("postgres transaction not found when requested", zap.String("operation", "uow_GetTransaction"))
 		return nil, ErrMissingPostgresTransaction
 	}
 	return tx, nil
