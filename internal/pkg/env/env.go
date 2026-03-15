@@ -3,6 +3,7 @@ package env
 import (
 	"os"
 	"strconv"
+	"time"
 )
 
 // GetString retrieves the value of an environment variable as a string.
@@ -29,4 +30,19 @@ func GetInt(key string, defaultValue int) int {
 	}
 
 	return intValue
+}
+
+// GetTimeDuration retrieves the value of an environment variable as a time.Duration.
+// If the variable is not set or cannot be parsed, it returns the provided default value.
+// The expected format is a string like "1h30m" or "24h".
+func GetTimeDuration(key string, defaultValue time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return defaultValue
+	}
+	return duration
 }
