@@ -9,7 +9,7 @@ services:
       - PORT=${PORT:-8080}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/autorepairshop?sslmode=disable
       - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRY=${JWT_EXPIRY:-24h}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
       - BCRYPT_COST=${BCRYPT_COST:-10}
     depends_on:
       db:
