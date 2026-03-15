@@ -92,32 +92,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
               example:
-                error: invalid CPF
+                code: 400
+                errors:
+                  - invalid CPF
         "409":
           description: CPF, CNPJ or email already registered
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
               example:
-                error: email already in use
+                code: 409
+                error: resource already exists
         "422":
           description: Business rule violation (e.g. constraint failure)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
               example:
+                code: 422
                 error: data violates business constraints
         "500":
           description: Unexpected internal error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ErrorResponse"
               example:
+                code: 500
                 error: Internal Server Error
 
   /ping:
@@ -136,14 +141,96 @@ paths:
                 properties:
                   message:
                     type: string
-                example:
-                  message: pong
+              example:
+                message: pong
+
+  /v1/auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account. Requires name, email, password, and confirm_password.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegisterRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Invalid request body or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
-    Error:
+    UserRegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - confirm_password
+      properties:
+        name:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          format: password
+          description: User password
+        confirm_password:
+          type: string
+          format: password
+          description: Password confirmation (must match password)
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        name:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: User email address
+
+    ErrorResponse:
       type: object
       properties:
         error:
           type: string
-          example: human-readable error message
+          description: Human-readable error message
+        code:
+          type: integer
+          description: HTTP status code
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of validation/business error messages

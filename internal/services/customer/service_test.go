@@ -83,37 +83,30 @@ func TestService_Create_Company_Success(t *testing.T) {
 }
 
 func TestService_Create_DuplicateEmail_ReturnsConflict(t *testing.T) {
-	conflictErr := domain.ConflictError{Message: "email already in use"}
-
 	userRepo := domainmocks.NewUserRepository(t)
 	customerRepo := domainmocks.NewCustomerRepository(t) // Create must NOT be called
 	transactor := domainmocks.NewTransactor(t)
 
-	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(conflictErr)
+	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(domain.ErrDataConflict)
 	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).RunAndReturn(runFn())
 
 	err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
 
-	var conflictError domain.ConflictError
-	assert.ErrorAs(t, err, &conflictError)
-	assert.Equal(t, "email already in use", conflictError.Message)
+	assert.ErrorIs(t, err, domain.ErrDataConflict)
 }
 
 func TestService_Create_DuplicateCPF_ReturnsConflict(t *testing.T) {
-	conflictErr := domain.ConflictError{Message: "CPF already registered"}
-
 	userRepo := domainmocks.NewUserRepository(t)
 	customerRepo := domainmocks.NewCustomerRepository(t)
 	transactor := domainmocks.NewTransactor(t)
 
 	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
-	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(conflictErr)
+	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(domain.ErrDataConflict)
 	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).RunAndReturn(runFn())
 
 	err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
 
-	var conflictError domain.ConflictError
-	assert.ErrorAs(t, err, &conflictError)
+	assert.ErrorIs(t, err, domain.ErrDataConflict)
 }
 
 func TestService_Create_TransactionFailure_ReturnsError(t *testing.T) {

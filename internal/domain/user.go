@@ -9,25 +9,32 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type (
-	User struct {
-		ID       string
-		Name     string
-		Email    string
-		Password string
-	}
+type User struct {
+	ID       string
+	Name     string
+	Email    string
+	Password string
+}
 
-	UserService interface {
-		Create(ctx context.Context, user *User) (*User, error)
-	}
+type UserService interface {
+	Create(ctx context.Context, user *User) (*User, error)
+}
 
-	UserRepository interface {
-		Create(ctx context.Context, u *User) error
-	}
-)
+type UserRepository interface {
+	Create(ctx context.Context, u *User) error
+}
 
 //go:generate mockery --name=UserService --with-expecter
 //go:generate mockery --name=UserRepository --with-expecter
+
+var (
+	ErrEmptyName         = errors.New("name cannot be empty")
+	ErrEmptyEmail        = errors.New("email cannot be empty")
+	ErrEmptyPassword     = errors.New("password cannot be empty")
+	ErrPasswordDontMatch = errors.New("passwords do not match")
+	ErrPasswordTooLong   = errors.New("password too long")
+	ErrPasswordTooShort  = errors.New("password too short")
+)
 
 func NewUser(name, email, password string) *User {
 	return &User{
@@ -39,8 +46,14 @@ func NewUser(name, email, password string) *User {
 }
 
 func (u *User) Validate() error {
-	if strings.TrimSpace(u.Name) == "" || strings.TrimSpace(u.Email) == "" || strings.TrimSpace(u.Password) == "" {
-		return errors.New("name, email and password hash cannot be empty")
+	if strings.TrimSpace(u.Name) == "" {
+		return ErrEmptyName
+	}
+	if strings.TrimSpace(u.Email) == "" {
+		return ErrEmptyEmail
+	}
+	if strings.TrimSpace(u.Password) == "" {
+		return ErrEmptyPassword
 	}
 	return nil
 }
@@ -48,6 +61,12 @@ func (u *User) Validate() error {
 func (u *User) HashPassword() error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
+		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
+			return ErrPasswordTooLong
+		}
+		if errors.Is(err, bcrypt.ErrHashTooShort) {
+			return ErrPasswordTooShort
+		}
 		return err
 	}
 	u.Password = string(hash)

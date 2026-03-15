@@ -1,27 +1,21 @@
 package domain
 
-type (
-	ValidationError struct {
-		Message string `json:"message"`
-	}
+import "errors"
 
-	ConflictError struct {
-		Message string `json:"message"`
-	}
-
-	BusinessRuleError struct {
-		Message string `json:"message"`
-	}
-)
+// ValidationError carries a human-readable message for domain validation failures (e.g. invalid CPF).
+// It maps to HTTP 400 Bad Request.
+type ValidationError struct {
+	Message string `json:"message"`
+}
 
 func (e ValidationError) Error() string {
 	return e.Message
 }
 
-func (e ConflictError) Error() string {
-	return e.Message
-}
-
-func (e BusinessRuleError) Error() string {
-	return e.Message
-}
+// Sentinel errors used by the repository and service layers.
+// These map to HTTP status codes in pkg/web/errors.go.
+var (
+	ErrDataConflict  = errors.New("resource already exists")
+	ErrDataViolation = errors.New("data violates business constraints")
+	ErrInfraConflict = errors.New("something went wrong with our resources, try again")
+)

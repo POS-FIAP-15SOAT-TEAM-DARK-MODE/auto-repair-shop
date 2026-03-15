@@ -7,6 +7,7 @@ import (
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user/dto"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 )
 
 type Handler struct {
@@ -20,19 +21,24 @@ func NewHandler(service domain.UserService) *Handler {
 func (h *Handler) CreateUser(c *gin.Context) {
 	req, err := dto.MapBodyToUserRequestDTO(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := req.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	user := dto.MapUserRequestDTOToDomain(req)
-	user, err = h.service.Create(c.Request.Context(), user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		status, response := web.Error(err)
+		c.JSON(status, response)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"user": dto.MapUserToResponseDTO(user)})
+	if err := req.Validate(); err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	user := dto.MapUserRequestDTOToDomain(req)
+	user, err = h.service.Create(c.Request.Context(), user)
+	if err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.MapUserToResponseDTO(user))
 }

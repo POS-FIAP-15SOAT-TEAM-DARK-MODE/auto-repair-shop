@@ -8,20 +8,16 @@ import (
 )
 
 // PostgreSQL error codes
-// https://www.postgresql.org/docs/current/errcodes-appendix.html
+// See: https://www.postgresql.org/docs/current/errcodes-appendix.html
 const (
-	pgUniqueViolation     pq.ErrorCode = "23505"
-	pgCheckViolation      pq.ErrorCode = "23514"
-	pgNotNullViolation    pq.ErrorCode = "23502"
-	pgForeignKeyViolation pq.ErrorCode = "23503"
+	pgUniqueViolation      pq.ErrorCode = "23505"
+	pgCheckViolation       pq.ErrorCode = "23514"
+	pgNotNullViolation     pq.ErrorCode = "23502"
+	pgForeignKeyViolation  pq.ErrorCode = "23503"
+	pgSerializationFailure pq.ErrorCode = "40001"
+	pgDeadlockDetected     pq.ErrorCode = "40P01"
+	pgExclusionViolation   pq.ErrorCode = "23P01"
 )
-
-// constraintMessages maps PostgreSQL unique constraint names to human-readable conflict messages.
-var constraintMessages = map[string]string{
-	"user_email_key":    "email already in use",
-	"customer_cpf_key":  "CPF already registered",
-	"customer_cnpj_key": "CNPJ already registered",
-}
 
 // Error maps PostgreSQL-specific errors to domain errors.
 // Any unmapped error is returned as-is so the transactor can still rollback.
@@ -34,19 +30,16 @@ func Error(err error) error {
 
 	switch pgErr.Code {
 	case pgUniqueViolation:
-		if msg, found := constraintMessages[pgErr.Constraint]; found {
-			return domain.ConflictError{Message: msg}
-		}
-		return domain.ConflictError{Message: "resource already exists"}
+		// HTTP 409 Conflict
+		return domain.ErrDataConflict
 
-	case pgCheckViolation:
-		return domain.BusinessRuleError{Message: "data violates business constraints"}
+	case pgCheckViolation, pgForeignKeyViolation, pgNotNullViolation, pgExclusionViolation:
+		// HTTP 422 Unprocessable Entity
+		return domain.ErrDataViolation
 
-	case pgNotNullViolation:
-		return domain.BusinessRuleError{Message: "required field is missing"}
-
-	case pgForeignKeyViolation:
-		return domain.BusinessRuleError{Message: "referenced resource does not exist"}
+	case pgSerializationFailure, pgDeadlockDetected:
+		// HTTP 409 Conflict (transient, should retry)
+		return domain.ErrInfraConflict
 
 	default:
 		return err

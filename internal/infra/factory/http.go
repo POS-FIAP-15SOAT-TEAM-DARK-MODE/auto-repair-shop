@@ -1,8 +1,6 @@
 package factory
 
 import (
-	"github.com/jmoiron/sqlx"
-
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db"
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
@@ -16,12 +14,10 @@ import (
 )
 
 func HttpContainer() *container.HTTP {
-	dbConn := db.Connect()
-
 	return &container.HTTP{
 		PingHandler:     newPingHandler(),
-		UserHandler:     newUserHandler(dbConn),
-		CustomerHandler: newCustomerHandler(dbConn),
+		UserHandler:     newUserHandler(),
+		CustomerHandler: newCustomerHandler(),
 	}
 }
 
@@ -29,12 +25,14 @@ func newPingHandler() *pingHandler.Handler {
 	return pingHandler.NewHandler(pingSvc.Service())
 }
 
-func newUserHandler(dbConn *sqlx.DB) *userHandler.Handler {
+func newUserHandler() *userHandler.Handler {
+	dbConn := db.Connect()
 	userRepository := userRepo.NewUserRepository(dbConn)
 	return userHandler.NewHandler(userSvc.NewUserService(userRepository))
 }
 
-func newCustomerHandler(dbConn *sqlx.DB) *customerHandler.Handler {
+func newCustomerHandler() *customerHandler.Handler {
+	dbConn := db.Connect()
 	transactor := db.NewTransactor(dbConn)
 	userRepository := userRepo.NewUserRepository(dbConn)
 	customerRepository := customerRepo.Repository(dbConn)
