@@ -1,22 +1,24 @@
-package services
+package user
 
 import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 )
 
-type UserService struct {
+type service struct {
 	repo domain.UserRepository
 }
 
-func NewUserService(repo domain.UserRepository) domain.UserService {
-	return &UserService{repo: repo}
+func Service(repo domain.UserRepository) domain.UserService {
+	return &service{repo: repo}
 }
 
-func (s *UserService) Create(user *domain.User) (*domain.User, error) {
+func (s *service) Create(user *domain.User) (*domain.User, error) {
 	if err := user.Validate(); err != nil {
+		// TODO: add logging
 		return nil, err
 	}
 	if err := user.HashPassword(); err != nil {
+		// TODO: add logging
 		return nil, err
 	}
 

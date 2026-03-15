@@ -27,12 +27,13 @@ paths:
                 properties:
                   message:
                     type: string
-                example:
-                  message: pong
+              example:
+                message: pong
+
   /v1/auth/register:
     post:
       summary: Register a new user
-      description: Creates a new user account in the system.
+      description: Creates a new user account. Requires name, email, password, and confirm_password.
       tags:
         - Auth
       requestBody:
@@ -40,53 +41,82 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - name
-                - email
-                - password
-              properties:
-                name:
-                  type: string
-                  example: Diogo Ferreira
-                email:
-                  type: string
-                  format: email
-                  example: diogo@email.com
-                password:
-                  type: string
-                  example: "123456"
-                confirm_password:
-                  type: string
-                  example: "123456"
+              $ref: "#/components/schemas/UserRegisterRequest"
       responses:
         "201":
-          description: User successfully created
+          description: User created successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
-                  email:
-                    type: string
-              example:
-                id: 1
-                name: Diogo Ferreira
-                email: diogo@email.com
+                  user:
+                    $ref: "#/components/schemas/UserResponse"
         "400":
-          description: Invalid request body
+          description: Invalid request body or validation failed
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-              example:
-                error: invalid request body
+                $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    UserRegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - confirm_password
+      properties:
+        name:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          format: password
+          description: User password
+        confirm_password:
+          type: string
+          format: password
+          description: Password confirmation (must match password)
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        name:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: User email address
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        status:
+          type: integer
+          description: HTTP status code
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of validation/business error messages
