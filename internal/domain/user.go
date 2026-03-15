@@ -22,22 +22,28 @@ type (
 	}
 )
 
+//go:generate mockery --name=UserService --output=mocks --outpkg=mocks
 type UserService interface {
 	Create(req *User) (*User, error)
 	Login(user *User) (*LoginResponse, error)
 }
 
+//go:generate mockery --name=UserRepository --output=mocks --outpkg=mocks
 type UserRepository interface {
 	Create(c *User) (*User, error)
+	GetByEmail(email string) (*User, error)
+	GetRolesById(id string) ([]string, error)
 }
 
 var (
-	ErrEmptyName         = errors.New("name cannot be empty")
-	ErrEmptyEmail        = errors.New("email cannot be empty")
-	ErrEmptyPassword     = errors.New("password cannot be empty")
-	ErrPasswordDontMatch = errors.New("passwords do not match")
-	ErrPasswordTooLong   = errors.New("password too long")
-	ErrPasswordTooShort  = errors.New("password too short")
+	ErrEmptyName          = errors.New("name cannot be empty")
+	ErrEmptyEmail         = errors.New("email cannot be empty")
+	ErrEmptyPassword      = errors.New("password cannot be empty")
+	ErrPasswordDontMatch  = errors.New("passwords do not match")
+	ErrPasswordTooLong    = errors.New("password too long")
+	ErrPasswordTooShort   = errors.New("password too short")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
 func NewUser(name, email, password string) *User {
