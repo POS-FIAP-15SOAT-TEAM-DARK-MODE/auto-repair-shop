@@ -21,8 +21,17 @@ func NewHandler(service domain.CustomerService) *Handler {
 func (h *Handler) Create(c *gin.Context) {
 	var body CreateCustomerRequest
 
-	if err := web.ValidateAndDecodeJSON(c.Request, &body); err != nil {
-		logger.Warn("create customer: invalid request body",
+	if err := c.ShouldBindJSON(&body); err != nil {
+		logger.Warn("create customer: invalid JSON payload",
+			zap.String("operation", "create_customer"),
+			zap.String("error", err.Error()),
+		)
+		web.Error(c, domain.ValidationError{Message: "invalid JSON payload"})
+		return
+	}
+
+	if err := body.Validate(); err != nil {
+		logger.Warn("create customer: validation failed",
 			zap.String("operation", "create_customer"),
 			zap.String("error", err.Error()),
 		)

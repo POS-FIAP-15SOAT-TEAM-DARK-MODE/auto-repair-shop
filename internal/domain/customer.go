@@ -41,6 +41,19 @@ type (
 //go:generate mockery --name=CustomerRepository --with-expecter
 
 func CreateCustomerToDomain(name, email, password, customerType, document, companyName, phone string) (Customer, error) {
+	if strings.TrimSpace(name) == "" {
+		return Customer{}, ValidationError{Message: "name is required"}
+	}
+	if strings.TrimSpace(email) == "" {
+		return Customer{}, ValidationError{Message: "email is required"}
+	}
+	if len(strings.TrimSpace(password)) < 6 {
+		return Customer{}, ValidationError{Message: "password must be at least 6 characters"}
+	}
+	if strings.TrimSpace(phone) == "" {
+		return Customer{}, ValidationError{Message: "phone is required"}
+	}
+
 	if customerType == IndividualCustomerType {
 		cpf := sanitizeCPF(document)
 		if err := validateCPF(cpf); err != nil {
