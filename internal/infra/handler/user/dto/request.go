@@ -4,24 +4,16 @@ import (
 	"strings"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
-	"github.com/gin-gonic/gin"
 )
 
-type UserRequestDTO struct {
-	Name            string `json:"name"`
-	Email           string `json:"email"`
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirm_password"`
-}
-
-func MapBodyToUserRequestDTO(body *gin.Context) (*UserRequestDTO, error) {
-	var req UserRequestDTO
-	if err := body.ShouldBindJSON(&req); err != nil {
-		return nil, json.CheckJsonError(err)
+type (
+	UserRequestDTO struct {
+		Name            string `json:"name"`
+		Email           string `json:"email"`
+		Password        string `json:"password"`
+		ConfirmPassword string `json:"confirm_password"`
 	}
-	return &req, nil
-}
+)
 
 func MapUserRequestDTOToDomain(req *UserRequestDTO) *domain.User {
 	return domain.NewUser(req.Name, req.Email, req.Password)

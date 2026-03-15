@@ -20,7 +20,7 @@ func NewHandler(service domain.UserService) *Handler {
 
 func (h *Handler) CreateUser(c *gin.Context) {
 	// TODO: consider remove the dto folder and put the files in the same package-level, avoiding this public methods
-	req, err := dto.MapBodyToUserRequestDTO(c)
+	req, err := bind.BindGenericJSON[dto.UserRequestDTO](c)
 	if err != nil {
 		status, response := web.Error(err)
 		// TODO: add logging
