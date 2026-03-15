@@ -3,10 +3,10 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	_ "github.com/lib/pq"
 )
 
@@ -28,8 +28,10 @@ func Connect() *sql.DB {
 
 		conn, err := sql.Open("postgres", connStr)
 		if err != nil {
-			log.Fatal("failed to connect to database: ", err)
+			logger.Global().Fatal(fmt.Errorf("failed to connect to database: %w", err).Error())
 		}
+
+		//TODO: Define pool configuration
 
 		instance = conn
 	})

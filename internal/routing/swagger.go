@@ -3,11 +3,10 @@ package routing
 import (
 	"net/http"
 
+	api "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/docs"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/api"
 )
 
 func mountSwaggerUI(router *gin.Engine) {

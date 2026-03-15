@@ -18,9 +18,10 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 
 	mountSwaggerUI(router)
 
-	router.GET("/ping", c.PingHandler.Ping)
+	router.GET("/ping", c.PingHandler.Ping())
 
-	router.POST("/v1/services", c.ServiceHandler.Create)
-
+	v1 := router.Group("/v1")
+	v1.POST("/auth/register", c.UserHandler.Create())
+	v1.POST("/services", c.WorkHandler.Create())
 	return router
 }
