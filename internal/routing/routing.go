@@ -20,5 +20,6 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 
 	router.GET("/ping", c.PingHandler.Ping)
 	router.POST("/v1/auth/register", c.UserHandler.CreateUser)
+	router.POST("/v1/auth/login", c.UserHandler.LoginUser)
 	return router
 }

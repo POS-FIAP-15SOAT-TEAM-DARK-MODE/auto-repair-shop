@@ -8,15 +8,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type User struct {
-	Id       string
-	Name     string
-	Email    string
-	Password string
-}
+type (
+	User struct {
+		Id       string
+		Name     string
+		Email    string
+		Password string
+	}
+
+	LoginResponse struct {
+		Token     string `json:"token"`
+		ExpiresIn int    `json:"expires_in"`
+	}
+)
 
 type UserService interface {
 	Create(req *User) (*User, error)
+	Login(user *User) (*LoginResponse, error)
 }
 
 type UserRepository interface {
