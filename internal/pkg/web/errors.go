@@ -29,7 +29,7 @@ func Error(err error) (int, errorResponse) {
 // getHTTPStatus determines the HTTP status code for a given error.
 func getHTTPStatus(err error) int {
 	switch {
-	case isBadRequestError(err):
+	case isBadRequestError(err), IsJoined(err):
 		return http.StatusBadRequest
 	case isInternalServerError(err):
 		return http.StatusInternalServerError
@@ -42,15 +42,32 @@ func getHTTPStatus(err error) int {
 	}
 }
 
+func IsJoined(err error) bool {
+	type unwrapper interface {
+		Unwrap() []error
+	}
+
+	var uw unwrapper
+	return errors.As(err, &uw)
+}
+
 // buildErrorMessages formats the error messages based on status code.
 func buildErrorMessages(err error, status int) ([]string, string) {
 	switch status {
 	case http.StatusBadRequest:
-		// For 4XX BadRequest and 5XX Internal, provide stack of errors.
+		// For 4XX BadRequest provide stack of errors.
 		return unwrapAll(err), ""
 	case http.StatusConflict, http.StatusUnprocessableEntity, http.StatusInternalServerError:
-		// For 409/422, return plain error message.
-		return nil, err.Error()
+		// For 409/422 and 5XX unwrap recursively and return the innermost (root cause) error message.
+		root := err
+		for {
+			unwrapped := errors.Unwrap(root)
+			if unwrapped == nil {
+				break
+			}
+			root = unwrapped
+		}
+		return nil, root.Error()
 	default:
 		// For any other case, generic error message.
 		return nil, "Internal Server Error"
@@ -58,13 +75,21 @@ func buildErrorMessages(err error, status int) ([]string, string) {
 }
 
 func isBadRequestError(err error) bool {
-	return errors.Is(err, domain.ErrPasswordDontMatch) ||
+	return errors.Is(err, domain.ErrUserPasswordDontMatch) ||
+		errors.Is(err, domain.ErrUserPasswordTooLong) ||
+		errors.Is(err, domain.ErrEmptyUserName) ||
+		errors.Is(err, domain.ErrEmptyUserEmail) ||
+		errors.Is(err, domain.ErrEmptyUserPassword) ||
+		errors.Is(err, domain.ErrUserPasswordTooShort) ||
+		errors.Is(err, domain.ErrEmptyWorkName) ||
+		errors.Is(err, domain.ErrWorkNameShorterThenRequired) ||
+		errors.Is(err, domain.ErrEmptyWorkDescription) ||
+		errors.Is(err, domain.ErrWorkDescriptionShorterThenRequired) ||
 		errors.Is(err, json.ErrJSONSyntax) ||
 		errors.Is(err, json.ErrJSONType) ||
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
 		errors.Is(err, json.ErrJSONEmptyBody) ||
-		errors.Is(err, json.ErrWrongPayloadFormat) ||
-		errors.Is(err, domain.ErrPasswordTooLong)
+		errors.Is(err, json.ErrWrongPayloadFormat)
 }
 
 func isInternalServerError(err error) bool {
@@ -79,7 +104,10 @@ func isConflictError(err error) bool {
 }
 
 func isUnprocessableEntityError(err error) bool {
-	return errors.Is(err, domain.ErrDataViolation)
+	return errors.Is(err, domain.ErrDataViolation) ||
+		errors.Is(err, domain.ErrWorkPriceLessThenOrEqualZero) ||
+		errors.Is(err, domain.ErrInvalidWorkPriceValue) ||
+		errors.Is(err, domain.ErrInvalidWorkStatusValue)
 }
 
 func unwrapAll(err error) []string {

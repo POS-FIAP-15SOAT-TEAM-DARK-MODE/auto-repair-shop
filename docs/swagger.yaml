@@ -65,6 +65,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/services:
+    post:
+      summary: Register a new Service
+      description: Endpoint to create a new service object.
+      tags:
+        - Service
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+      responses:
+        "201":
+          description: Successful created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateServiceResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
 components:
   schemas:
     UserRegisterRequest:
@@ -120,3 +143,58 @@ components:
           items:
             type: string
           description: List of validation/business error messages
+
+    CreateServiceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Service name
+          example: Alinhamento
+        description:
+          type: string
+          description: Description of the service being provided
+          example: Alinhamento completo das rodas do veículo
+        price:
+          type: string
+          description: Price as string, decimal allowed, no thousands separator
+          example: "199.00"
+        status:
+          type: string
+          description: Status of the service. Must be a valid service status enum string.
+          example: ACTIVE
+      required:
+        - name
+        - description
+        - price
+        - status
+
+    CreateServiceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Service ID
+          example: 272e933f-273e-4ef7-a38d-2ab1dd8c234c
+        name:
+          type: string
+          description: Service name
+          example: Alinhamento
+        description:
+          type: string
+          description: Description of the service being provided
+          example: Alinhamento completo das rodas do veículo
+        price:
+          type: string
+          description: Price as string, decimal allowed, no thousands separator
+          example: "199.00"
+        status:
+          type: string
+          description: Status of the service. Must be a valid service status enum string.
+          example: ACTIVE
+      required:
+      - id
+        - name
+        - description
+        - price
+        - status

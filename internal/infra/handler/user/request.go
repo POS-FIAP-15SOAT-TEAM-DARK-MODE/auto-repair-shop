@@ -1,4 +1,4 @@
-package dto
+package user
 
 import (
 	"strings"
@@ -8,28 +8,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserRequestDTO struct {
+type userRequestDTO struct {
 	Name            string `json:"name"`
 	Email           string `json:"email"`
 	Password        string `json:"password"`
 	ConfirmPassword string `json:"confirm_password"`
 }
 
-func MapBodyToUserRequestDTO(body *gin.Context) (*UserRequestDTO, error) {
-	var req UserRequestDTO
+func mapBodyToUserRequestDTO(body *gin.Context) (*userRequestDTO, error) {
+	var req userRequestDTO
 	if err := body.ShouldBindJSON(&req); err != nil {
 		return nil, json.CheckJsonError(err)
 	}
 	return &req, nil
 }
 
-func MapUserRequestDTOToDomain(req *UserRequestDTO) *domain.User {
+func mapUserRequestDTOToDomain(req *userRequestDTO) *domain.User {
 	return domain.NewUser(req.Name, req.Email, req.Password)
 }
 
-func (u *UserRequestDTO) Validate() error {
+func (u *userRequestDTO) Validate() error {
 	if strings.TrimSpace(u.Password) != strings.TrimSpace(u.ConfirmPassword) {
-		return domain.ErrPasswordDontMatch
+		return domain.ErrUserPasswordDontMatch
 	}
 	return nil
 }

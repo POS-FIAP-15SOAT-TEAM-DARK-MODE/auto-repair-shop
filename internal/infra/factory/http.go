@@ -2,36 +2,41 @@ package factory
 
 import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
-	pingSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/ping"
 	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
+
+	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
+	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
+	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
 )
 
 func HttpContainer() *container.HTTP {
 	return &container.HTTP{
 		PingHandler: newPingHandler(),
 		UserHandler: newUserHandler(),
+		WorkHandler: newWorkHandler(),
 	}
 }
 
-func newPingHandler() *pingHandler.Handler {
-	pingService := pingSvc.Service()
-	return pingHandler.NewHandler(pingService)
+func newPingHandler() container.PingHttpHandler {
+	return pingHandler.HttpHandler()
 }
 
-func newUserHandler() *userHandler.Handler {
-	dbConn := db.Connect(&db.Config{
-		PostgresUser:     env.GetString("POSTGRES_USER", "postgres"),
-		PostgresPassword: env.GetString("POSTGRES_PASSWORD", "postgres"),
-		PostgresHost:     env.GetString("POSTGRES_HOST", "localhost"),
-		PostgresPort:     env.GetString("POSTGRES_PORT", "5432"),
-		PostgresDB:       env.GetString("POSTGRES_DB", "auto_repair_shop"),
-	})
-	userRepository := userRepo.NewSqlxUserRepository(dbConn)
-	userService := userSvc.Service(userRepository)
-	return userHandler.NewHandler(userService)
+func newUserHandler() container.UserHttpHandler {
+	db := postgres.Connect()
+	uow := postgres.NewTransactionalUoW(db)
+	userRepository := userRepo.Repository()
+	userService := userSvc.Service(uow, userRepository)
+	return userHandler.HttpHandler(userService)
+}
+
+func newWorkHandler() container.WorkHttpHandler {
+	db := postgres.Connect()
+	uow := postgres.NewTransactionalUoW(db)
+	repo := workRepo.Repository()
+	svc := workSvc.Service(uow, repo)
+	return workHandler.HttpHandler(svc)
 }
