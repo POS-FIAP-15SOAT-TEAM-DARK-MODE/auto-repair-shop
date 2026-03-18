@@ -27,6 +27,7 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 	v1.POST("/customers", c.CustomerHandler.Create())
 
 	v1.POST("/services", c.WorkHandler.Create())
+	v1.GET("/services", c.WorkHandler.List())
 
 	return router
 }

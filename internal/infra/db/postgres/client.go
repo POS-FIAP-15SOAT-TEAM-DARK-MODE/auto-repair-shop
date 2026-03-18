@@ -8,6 +8,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 var (
@@ -26,12 +27,22 @@ func Connect() *sql.DB {
 			env.GetString("POSTGRES_DB", "autorepairshop"),
 		)
 
+		logger.Global().Debug("Database conn str", zap.String("value", connStr))
 		conn, err := sql.Open("postgres", connStr)
 		if err != nil {
-			logger.Global().Fatal(fmt.Errorf("failed to connect to database: %w", err).Error())
+			if conn != nil {
+				_ = conn.Close()
+			}
+			logger.Global().Fatal("failed to connect to database: ", zap.Error(err))
+			return
 		}
 
-		//TODO: Define pool configuration
+		if pingErr := conn.Ping(); pingErr != nil {
+			_ = conn.Close()
+			logger.Global().Fatal("failed to ping database: ", zap.Error(pingErr))
+		}
+
+		// TODO: Define pool configuration
 
 		instance = conn
 	})

@@ -145,6 +145,46 @@ paths:
         "400":
           description: Invalid Body Content
 
+    get:
+      summary: List Services
+      description: List registered services with pagination and optional status filter.
+      tags:
+        - Service
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based).
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          description: Filter services by status.
+      responses:
+        "200":
+          description: Successful list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListServicesResponse'
+        "500":
+          description: Internal Server Error
+
 components:
   schemas:
     UserRegisterRequest:
@@ -313,8 +353,33 @@ components:
           description: Status of the service. Must be a valid service status enum string.
           example: ACTIVE
       required:
-      - id
+        - id
         - name
         - description
         - price
         - status
+    ListServicesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateServiceResponse'
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+      required:
+        - items
+        - totalItems
+        - totalPages
+        - pageSize
+        - page

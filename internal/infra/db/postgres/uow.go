@@ -81,3 +81,8 @@ func GetTransaction(ctx context.Context) (*sql.Tx, error) {
 	}
 	return tx, nil
 }
+
+func GetOneTimeTransaction(ctx context.Context) (*sql.DB, error) {
+	db := Connect()
+	return db, nil
+}

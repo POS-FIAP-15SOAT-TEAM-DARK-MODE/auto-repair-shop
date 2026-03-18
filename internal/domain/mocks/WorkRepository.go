@@ -69,6 +69,100 @@ func (_c *WorkRepository_Save_Call) RunAndReturn(run func(context.Context, *doma
 	return _c
 }
 
+// Search provides a mock function with given fields: _a0, _a1
+func (_m *WorkRepository) Search(_a0 context.Context, _a1 *domain.SearchWorkParams) ([]domain.Work, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Search")
+	}
+
+	var r0 []domain.Work
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchWorkParams) ([]domain.Work, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]domain.Work)
+	}
+	if ret.Get(1) != nil {
+		r1 = ret.Get(1).(error)
+	}
+	return r0, r1
+}
+
+// WorkRepository_Search_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Search'
+type WorkRepository_Search_Call struct {
+	*mock.Call
+}
+
+func (_e *WorkRepository_Expecter) Search(_a0 interface{}, _a1 interface{}) *WorkRepository_Search_Call {
+	return &WorkRepository_Search_Call{Call: _e.mock.On("Search", _a0, _a1)}
+}
+
+func (_c *WorkRepository_Search_Call) Run(run func(_a0 context.Context, _a1 *domain.SearchWorkParams)) *WorkRepository_Search_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SearchWorkParams))
+	})
+	return _c
+}
+
+func (_c *WorkRepository_Search_Call) Return(_a0 []domain.Work, _a1 error) *WorkRepository_Search_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *WorkRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.SearchWorkParams) ([]domain.Work, error)) *WorkRepository_Search_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Count provides a mock function with given fields: _a0, _a1
+func (_m *WorkRepository) Count(_a0 context.Context, _a1 *domain.SearchWorkParams) (int64, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Count")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchWorkParams) (int64, error)); ok {
+		return rf(_a0, _a1)
+	}
+	r0 = ret.Get(0).(int64)
+	if ret.Get(1) != nil {
+		r1 = ret.Get(1).(error)
+	}
+	return r0, r1
+}
+
+// WorkRepository_Count_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Count'
+type WorkRepository_Count_Call struct {
+	*mock.Call
+}
+
+func (_e *WorkRepository_Expecter) Count(_a0 interface{}, _a1 interface{}) *WorkRepository_Count_Call {
+	return &WorkRepository_Count_Call{Call: _e.mock.On("Count", _a0, _a1)}
+}
+
+func (_c *WorkRepository_Count_Call) Run(run func(_a0 context.Context, _a1 *domain.SearchWorkParams)) *WorkRepository_Count_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SearchWorkParams))
+	})
+	return _c
+}
+
+func (_c *WorkRepository_Count_Call) Return(_a0 int64, _a1 error) *WorkRepository_Count_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *WorkRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.SearchWorkParams) (int64, error)) *WorkRepository_Count_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewWorkRepository creates a new instance of WorkRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewWorkRepository(t interface {

@@ -18,6 +18,7 @@ type CustomerHttpHandler interface {
 
 type WorkHttpHandler interface {
 	Create() gin.HandlerFunc
+	List() gin.HandlerFunc
 }
 
 type HTTP struct {

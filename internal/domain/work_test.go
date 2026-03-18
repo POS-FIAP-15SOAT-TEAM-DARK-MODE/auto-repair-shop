@@ -178,3 +178,40 @@ func TestValidWorkStatusStringValue(t *testing.T) {
 		})
 	}
 }
+
+func TestNewWork(t *testing.T) {
+	t.Run("valid inputs create work with uuid", func(t *testing.T) {
+		w, err := domain.NewWork("Oil Change", "Complete oil change", "49.99", domain.ACTIVE)
+		assert.NoError(t, err)
+		assert.NotNil(t, w)
+		assert.NotEmpty(t, w.ID)
+		assert.Equal(t, "Oil Change", w.Name)
+		assert.Equal(t, "Complete oil change", w.Description)
+		assert.Equal(t, domain.ACTIVE, w.Status)
+		assert.True(t, w.Price.IsPositive())
+	})
+
+	t.Run("invalid price returns error", func(t *testing.T) {
+		w, err := domain.NewWork("Oil Change", "Complete oil change", "not-a-number", domain.ACTIVE)
+		assert.Error(t, err)
+		assert.Nil(t, w)
+	})
+}
+
+func TestListWorkParams_SearchWorkParams(t *testing.T) {
+	t.Run("maps limit offset and status correctly", func(t *testing.T) {
+		params := domain.ListWorkParams{Page: 3, PageSize: 20, Status: "ACTIVE"}
+		sp := params.SearchWorkParams()
+		assert.Equal(t, int64(20), sp.Limit)
+		assert.Equal(t, int64(40), sp.Offset)
+		assert.Equal(t, "ACTIVE", sp.Status)
+	})
+
+	t.Run("page 1 produces zero offset", func(t *testing.T) {
+		params := domain.ListWorkParams{Page: 1, PageSize: 10, Status: ""}
+		sp := params.SearchWorkParams()
+		assert.Equal(t, int64(10), sp.Limit)
+		assert.Equal(t, int64(0), sp.Offset)
+		assert.Equal(t, "", sp.Status)
+	})
+}

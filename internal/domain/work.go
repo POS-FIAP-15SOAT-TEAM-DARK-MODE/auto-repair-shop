@@ -12,11 +12,34 @@ import (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=WorkService --with-expecter
 type WorkService interface {
 	Create(context.Context, *Work) error
+	List(context.Context, *ListWorkParams) (*PaginatorResponse[Work], error)
+}
+
+type ListWorkParams struct {
+	PageSize int64
+	Page     int64
+	Status   string
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=WorkRepository --with-expecter
 type WorkRepository interface {
 	Save(context.Context, *Work) error
+	Search(context.Context, *SearchWorkParams) ([]Work, error)
+	Count(context.Context, *SearchWorkParams) (int64, error)
+}
+
+type SearchWorkParams struct {
+	Limit  int64
+	Offset int64
+	Status string
+}
+
+func (l ListWorkParams) SearchWorkParams() *SearchWorkParams {
+	return &SearchWorkParams{
+		Limit:  l.PageSize,
+		Offset: (l.Page - 1) * l.PageSize,
+		Status: l.Status,
+	}
 }
 
 const (

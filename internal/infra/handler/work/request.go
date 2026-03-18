@@ -2,6 +2,7 @@ package work
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -58,4 +59,33 @@ func (c *createWorkReqDTO) Validate() error {
 
 func (c *createWorkReqDTO) MapToDomain() (*domain.Work, error) {
 	return domain.NewWork(c.Name, c.Description, c.Price, domain.StringToWorkStatus(c.Status))
+}
+
+func mapListParamsToDomain(c *gin.Context) *domain.ListWorkParams {
+	page := int64(1)
+	pageSize := int64(10)
+	var status string
+
+	if p := c.Query("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = int64(v)
+		}
+	}
+
+	if ps := c.Query("pageSize"); ps != "" {
+		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
+			pageSize = int64(v)
+		}
+	}
+
+	status = c.Query("status")
+	if err := domain.ValidWorkStatusStringValue(status); status != "" && err != nil {
+		status = ""
+	}
+
+	return &domain.ListWorkParams{
+		Page:     page,
+		PageSize: pageSize,
+		Status:   status,
+	}
 }

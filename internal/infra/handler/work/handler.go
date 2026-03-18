@@ -75,3 +75,27 @@ func (h *handler) Create() gin.HandlerFunc {
 		c.JSON(http.StatusCreated, mapResponseDTOFromDomain(body))
 	}
 }
+
+func (h *handler) List() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		params := mapListParamsToDomain(c)
+		ctx := c.Request.Context()
+
+		logger.Of(ctx).Debug("list request", zap.Any("params", params))
+		response, err := h.svc.List(ctx, params)
+		if err != nil {
+			status, resp := web.Error(err)
+			logger.Of(ctx).Error(err)
+			logger.Of(ctx).Debug("Work list failed in service layer",
+				zap.String("operation", "list_work"),
+				zap.Error(err),
+				zap.String("entity", "work"),
+			)
+			c.JSON(status, resp)
+			return
+		}
+
+		logger.Of(ctx).Debug("list response", zap.Any("service", response))
+		c.JSON(http.StatusCreated, response)
+	}
+}
