@@ -75,7 +75,9 @@ func buildErrorMessages(err error, status int) ([]string, string) {
 }
 
 func isBadRequestError(err error) bool {
-	return errors.Is(err, domain.ErrUserPasswordDontMatch) ||
+	var validationErr domain.ValidationError
+	return errors.As(err, &validationErr) ||
+		errors.Is(err, domain.ErrUserPasswordDontMatch) ||
 		errors.Is(err, domain.ErrUserPasswordTooLong) ||
 		errors.Is(err, domain.ErrEmptyUserName) ||
 		errors.Is(err, domain.ErrEmptyUserEmail) ||

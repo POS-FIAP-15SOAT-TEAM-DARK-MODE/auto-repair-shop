@@ -11,6 +11,63 @@ servers:
         default: "8080"
         description: Port number for the server
 paths:
+  /v1/customers:
+    post:
+      summary: Create a customer
+      description: Creates a new customer along with a linked user account. Supports both individual (CPF) and company (CNPJ) types. Alphanumeric CNPJ format is supported (RFB 2243/2024).
+      tags:
+        - Customers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerRequest"
+      responses:
+        "201":
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCustomerResponse"
+        "400":
+          description: Invalid request body or document validation failed (CPF/CNPJ)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                errors:
+                  - invalid CPF
+        "409":
+          description: CPF, CNPJ or email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: resource already exists
+        "422":
+          description: Business rule violation (e.g. constraint failure)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: data violates business constraints
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: Internal Server Error
+
   /ping:
     get:
       summary: Ping the API
@@ -135,7 +192,7 @@ components:
         error:
           type: string
           description: Human-readable error message
-        status:
+        code:
           type: integer
           description: HTTP status code
         errors:
@@ -143,6 +200,69 @@ components:
           items:
             type: string
           description: List of validation/business error messages
+
+    CreateCustomerRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - type
+        - document
+        - phone
+      properties:
+        name:
+          type: string
+          example: João Silva
+        email:
+          type: string
+          format: email
+          example: joao@example.com
+        password:
+          type: string
+          minLength: 6
+          example: secret123
+        type:
+          type: string
+          enum: [INDIVIDUAL, COMPANY]
+          example: INDIVIDUAL
+        document:
+          type: string
+          description: CPF (e.g. 111.444.777-35) for INDIVIDUAL or CNPJ (e.g. 11.222.333/0001-81) for COMPANY. Alphanumeric CNPJ is also accepted (e.g. AB.CDE.FGH/0001-95).
+          example: "111.444.777-35"
+        company_name:
+          type: string
+          description: Required when type is COMPANY.
+          example: Empresa SA
+        phone:
+          type: string
+          example: "11999999999"
+
+    CreateCustomerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        name:
+          type: string
+          example: João Silva
+        email:
+          type: string
+          example: joao@example.com
+        type:
+          type: string
+          example: INDIVIDUAL
+        document:
+          type: string
+          example: "11144477735"
+        company_name:
+          type: string
+          example: ""
+        phone:
+          type: string
+          example: "11999999999"
 
     CreateServiceRequest:
       type: object

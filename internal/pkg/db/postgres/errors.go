@@ -20,7 +20,6 @@ const (
 	pgSerializationFailure pq.ErrorCode = "40001"
 	pgDeadlockDetected     pq.ErrorCode = "40P01"
 	pgExclusionViolation   pq.ErrorCode = "23P01"
-	// Add more codes if needed for further business rules.
 )
 
 // Error maps PostgreSQL-specific errors to domain errors.

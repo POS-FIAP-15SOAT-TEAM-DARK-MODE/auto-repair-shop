@@ -3,9 +3,12 @@ package factory
 import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
+	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
+	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
 	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
 
 	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
@@ -15,9 +18,10 @@ import (
 
 func HttpContainer() *container.HTTP {
 	return &container.HTTP{
-		PingHandler: newPingHandler(),
-		UserHandler: newUserHandler(),
-		WorkHandler: newWorkHandler(),
+		PingHandler:     newPingHandler(),
+		UserHandler:     newUserHandler(),
+		CustomerHandler: newCustomerHandler(),
+		WorkHandler:     newWorkHandler(),
 	}
 }
 
@@ -31,6 +35,15 @@ func newUserHandler() container.UserHttpHandler {
 	userRepository := userRepo.Repository()
 	userService := userSvc.Service(uow, userRepository)
 	return userHandler.HttpHandler(userService)
+}
+
+func newCustomerHandler() container.CustomerHttpHandler {
+	db := postgres.Connect()
+	uow := postgres.NewTransactionalUoW(db)
+	userRepository := userRepo.Repository()
+	customerRepository := customerRepo.Repository()
+
+	return customerHandler.NewHandler(customerSvc.Service(uow, userRepository, customerRepository))
 }
 
 func newWorkHandler() container.WorkHttpHandler {

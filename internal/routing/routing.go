@@ -21,7 +21,12 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 	router.GET("/ping", c.PingHandler.Ping())
 
 	v1 := router.Group("/v1")
+
 	v1.POST("/auth/register", c.UserHandler.Create())
+
+	v1.POST("/customers", c.CustomerHandler.Create())
+
 	v1.POST("/services", c.WorkHandler.Create())
+
 	return router
 }

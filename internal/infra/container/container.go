@@ -12,12 +12,17 @@ type UserHttpHandler interface {
 	Create() gin.HandlerFunc
 }
 
+type CustomerHttpHandler interface {
+	Create() gin.HandlerFunc
+}
+
 type WorkHttpHandler interface {
 	Create() gin.HandlerFunc
 }
 
 type HTTP struct {
-	PingHandler PingHttpHandler
-	UserHandler UserHttpHandler
-	WorkHandler WorkHttpHandler
+	PingHandler     PingHttpHandler
+	UserHandler     UserHttpHandler
+	CustomerHandler CustomerHttpHandler
+	WorkHandler     WorkHttpHandler
 }
