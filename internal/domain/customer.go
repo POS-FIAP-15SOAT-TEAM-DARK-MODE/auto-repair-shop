@@ -7,18 +7,20 @@ import (
 	"unicode"
 )
 
+type CustomerType string
+
 const (
-	IndividualCustomerType  = "INDIVIDUAL"
-	CompanyCustomerType     = "COMPANY"
-	invalidCPFErrorMessage  = "invalid CPF"
-	invalidCNPJErrorMessage = "invalid CNPJ"
+	IndividualCustomerType CustomerType = "INDIVIDUAL"
+	CompanyCustomerType    CustomerType = "COMPANY"
 )
 
+//go:generate mockery --name=CustomerService --with-expecter
+//go:generate mockery --name=CustomerRepository --with-expecter
 type (
 	Customer struct {
 		ID          string
 		UserID      string
-		Type        string
+		Type        CustomerType
 		CPF         string
 		CNPJ        string
 		CompanyName string
@@ -35,16 +37,7 @@ type (
 	}
 )
 
-//go:generate mockery --name=CustomerService --with-expecter
-//go:generate mockery --name=CustomerRepository --with-expecter
-
-var (
-	ErrPhoneRequired       = errors.New("phone is required")
-	ErrCompanyNameRequired = errors.New("company_name is required for COMPANY type")
-	ErrInvalidCustomerType = errors.New("invalid customer type")
-)
-
-func CreateCustomerToDomain(name, email, password, customerType, document, companyName, phone string) (Customer, error) {
+func NewCustomer(name, email, password string, customerType CustomerType, document, companyName, phone string) (Customer, error) {
 	user, err := CreateUserToDomain(name, email, password)
 	if err != nil {
 		return Customer{}, err
@@ -131,7 +124,7 @@ func sanitizeCNPJ(doc string) string {
 // Rules: 11 digits, no all-same sequence, two check digits via weighted sum algorithm.
 func validateCPF(cpf string) error {
 	if len(cpf) != 11 {
-		return errors.New("CPF must have 11 digits")
+		return ErrCPFLength
 	}
 
 	allSame := true
@@ -142,7 +135,7 @@ func validateCPF(cpf string) error {
 		}
 	}
 	if allSame {
-		return errors.New(invalidCPFErrorMessage)
+		return ErrInvalidCPF
 	}
 
 	calcDigit := func(s string, length int) int {
@@ -158,10 +151,10 @@ func validateCPF(cpf string) error {
 	}
 
 	if calcDigit(cpf, 9) != int(cpf[9]-'0') {
-		return errors.New(invalidCPFErrorMessage)
+		return ErrInvalidCPF
 	}
 	if calcDigit(cpf, 10) != int(cpf[10]-'0') {
-		return errors.New(invalidCPFErrorMessage)
+		return ErrInvalidCPF
 	}
 
 	return nil
@@ -172,18 +165,18 @@ func validateCPF(cpf string) error {
 // Check digits (positions 13-14) must always be numeric.
 func validateCNPJ(cnpj string) error {
 	if len(cnpj) != 14 {
-		return errors.New("CNPJ must have 14 characters")
+		return ErrCNPJLength
 	}
 
 	// Check digits must be numeric
 	if cnpj[12] < '0' || cnpj[12] > '9' || cnpj[13] < '0' || cnpj[13] > '9' {
-		return errors.New(invalidCNPJErrorMessage)
+		return ErrInvalidCNPJ
 	}
 
 	// All characters must be valid alphanumeric (0-9 or A-Z)
 	for _, c := range cnpj {
 		if !((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')) {
-			return errors.New(invalidCNPJErrorMessage)
+			return ErrInvalidCNPJ
 		}
 	}
 
@@ -195,7 +188,7 @@ func validateCNPJ(cnpj string) error {
 		}
 	}
 	if allSame {
-		return errors.New(invalidCNPJErrorMessage)
+		return ErrInvalidCNPJ
 	}
 
 	cnpjCharValue := func(c byte) int {
@@ -221,10 +214,10 @@ func validateCNPJ(cnpj string) error {
 	weights2 := []int{6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2}
 
 	if calcDigit(cnpj, 12, weights1) != int(cnpj[12]-'0') {
-		return errors.New(invalidCNPJErrorMessage)
+		return ErrInvalidCNPJ
 	}
 	if calcDigit(cnpj, 13, weights2) != int(cnpj[13]-'0') {
-		return errors.New(invalidCNPJErrorMessage)
+		return ErrInvalidCNPJ
 	}
 
 	return nil

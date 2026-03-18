@@ -22,34 +22,22 @@ func (_m *UserService) EXPECT() *UserService_Expecter {
 	return &UserService_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: ctx, user
-func (_m *UserService) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
-	ret := _m.Called(ctx, user)
+// Create provides a mock function with given fields: ctx, req
+func (_m *UserService) Create(ctx context.Context, req *domain.User) error {
+	ret := _m.Called(ctx, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 *domain.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) (*domain.User, error)); ok {
-		return rf(ctx, user)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) *domain.User); ok {
-		r0 = rf(ctx, user)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) error); ok {
+		r0 = rf(ctx, req)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.User)
-		}
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.User) error); ok {
-		r1 = rf(ctx, user)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // UserService_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -59,24 +47,24 @@ type UserService_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - user *domain.User
-func (_e *UserService_Expecter) Create(ctx interface{}, user interface{}) *UserService_Create_Call {
-	return &UserService_Create_Call{Call: _e.mock.On("Create", ctx, user)}
+//   - req *domain.User
+func (_e *UserService_Expecter) Create(ctx interface{}, req interface{}) *UserService_Create_Call {
+	return &UserService_Create_Call{Call: _e.mock.On("Create", ctx, req)}
 }
 
-func (_c *UserService_Create_Call) Run(run func(ctx context.Context, user *domain.User)) *UserService_Create_Call {
+func (_c *UserService_Create_Call) Run(run func(ctx context.Context, req *domain.User)) *UserService_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*domain.User))
 	})
 	return _c
 }
 
-func (_c *UserService_Create_Call) Return(_a0 *domain.User, _a1 error) *UserService_Create_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *UserService_Create_Call) Return(_a0 error) *UserService_Create_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *UserService_Create_Call) RunAndReturn(run func(context.Context, *domain.User) (*domain.User, error)) *UserService_Create_Call {
+func (_c *UserService_Create_Call) RunAndReturn(run func(context.Context, *domain.User) error) *UserService_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

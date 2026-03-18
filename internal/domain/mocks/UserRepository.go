@@ -22,9 +22,9 @@ func (_m *UserRepository) EXPECT() *UserRepository_Expecter {
 	return &UserRepository_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: ctx, u
-func (_m *UserRepository) Create(ctx context.Context, u *domain.User) error {
-	ret := _m.Called(ctx, u)
+// Create provides a mock function with given fields: ctx, c
+func (_m *UserRepository) Create(ctx context.Context, c *domain.User) error {
+	ret := _m.Called(ctx, c)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -32,7 +32,7 @@ func (_m *UserRepository) Create(ctx context.Context, u *domain.User) error {
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) error); ok {
-		r0 = rf(ctx, u)
+		r0 = rf(ctx, c)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -47,12 +47,12 @@ type UserRepository_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - u *domain.User
-func (_e *UserRepository_Expecter) Create(ctx interface{}, u interface{}) *UserRepository_Create_Call {
-	return &UserRepository_Create_Call{Call: _e.mock.On("Create", ctx, u)}
+//   - c *domain.User
+func (_e *UserRepository_Expecter) Create(ctx interface{}, c interface{}) *UserRepository_Create_Call {
+	return &UserRepository_Create_Call{Call: _e.mock.On("Create", ctx, c)}
 }
 
-func (_c *UserRepository_Create_Call) Run(run func(ctx context.Context, u *domain.User)) *UserRepository_Create_Call {
+func (_c *UserRepository_Create_Call) Run(run func(ctx context.Context, c *domain.User)) *UserRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*domain.User))
 	})

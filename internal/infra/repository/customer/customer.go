@@ -6,23 +6,25 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	pkgdb "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 )
 
-type repository struct {
-	db pkgdb.Executor
-}
+type repository struct{}
 
-func Repository(ex pkgdb.Executor) *repository {
-	return &repository{db: ex}
+func Repository() *repository {
+	return &repository{}
 }
 
 func (r *repository) Create(ctx context.Context, customer *domain.Customer) error {
-	exec := pkgdb.ExtractExecutor(ctx, r.db)
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
 
-	_, err := exec.ExecContext(ctx, createCustomerQuery,
+	logger.Of(ctx).Debug("Executing query", zap.String("query", createCustomerQuery), zap.Any("params", customer))
+	_, err = tx.ExecContext(ctx, createCustomerQuery,
 		customer.ID,
 		customer.UserID,
 		customer.Type,
@@ -32,12 +34,12 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 		customer.Phone,
 	)
 	if err != nil {
-		logger.Error("customer repository: failed to create customer",
+		logger.Of(ctx).Warn("customer repository: failed to create customer",
 			zap.String("operation", "create_customer"),
 			zap.String("entity_id", customer.ID),
 			zap.Error(err),
 		)
-		return postgres.Error(err)
+		return pgPkg.Error(ctx, err)
 	}
 
 	return nil

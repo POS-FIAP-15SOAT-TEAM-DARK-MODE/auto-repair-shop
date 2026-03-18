@@ -10,13 +10,20 @@ import (
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	uowmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow/mocks"
 	svc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
 )
 
-// executes fn with the provided context — simulates a real transaction
-func runFn() func(context.Context, domain.TxFunc) error {
-	return func(ctx context.Context, fn domain.TxFunc) error {
-		return fn(ctx)
+// runAllSteps executes all UoW steps with the provided context — simulates a real transaction.
+func runAllSteps() func(context.Context, ...uow.Step) error {
+	return func(ctx context.Context, steps ...uow.Step) error {
+		for _, step := range steps {
+			if err := step(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 }
 
@@ -56,14 +63,14 @@ func validCompanyCustomer() domain.Customer {
 func TestService_Create_Individual_Success(t *testing.T) {
 	userRepo := domainmocks.NewUserRepository(t)
 	customerRepo := domainmocks.NewCustomerRepository(t)
-	transactor := domainmocks.NewTransactor(t)
+	executor := uowmocks.NewExecutor(t)
 
 	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
 	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
-	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).RunAndReturn(runFn())
+	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 
 	input := validIndividualCustomer()
-	err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), input)
+	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), input)
 
 	assert.NoError(t, err)
 }
@@ -71,13 +78,13 @@ func TestService_Create_Individual_Success(t *testing.T) {
 func TestService_Create_Company_Success(t *testing.T) {
 	userRepo := domainmocks.NewUserRepository(t)
 	customerRepo := domainmocks.NewCustomerRepository(t)
-	transactor := domainmocks.NewTransactor(t)
+	executor := uowmocks.NewExecutor(t)
 
 	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
 	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
-	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).RunAndReturn(runFn())
+	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 
-	err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validCompanyCustomer())
+	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), validCompanyCustomer())
 
 	assert.NoError(t, err)
 }
@@ -85,12 +92,12 @@ func TestService_Create_Company_Success(t *testing.T) {
 func TestService_Create_DuplicateEmail_ReturnsConflict(t *testing.T) {
 	userRepo := domainmocks.NewUserRepository(t)
 	customerRepo := domainmocks.NewCustomerRepository(t) // Create must NOT be called
-	transactor := domainmocks.NewTransactor(t)
+	executor := uowmocks.NewExecutor(t)
 
 	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(domain.ErrDataConflict)
-	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).RunAndReturn(runFn())
+	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 
-	err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
+	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
 
 	assert.ErrorIs(t, err, domain.ErrDataConflict)
 }
@@ -98,23 +105,23 @@ func TestService_Create_DuplicateEmail_ReturnsConflict(t *testing.T) {
 func TestService_Create_DuplicateCPF_ReturnsConflict(t *testing.T) {
 	userRepo := domainmocks.NewUserRepository(t)
 	customerRepo := domainmocks.NewCustomerRepository(t)
-	transactor := domainmocks.NewTransactor(t)
+	executor := uowmocks.NewExecutor(t)
 
 	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
 	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(domain.ErrDataConflict)
-	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).RunAndReturn(runFn())
+	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 
-	err := svc.Service(transactor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
+	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
 
 	assert.ErrorIs(t, err, domain.ErrDataConflict)
 }
 
 func TestService_Create_TransactionFailure_ReturnsError(t *testing.T) {
-	transactor := domainmocks.NewTransactor(t)
-	transactor.EXPECT().WithTransaction(mock.Anything, mock.Anything).
+	executor := uowmocks.NewExecutor(t)
+	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).
 		Return(errors.New("db connection lost"))
 
-	err := svc.Service(transactor, nil, nil).Create(context.Background(), validIndividualCustomer())
+	err := svc.Service(executor, nil, nil).Create(context.Background(), validIndividualCustomer())
 
 	assert.Error(t, err)
 }

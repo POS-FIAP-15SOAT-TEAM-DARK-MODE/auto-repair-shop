@@ -1,13 +1,28 @@
 package container
 
 import (
-	Customer "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
-	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
-	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
+	"github.com/gin-gonic/gin"
 )
 
+type PingHttpHandler interface {
+	Ping() gin.HandlerFunc
+}
+
+type UserHttpHandler interface {
+	Create() gin.HandlerFunc
+}
+
+type CustomerHttpHandler interface {
+	Create() gin.HandlerFunc
+}
+
+type WorkHttpHandler interface {
+	Create() gin.HandlerFunc
+}
+
 type HTTP struct {
-	PingHandler     *pingHandler.Handler
-	UserHandler     *userHandler.Handler
-	CustomerHandler *Customer.Handler
+	PingHandler     PingHttpHandler
+	UserHandler     UserHttpHandler
+	CustomerHandler CustomerHttpHandler
+	WorkHandler     WorkHttpHandler
 }

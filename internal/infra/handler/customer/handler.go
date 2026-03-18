@@ -11,56 +11,59 @@ import (
 	"go.uber.org/zap"
 )
 
-type Handler struct {
+type handler struct {
 	service domain.CustomerService
 }
 
-func NewHandler(service domain.CustomerService) *Handler {
-	return &Handler{
+func NewHandler(service domain.CustomerService) *handler {
+	return &handler{
 		service: service,
 	}
 }
 
-func (h *Handler) Create(c *gin.Context) {
-	var body CreateCustomerRequest
+func (h *handler) Create() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		var body createCustomerRequest
 
-	if err := c.ShouldBindJSON(&body); err != nil {
-		jsonErr := pkgjson.CheckJsonError(err)
-		logger.Warn("create customer: invalid JSON payload",
-			zap.String("operation", "create_customer"),
-			zap.String("error", jsonErr.Error()),
-		)
-		status, response := web.Error(jsonErr)
-		c.JSON(status, response)
-		return
+		if err := c.ShouldBindJSON(&body); err != nil {
+			jsonErr := pkgjson.CheckJsonError(err)
+			logger.Of(ctx).Warn("create customer: invalid JSON payload",
+				zap.String("operation", "create_customer"),
+				zap.String("error", jsonErr.Error()),
+			)
+			status, response := web.Error(jsonErr)
+			c.JSON(status, response)
+			return
+		}
+
+		if err := body.validate(); err != nil {
+			logger.Of(ctx).Warn("create customer: validation failed",
+				zap.String("operation", "create_customer"),
+				zap.String("error", err.Error()),
+			)
+			status, response := web.Error(err)
+			c.JSON(status, response)
+			return
+		}
+
+		customer, err := body.Domain()
+		if err != nil {
+			logger.Of(ctx).Warn("create customer: domain mapping failed",
+				zap.String("operation", "create_customer"),
+				zap.String("error", err.Error()),
+			)
+			status, response := web.Error(err)
+			c.JSON(status, response)
+			return
+		}
+
+		if err = h.service.Create(ctx, customer); err != nil {
+			status, response := web.Error(err)
+			c.JSON(status, response)
+			return
+		}
+
+		c.JSON(http.StatusCreated, toResponse(customer))
 	}
-
-	if err := body.validate(); err != nil {
-		logger.Warn("create customer: validation failed",
-			zap.String("operation", "create_customer"),
-			zap.String("error", err.Error()),
-		)
-		status, response := web.Error(err)
-		c.JSON(status, response)
-		return
-	}
-
-	customer, err := body.toDomain()
-	if err != nil {
-		logger.Warn("create customer: domain mapping failed",
-			zap.String("operation", "create_customer"),
-			zap.String("error", err.Error()),
-		)
-		status, response := web.Error(err)
-		c.JSON(status, response)
-		return
-	}
-
-	if err = h.service.Create(c.Request.Context(), customer); err != nil {
-		status, response := web.Error(err)
-		c.JSON(status, response)
-		return
-	}
-
-	c.JSON(http.StatusCreated, toResponse(customer))
 }

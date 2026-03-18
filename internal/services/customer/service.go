@@ -7,35 +7,38 @@ import (
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 )
 
 type service struct {
-	transactor   domain.Transactor
+	uow          uow.Executor
 	userRepo     domain.UserRepository
 	customerRepo domain.CustomerRepository
 }
 
-func Service(transactor domain.Transactor, userRepo domain.UserRepository, customerRepo domain.CustomerRepository) *service {
+func Service(uow uow.Executor, userRepo domain.UserRepository, customerRepo domain.CustomerRepository) *service {
 	return &service{
-		transactor:   transactor,
+		uow:          uow,
 		userRepo:     userRepo,
 		customerRepo: customerRepo,
 	}
 }
 
 func (s *service) Create(ctx context.Context, customer domain.Customer) error {
-	err := s.transactor.WithTransaction(ctx, func(txCtx context.Context) error {
-		if err := s.userRepo.Create(txCtx, customer.User); err != nil {
-			return err
-		}
-		return s.customerRepo.Create(txCtx, &customer)
-	})
+	err := s.uow.Execute(ctx,
+		func(txCtx context.Context) error {
+			return s.userRepo.Create(txCtx, customer.User)
+		},
+		func(txCtx context.Context) error {
+			return s.customerRepo.Create(txCtx, &customer)
+		},
+	)
 
 	if err != nil {
 		return err
 	}
 
-	logger.Info("customer created",
+	logger.Of(ctx).Info("customer created",
 		zap.String("operation", "create_customer"),
 		zap.String("entity_id", customer.ID),
 	)
