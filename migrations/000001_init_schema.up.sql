@@ -189,4 +189,4 @@ INSERT INTO "role" (id, name) VALUES ('2', 'MECHANIC');
 
 INSERT INTO "role" (id, name) VALUES ('3', 'ATTENDANT');
 
-INSERT INTO "role" (id, name) VALUES ('4', 'CLIENT');
+INSERT INTO "role" (id, name) VALUES ('4', 'CUSTOMER');

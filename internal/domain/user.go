@@ -13,7 +13,7 @@ import (
 )
 
 type User struct {
-	Id       string
+	ID       string
 	Name     string
 	Email    string
 	Password string
@@ -31,32 +31,41 @@ type UserRepository interface {
 
 func NewUser(name, email, password string) *User {
 	return &User{
-		Id:       uuid.New().String(),
+		ID:       uuid.New().String(),
 		Name:     name,
 		Email:    email,
 		Password: password,
 	}
 }
 
+func CreateUserToDomain(name, email, password string) (*User, error) {
+	u := NewUser(name, email, password)
+	if err := u.Validate(); err != nil {
+		return nil, err
+	}
+	if err := u.HashPassword(context.Background()); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 func (u *User) Validate() error {
-	var err []error
+	var errs []error
 	if strings.TrimSpace(u.Name) == "" {
-		err = append(err, ErrEmptyUserName)
+		errs = append(errs, ErrEmptyUserName)
 	}
-
 	if strings.TrimSpace(u.Email) == "" {
-		err = append(err, ErrEmptyUserEmail)
+		errs = append(errs, ErrEmptyUserEmail)
 	}
-
 	if strings.TrimSpace(u.Password) == "" {
-		err = append(err, ErrEmptyUserPassword)
+		errs = append(errs, ErrEmptyUserPassword)
 	}
 
 	// TODO: Should have a minimun length for Password and Name? If true, add the errors.
 	// TODO: Should validate e-mail format and add errors.
 
-	if len(err) > 0 {
-		return errors.Join(err...)
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 
 	return nil
@@ -74,7 +83,6 @@ func (u *User) HashPassword(ctx context.Context) error {
 		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
 			return ErrUserPasswordTooLong
 		}
-
 		if errors.Is(err, bcrypt.ErrHashTooShort) {
 			return ErrUserPasswordTooShort
 		}

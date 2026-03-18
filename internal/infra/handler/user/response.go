@@ -10,7 +10,7 @@ type userResponseDTO struct {
 
 func mapUserToResponseDTO(user *domain.User) userResponseDTO {
 	return userResponseDTO{
-		Id:    user.Id,
+		Id:    user.ID,
 		Name:  user.Name,
 		Email: user.Email,
 	}
