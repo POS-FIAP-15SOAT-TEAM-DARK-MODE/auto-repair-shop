@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,31 +17,31 @@ type service struct {
 	repo      domain.UserRepository
 	expiresIn time.Duration
 	secretKey string
-	uow  uow.Executor
+	uow       uow.Executor
 }
 
 func Service(uow uow.Executor, repo domain.UserRepository, expiresIn time.Duration, secretKey string) domain.UserService {
 	return &service{
-		uow: uow,
-		repo: repo,
+		uow:       uow,
+		repo:      repo,
 		expiresIn: expiresIn,
 		secretKey: secretKey,
 	}
 }
 
-func (s *service) Login(user *domain.User) (*domain.LoginResponse, error) {
-	stored, err := s.validateUserCredentials(user)
+func (s *service) Login(ctx context.Context, user *domain.User) (*domain.LoginResponse, error) {
+	stored, err := s.validateUserCredentials(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	roles, err := s.repo.GetRolesById(stored.Id)
+	roles, err := s.repo.GetRolesById(ctx, stored.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	expiresAt := time.Now().Add(s.expiresIn)
-	token, err := auth.GenerateToken(s.secretKey, stored.Id, roles, expiresAt)
+	token, err := auth.GenerateToken(s.secretKey, stored.ID, roles, expiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,8 @@ func (s *service) createRepositoryStep(user *domain.User) func(context.Context) 
 	}
 }
 
-func (s *service) validateUserCredentials(user *domain.User) (*domain.User, error) {
-	stored, err := s.repo.GetByEmail(user.Email)
+func (s *service) validateUserCredentials(ctx context.Context, user *domain.User) (*domain.User, error) {
+	stored, err := s.repo.GetByEmail(ctx, user.Email)
 	if err != nil {
 		return nil, err
 	}
