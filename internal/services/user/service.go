@@ -16,16 +16,14 @@ import (
 type service struct {
 	repo      domain.UserRepository
 	expiresIn time.Duration
-	secretKey string
 	uow       uow.Executor
 }
 
-func Service(uow uow.Executor, repo domain.UserRepository, expiresIn time.Duration, secretKey string) domain.UserService {
+func Service(uow uow.Executor, repo domain.UserRepository, expiresIn time.Duration) domain.UserService {
 	return &service{
 		uow:       uow,
 		repo:      repo,
 		expiresIn: expiresIn,
-		secretKey: secretKey,
 	}
 }
 
@@ -41,7 +39,7 @@ func (s *service) Login(ctx context.Context, user *domain.User) (*domain.LoginRe
 	}
 
 	expiresAt := time.Now().Add(s.expiresIn)
-	token, err := auth.GenerateToken(s.secretKey, stored.ID, roles, expiresAt)
+	token, err := auth.GenerateToken(stored.ID, roles, expiresAt)
 	if err != nil {
 		return nil, err
 	}

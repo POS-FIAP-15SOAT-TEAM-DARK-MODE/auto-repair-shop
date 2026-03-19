@@ -10,9 +10,9 @@ import (
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
 	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
 	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 
 	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
 	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
@@ -37,10 +37,9 @@ func newUserHandler() container.UserHttpHandler {
 	uow := postgres.NewTransactionalUoW(db)
 
 	expiresIn := env.GetTimeDuration("JWT_EXPIRES_IN", 24*time.Hour)
-	secretKey := env.GetString("JWT_SECRET", "")
 
 	userRepository := userRepo.Repository()
-	userService := userSvc.Service(uow, userRepository, expiresIn, secretKey)
+	userService := userSvc.Service(uow, userRepository, expiresIn)
 	return userHandler.HttpHandler(userService)
 }
 

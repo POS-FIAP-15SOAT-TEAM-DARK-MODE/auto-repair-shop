@@ -3,6 +3,9 @@ package auth
 import (
 	"time"
 
+	"sync"
+
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -12,7 +15,12 @@ type UserClaims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(secretKey, userId string, roles []string, expiresAt time.Time) (string, error) {
+var (
+	once      sync.Once
+	secretKey string
+)
+
+func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, error) {
 	claims := UserClaims{
 		UserId: userId,
 		Roles:  roles,
@@ -23,5 +31,12 @@ func GenerateToken(secretKey, userId string, roles []string, expiresAt time.Time
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secretKey))
+	return token.SignedString(getSecretKey())
+}
+
+func getSecretKey() []byte {
+	once.Do(func() {
+		secretKey = env.GetString("JWT_SECRET", "")
+	})
+	return []byte(secretKey)
 }

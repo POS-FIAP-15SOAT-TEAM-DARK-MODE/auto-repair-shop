@@ -103,7 +103,7 @@ func TestService_Login(t *testing.T) {
 				mockRepo = tt.mockRepo(t)
 			}
 
-			service := Service(nil, mockRepo, 24*time.Hour, "super-secret-key")
+			service := Service(nil, mockRepo, 24*time.Hour)
 			_, err := service.Login(context.Background(), tt.user)
 			if tt.expectedError != nil {
 				assert.Error(t, err)
