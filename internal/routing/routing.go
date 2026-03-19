@@ -23,7 +23,7 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 	v1 := router.Group("/v1")
 
 	v1.POST("/auth/register", c.UserHandler.Create())
-	v1.POST("/auth/login", c.UserHandler.LoginUser())
+	v1.POST("/auth/login", c.UserHandler.Login())
 
 	v1.POST("/customers", c.CustomerHandler.Create())
 
