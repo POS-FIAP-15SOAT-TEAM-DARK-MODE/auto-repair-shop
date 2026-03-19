@@ -1,16 +1,16 @@
-package dto
+package user
 
 import "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 
-type UserResponseDTO struct {
+type userResponseDTO struct {
 	Id    string `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
-func MapUserToResponseDTO(user *domain.User) UserResponseDTO {
-	return UserResponseDTO{
-		Id:    user.Id,
+func mapUserToResponseDTO(user *domain.User) userResponseDTO {
+	return userResponseDTO{
+		Id:    user.ID,
 		Name:  user.Name,
 		Email: user.Email,
 	}

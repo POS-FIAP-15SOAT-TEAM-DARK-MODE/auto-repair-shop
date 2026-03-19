@@ -43,6 +43,23 @@ internal/
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/)
 - PostgreSQL (provided via Docker Compose)
 
+## Contributing
+To contribute with the project you should install pre-commit:
+
+```bash
+# 1. Make sure you have Python installed
+python3 --version # or (on Windows) python --version
+
+# 1.1 If you do not have Python installed:
+brew install python # or (on Windows) download from https://www.python.org/downloads/
+
+# 2. Install pre-commit using pip
+pip install pre-commit
+
+# 3. Install the pre-commit hooks for this repository
+pre-commit install
+```
+
 ## Getting Started
 
 ### Setup with Docker

@@ -1,9 +1,14 @@
 package user
 
 import (
+	"context"
+	"fmt"
+
 	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -12,10 +17,16 @@ type service struct {
 	repo      domain.UserRepository
 	expiresIn time.Duration
 	secretKey string
+	uow  uow.Executor
 }
 
-func Service(repo domain.UserRepository, expiresIn time.Duration, secretKey string) domain.UserService {
-	return &service{repo: repo, expiresIn: expiresIn, secretKey: secretKey}
+func Service(uow uow.Executor, repo domain.UserRepository, expiresIn time.Duration, secretKey string) domain.UserService {
+	return &service{
+		uow: uow,
+		repo: repo,
+		expiresIn: expiresIn,
+		secretKey: secretKey,
+	}
 }
 
 func (s *service) Login(user *domain.User) (*domain.LoginResponse, error) {
@@ -41,17 +52,33 @@ func (s *service) Login(user *domain.User) (*domain.LoginResponse, error) {
 	}, nil
 }
 
-func (s *service) Create(user *domain.User) (*domain.User, error) {
+func (s *service) Create(ctx context.Context, user *domain.User) error {
 	if err := user.Validate(); err != nil {
-		// TODO: add logging
-		return nil, err
+		err = fmt.Errorf("user validation failed: %w", err)
+		logger.Of(ctx).Error(err)
+		return err
 	}
-	if err := user.HashPassword(); err != nil {
-		// TODO: add logging
-		return nil, err
+	if err := user.HashPassword(ctx); err != nil {
+		err = fmt.Errorf("user password hashing failed: %w", err)
+		logger.Of(ctx).Error(err)
+		return err
 	}
 
-	return s.repo.Create(user)
+	if err := s.uow.Execute(ctx, s.createRepositoryStep(user)); err != nil {
+		logger.Of(ctx).Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) createRepositoryStep(user *domain.User) func(context.Context) error {
+	return func(ctx context.Context) error {
+		if err := s.repo.Create(ctx, user); err != nil {
+			return fmt.Errorf("repository.Create failed: %w", err)
+		}
+		return nil
+	}
 }
 
 func (s *service) validateUserCredentials(user *domain.User) (*domain.User, error) {

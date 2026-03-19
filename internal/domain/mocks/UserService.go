@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	domain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -12,64 +14,59 @@ type UserService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: req
-func (_m *UserService) Create(req *domain.User) (*domain.User, error) {
-	ret := _m.Called(req)
+type UserService_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *UserService) EXPECT() *UserService_Expecter {
+	return &UserService_Expecter{mock: &_m.Mock}
+}
+
+// Create provides a mock function with given fields: ctx, req
+func (_m *UserService) Create(ctx context.Context, req *domain.User) error {
+	ret := _m.Called(ctx, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 *domain.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*domain.User) (*domain.User, error)); ok {
-		return rf(req)
-	}
-	if rf, ok := ret.Get(0).(func(*domain.User) *domain.User); ok {
-		r0 = rf(req)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) error); ok {
+		r0 = rf(ctx, req)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.User)
-		}
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(*domain.User) error); ok {
-		r1 = rf(req)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// Login provides a mock function with given fields: user
-func (_m *UserService) Login(user *domain.User) (*domain.LoginResponse, error) {
-	ret := _m.Called(user)
+// UserService_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
+type UserService_Create_Call struct {
+	*mock.Call
+}
 
-	if len(ret) == 0 {
-		panic("no return value specified for Login")
-	}
+// Create is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *domain.User
+func (_e *UserService_Expecter) Create(ctx interface{}, req interface{}) *UserService_Create_Call {
+	return &UserService_Create_Call{Call: _e.mock.On("Create", ctx, req)}
+}
 
-	var r0 *domain.LoginResponse
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*domain.User) (*domain.LoginResponse, error)); ok {
-		return rf(user)
-	}
-	if rf, ok := ret.Get(0).(func(*domain.User) *domain.LoginResponse); ok {
-		r0 = rf(user)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.LoginResponse)
-		}
-	}
+func (_c *UserService_Create_Call) Run(run func(ctx context.Context, req *domain.User)) *UserService_Create_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.User))
+	})
+	return _c
+}
 
-	if rf, ok := ret.Get(1).(func(*domain.User) error); ok {
-		r1 = rf(user)
-	} else {
-		r1 = ret.Error(1)
-	}
+func (_c *UserService_Create_Call) Return(_a0 error) *UserService_Create_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
 
-	return r0, r1
+func (_c *UserService_Create_Call) RunAndReturn(run func(context.Context, *domain.User) error) *UserService_Create_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // NewUserService creates a new instance of UserService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
