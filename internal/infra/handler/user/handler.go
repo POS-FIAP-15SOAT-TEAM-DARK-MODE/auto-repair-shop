@@ -120,11 +120,11 @@ func (h *handler) Create() gin.HandlerFunc {
 
 func (l *loginRequestDTO) validate() error {
 	if strings.TrimSpace(l.Email) == "" {
-		return domain.ErrEmptyEmail
+		return domain.ErrEmptyUserEmail
 	}
 
 	if strings.TrimSpace(l.Password) == "" {
-		return domain.ErrEmptyPassword
+		return domain.ErrEmptyUserPassword
 	}
 
 	return nil

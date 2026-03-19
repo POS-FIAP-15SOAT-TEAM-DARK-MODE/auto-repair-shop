@@ -22,6 +22,7 @@ var (
 // User errors
 var (
 	ErrEmptyUserName         = errors.New("user name cannot be empty")
+	ErrInvalidCredentials    = errors.New("invalid credentials")
 	ErrInvalidUserName       = errors.New("the username must be longer than 3 characters and can only contain letters and spaces.")
 	ErrEmptyUserEmail        = errors.New("user email cannot be empty")
 	ErrInvalidUserEmail      = errors.New("invalid user email format")

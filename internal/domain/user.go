@@ -42,13 +42,6 @@ type UserRepository interface {
 }
 
 var (
-	ErrEmptyEmail         = errors.New("email cannot be empty")
-	ErrEmptyPassword      = errors.New("password cannot be empty")
-	ErrPasswordTooLong    = errors.New("password too long")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-)
-
-var (
 	passwordMinLength  = 8
 	passordMaxLength   = 72
 	minNameLength      = 3

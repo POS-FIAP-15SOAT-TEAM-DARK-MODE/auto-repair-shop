@@ -94,10 +94,7 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, json.ErrJSONType) ||
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
 		errors.Is(err, json.ErrJSONEmptyBody) ||
-		errors.Is(err, json.ErrWrongPayloadFormat) ||
-		errors.Is(err, domain.ErrPasswordTooLong) ||
-		errors.Is(err, domain.ErrEmptyEmail) ||
-		errors.Is(err, domain.ErrEmptyPassword)
+		errors.Is(err, json.ErrWrongPayloadFormat)
 }
 
 func isInternalServerError(err error) bool {
