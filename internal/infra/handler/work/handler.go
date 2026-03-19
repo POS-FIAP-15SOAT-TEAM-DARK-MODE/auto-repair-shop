@@ -11,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const idPathParamKey = "id"
+
 type handler struct {
 	svc domain.WorkService
 }
@@ -97,5 +99,112 @@ func (h *handler) List() gin.HandlerFunc {
 
 		logger.Of(ctx).Debug("list response", zap.Any("service", response))
 		c.JSON(http.StatusCreated, response)
+	}
+}
+
+func (h *handler) Update() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		dto, err := mapBodyToRequestDTO(c)
+		if err != nil {
+			err = json.CheckJsonError(err)
+			status, response := web.Error(err)
+			logger.Of(ctx).Debug("Failed to bind work update payload",
+				zap.String("operation", "update_work"),
+				zap.Error(err),
+				zap.String("entity", "work"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		if err := dto.Validate(); err != nil {
+			status, response := web.Error(err)
+			logger.Of(ctx).Debug("Work validation failed",
+				zap.String("operation", "update_work"),
+				zap.Error(err),
+				zap.String("entity", "work"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		body, err := dto.MapToDomain()
+		if err != nil {
+			status, response := web.Error(err)
+			logger.Of(ctx).Debug("Work parse to domain failed",
+				zap.String("operation", "update_work"),
+				zap.Error(err),
+				zap.String("entity", "work"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		id := c.Param(idPathParamKey)
+		if id == "" {
+			status, response := web.Error(domain.ErrInvalidWorkId)
+			logger.Of(ctx).Debug("Work invalid work id",
+				zap.String("operation", "update_work"),
+				zap.Error(domain.ErrInvalidWorkId),
+				zap.String("entity", "work"),
+				zap.String("entity.id", id),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		body.ID = id
+
+		logger.Of(ctx).Debug("update request", zap.Any("service", body))
+		if err := h.svc.Update(ctx, body); err != nil {
+			status, response := web.Error(err)
+			logger.Of(ctx).Error(err)
+			logger.Of(ctx).Debug("Work update failed in service layer",
+				zap.String("operation", "update_work"),
+				zap.Error(err),
+				zap.String("entity", "work"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		logger.Of(ctx).Debug("update response", zap.Any("service", body))
+		c.JSON(http.StatusOK, mapResponseDTOFromDomain(body))
+	}
+}
+
+func (h *handler) Delete() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
+		id := c.Param(idPathParamKey)
+		if id == "" {
+			status, response := web.Error(domain.ErrInvalidWorkId)
+			logger.Of(ctx).Debug("Work invalid work id",
+				zap.String("operation", "delete_work"),
+				zap.Error(domain.ErrInvalidWorkId),
+				zap.String("entity", "work"),
+				zap.String("entity.id", id),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		logger.Of(ctx).Debug("delete request", zap.Any(idPathParamKey, id))
+		if err := h.svc.Delete(ctx, id); err != nil {
+			status, response := web.Error(err)
+			logger.Of(ctx).Error(err)
+			logger.Of(ctx).Debug("Work deletion failed in service layer",
+				zap.String("operation", "delete_work"),
+				zap.Error(err),
+				zap.String("entity", "work"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		logger.Of(ctx).Debug("deletion ok")
+		c.Status(http.StatusNoContent)
 	}
 }

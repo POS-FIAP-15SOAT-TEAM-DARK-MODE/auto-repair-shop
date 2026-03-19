@@ -38,6 +38,7 @@ var (
 	ErrWorkPriceLessThenOrEqualZero       = errors.New("work price should be bigger then 0")
 	ErrInvalidWorkPriceValue              = errors.New("invalid work price value")
 	ErrInvalidWorkStatusValue             = errors.New("work status should be ACTIVE or INACTIVE")
+	ErrInvalidWorkId                      = errors.New("invalid work id")
 )
 
 // Customer errors
