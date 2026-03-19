@@ -69,6 +69,65 @@ func (_c *UserService_Create_Call) RunAndReturn(run func(context.Context, *domai
 	return _c
 }
 
+// Login provides a mock function with given fields: ctx, user
+func (_m *UserService) Login(ctx context.Context, user *domain.User) (*domain.LoginResponse, error) {
+	ret := _m.Called(ctx, user)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Login")
+	}
+
+	var r0 *domain.LoginResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) (*domain.LoginResponse, error)); ok {
+		return rf(ctx, user)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User) *domain.LoginResponse); ok {
+		r0 = rf(ctx, user)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.LoginResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.User) error); ok {
+		r1 = rf(ctx, user)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserService_Login_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Login'
+type UserService_Login_Call struct {
+	*mock.Call
+}
+
+// Login is a helper method to define mock.On call
+//   - ctx context.Context
+//   - user *domain.User
+func (_e *UserService_Expecter) Login(ctx interface{}, user interface{}) *UserService_Login_Call {
+	return &UserService_Login_Call{Call: _e.mock.On("Login", ctx, user)}
+}
+
+func (_c *UserService_Login_Call) Run(run func(ctx context.Context, user *domain.User)) *UserService_Login_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.User))
+	})
+	return _c
+}
+
+func (_c *UserService_Login_Call) Return(_a0 *domain.LoginResponse, _a1 error) *UserService_Login_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserService_Login_Call) RunAndReturn(run func(context.Context, *domain.User) (*domain.LoginResponse, error)) *UserService_Login_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewUserService creates a new instance of UserService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserService(t interface {

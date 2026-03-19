@@ -69,6 +69,124 @@ func (_c *UserRepository_Create_Call) RunAndReturn(run func(context.Context, *do
 	return _c
 }
 
+// GetByEmail provides a mock function with given fields: ctx, email
+func (_m *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	ret := _m.Called(ctx, email)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByEmail")
+	}
+
+	var r0 *domain.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.User, error)); ok {
+		return rf(ctx, email)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.User); ok {
+		r0 = rf(ctx, email)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.User)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, email)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserRepository_GetByEmail_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByEmail'
+type UserRepository_GetByEmail_Call struct {
+	*mock.Call
+}
+
+// GetByEmail is a helper method to define mock.On call
+//   - ctx context.Context
+//   - email string
+func (_e *UserRepository_Expecter) GetByEmail(ctx interface{}, email interface{}) *UserRepository_GetByEmail_Call {
+	return &UserRepository_GetByEmail_Call{Call: _e.mock.On("GetByEmail", ctx, email)}
+}
+
+func (_c *UserRepository_GetByEmail_Call) Run(run func(ctx context.Context, email string)) *UserRepository_GetByEmail_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *UserRepository_GetByEmail_Call) Return(_a0 *domain.User, _a1 error) *UserRepository_GetByEmail_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserRepository_GetByEmail_Call) RunAndReturn(run func(context.Context, string) (*domain.User, error)) *UserRepository_GetByEmail_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetRolesById provides a mock function with given fields: ctx, id
+func (_m *UserRepository) GetRolesById(ctx context.Context, id string) ([]string, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRolesById")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]string, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []string); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserRepository_GetRolesById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRolesById'
+type UserRepository_GetRolesById_Call struct {
+	*mock.Call
+}
+
+// GetRolesById is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *UserRepository_Expecter) GetRolesById(ctx interface{}, id interface{}) *UserRepository_GetRolesById_Call {
+	return &UserRepository_GetRolesById_Call{Call: _e.mock.On("GetRolesById", ctx, id)}
+}
+
+func (_c *UserRepository_GetRolesById_Call) Run(run func(ctx context.Context, id string)) *UserRepository_GetRolesById_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *UserRepository_GetRolesById_Call) Return(_a0 []string, _a1 error) *UserRepository_GetRolesById_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UserRepository_GetRolesById_Call) RunAndReturn(run func(context.Context, string) ([]string, error)) *UserRepository_GetRolesById_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewUserRepository creates a new instance of UserRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserRepository(t interface {

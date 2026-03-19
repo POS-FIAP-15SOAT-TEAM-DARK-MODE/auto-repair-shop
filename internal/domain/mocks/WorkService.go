@@ -82,12 +82,20 @@ func (_m *WorkService) List(_a0 context.Context, _a1 *domain.ListWorkParams) (*d
 	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListWorkParams) (*domain.PaginatorResponse[domain.Work], error)); ok {
 		return rf(_a0, _a1)
 	}
-	if ret.Get(0) != nil {
-		r0 = ret.Get(0).(*domain.PaginatorResponse[domain.Work])
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListWorkParams) *domain.PaginatorResponse[domain.Work]); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.Work])
+		}
 	}
-	if ret.Get(1) != nil {
-		r1 = ret.Get(1).(error)
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ListWorkParams) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
 	}
+
 	return r0, r1
 }
 
@@ -96,6 +104,9 @@ type WorkService_List_Call struct {
 	*mock.Call
 }
 
+// List is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *domain.ListWorkParams
 func (_e *WorkService_Expecter) List(_a0 interface{}, _a1 interface{}) *WorkService_List_Call {
 	return &WorkService_List_Call{Call: _e.mock.On("List", _a0, _a1)}
 }
