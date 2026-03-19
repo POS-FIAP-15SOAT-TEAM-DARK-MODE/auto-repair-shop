@@ -22,11 +22,14 @@ var (
 // User errors
 var (
 	ErrEmptyUserName         = errors.New("user name cannot be empty")
+	ErrInvalidUserName       = errors.New("The username must be longer than 3 characters and can only contain letters and spaces.")
 	ErrEmptyUserEmail        = errors.New("user email cannot be empty")
 	ErrEmptyUserPassword     = errors.New("user password cannot be empty")
 	ErrUserPasswordDontMatch = errors.New("passwords do not match")
 	ErrUserPasswordTooLong   = errors.New("password too long")
 	ErrUserPasswordTooShort  = errors.New("password too short")
+	ErrInvalidUserEmail      = errors.New("invalid email format")
+	ErrInvalidPassword       = errors.New("password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one digit and one special character")
 )
 
 // Work errors
