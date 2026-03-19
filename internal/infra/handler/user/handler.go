@@ -2,28 +2,19 @@ package user
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/bind"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 )
 
-type (
-	handler struct {
-		service domain.UserService
-	}
-
-	loginRequestDTO struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
-)
+type handler struct {
+	service domain.UserService
+}
 
 func HttpHandler(service domain.UserService) *handler {
 	return &handler{service: service}
@@ -32,7 +23,7 @@ func HttpHandler(service domain.UserService) *handler {
 func (h *handler) Login() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
-		req, err := bind.BindGenericJSON[loginRequestDTO](c)
+		req, err := mapBodyToLoginRequestDTO(c)
 		if err != nil {
 			status, response := web.Error(json.CheckJsonError(err))
 			logger.Of(ctx).Debug("Failed to bind login payload",
@@ -44,7 +35,7 @@ func (h *handler) Login() gin.HandlerFunc {
 			return
 		}
 
-		if err := req.validate(); err != nil {
+		if err := req.Validate(); err != nil {
 			status, response := web.Error(err)
 			logger.Of(ctx).Debug("Login validation failed",
 				zap.String("operation", "login"),
@@ -55,7 +46,7 @@ func (h *handler) Login() gin.HandlerFunc {
 			return
 		}
 
-		user := req.dtoToDomain()
+		user := req.mapLoginRequestDTOToDomain()
 
 		response, err := h.service.Login(ctx, user)
 		if err != nil {
@@ -115,24 +106,5 @@ func (h *handler) Create() gin.HandlerFunc {
 
 		logger.Of(ctx).Debug("create response", zap.Any("service", user))
 		c.JSON(http.StatusCreated, mapUserToResponseDTO(user))
-	}
-}
-
-func (l *loginRequestDTO) validate() error {
-	if strings.TrimSpace(l.Email) == "" {
-		return domain.ErrEmptyUserEmail
-	}
-
-	if strings.TrimSpace(l.Password) == "" {
-		return domain.ErrEmptyUserPassword
-	}
-
-	return nil
-}
-
-func (l *loginRequestDTO) dtoToDomain() *domain.User {
-	return &domain.User{
-		Email:    l.Email,
-		Password: l.Password,
 	}
 }
