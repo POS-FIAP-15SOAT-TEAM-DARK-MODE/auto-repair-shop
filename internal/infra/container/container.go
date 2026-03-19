@@ -10,6 +10,7 @@ type PingHttpHandler interface {
 
 type UserHttpHandler interface {
 	Create() gin.HandlerFunc
+	Login() gin.HandlerFunc
 }
 
 type CustomerHttpHandler interface {

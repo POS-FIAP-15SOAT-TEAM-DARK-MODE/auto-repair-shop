@@ -29,14 +29,14 @@ type (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserService --with-expecter
 type UserService interface {
 	Create(ctx context.Context, req *User) error
-	Login(user *User) (*LoginResponse, error)
+	Login(ctx context.Context, user *User) (*LoginResponse, error)
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserRepository --with-expecter
 type UserRepository interface {
 	Create(ctx context.Context, c *User) error
-	GetByEmail(email string) (*User, error)
-	GetRolesById(id string) ([]string, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetRolesById(ctx context.Context, id string) ([]string, error)
 }
 
 var (
