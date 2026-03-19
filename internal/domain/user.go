@@ -3,7 +3,9 @@ package domain
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
@@ -46,6 +48,15 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 )
 
+var (
+	passwordMinLength  = 8
+	passordMaxLength   = 72
+	minNameLength      = 3
+	passwordHasUpper   = regexp.MustCompile(`[A-Z]`)
+	passwordHasSpecial = regexp.MustCompile(`[^a-zA-Z0-9]`)
+	nameIsValid        = regexp.MustCompile(`^[a-zA-ZÀ-ÿ\s]+$`)
+)
+
 func NewUser(name, email, password string) *User {
 	return &User{
 		ID:       uuid.New().String(),
@@ -66,20 +77,80 @@ func CreateUserToDomain(name, email, password string) (*User, error) {
 	return u, nil
 }
 
-func (u *User) Validate() error {
-	var errs []error
+func (u *User) IsValidName() error {
 	if strings.TrimSpace(u.Name) == "" {
-		errs = append(errs, ErrEmptyUserName)
+		return ErrEmptyUserName
 	}
-	if strings.TrimSpace(u.Email) == "" {
-		errs = append(errs, ErrEmptyUserEmail)
-	}
-	if strings.TrimSpace(u.Password) == "" {
-		errs = append(errs, ErrEmptyUserPassword)
+	if utf8.RuneCountInString(u.Name) < minNameLength {
+		return ErrInvalidUserName
 	}
 
-	// TODO: Should have a minimun length for Password and Name? If true, add the errors.
-	// TODO: Should validate e-mail format and add errors.
+	if !nameIsValid.MatchString(u.Name) {
+		return ErrInvalidUserName
+	}
+
+	return nil
+}
+func (u *User) IsValidPassword() error {
+	if u.Password == "" {
+		return ErrEmptyUserPassword
+	}
+
+	if len(u.Password) > passordMaxLength {
+		return ErrUserPasswordTooLong
+	}
+	if len(u.Password) < passwordMinLength {
+		return ErrUserPasswordTooShort
+	}
+	if !passwordHasUpper.MatchString(u.Password) || !passwordHasSpecial.MatchString(u.Password) {
+		return ErrInvalidPassword
+	}
+
+	return nil
+}
+func (u *User) IsValidEmail() error {
+	email := strings.TrimSpace(u.Email)
+	if email == "" {
+		return ErrEmptyUserEmail
+	}
+
+	if strings.Contains(email, " ") {
+		return ErrInvalidUserEmail
+	}
+
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return ErrInvalidUserEmail
+	}
+
+	localPart := parts[0]
+	domainPart := parts[1]
+
+	if localPart == "" || domainPart == "" {
+		return ErrInvalidUserEmail
+	}
+
+	if !strings.Contains(domainPart, ".") {
+		return ErrInvalidUserEmail
+	}
+
+	if strings.HasPrefix(domainPart, ".") || strings.HasSuffix(domainPart, ".") {
+		return ErrInvalidUserEmail
+	}
+
+	return nil
+}
+func (u *User) Validate() error {
+	var errs []error
+	if err := u.IsValidName(); err != nil {
+		errs = append(errs, err)
+	}
+	if err := u.IsValidEmail(); err != nil {
+		errs = append(errs, err)
+	}
+	if err := u.IsValidPassword(); err != nil {
+		errs = append(errs, err)
+	}
 
 	if len(errs) > 0 {
 		return errors.Join(errs...)
