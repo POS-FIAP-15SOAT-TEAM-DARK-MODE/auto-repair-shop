@@ -47,7 +47,7 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 			mockSvc: func(t *testing.T) *mocks.UserService {
 				svc := mocks.NewUserService(t)
-				svc.On("Login", mock.Anything).Return(nil, errors.New("service failed"))
+				svc.On("Login", mock.Anything, mock.Anything).Return(nil, errors.New("service failed"))
 				return svc
 			},
 		},
@@ -57,7 +57,7 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			mockSvc: func(t *testing.T) *mocks.UserService {
 				svc := mocks.NewUserService(t)
-				svc.On("Login", mock.Anything).Return(&domain.LoginResponse{
+				svc.On("Login", mock.Anything, mock.Anything).Return(&domain.LoginResponse{
 					Token:     "success-token",
 					ExpiresIn: 3600,
 				}, nil)
@@ -75,10 +75,10 @@ func TestLoginUser(t *testing.T) {
 				mockSvc = tt.mockSvc(t)
 			}
 
-			h := NewHandler(mockSvc)
+			h := HttpHandler(mockSvc)
 
 			router := gin.New()
-			router.POST(loginRoute, h.LoginUser)
+			router.POST(loginRoute, h.Login())
 
 			req := httptest.NewRequest(http.MethodPost, loginRoute, bytes.NewBufferString(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
