@@ -32,6 +32,8 @@ type UserRepository interface {
 }
 
 var (
+	passwordMinLength  = 8
+	passordMaxLength   = 72
 	passwordHasUpper   = regexp.MustCompile(`[A-Z]`)
 	passwordHasSpecial = regexp.MustCompile(`[^a-zA-Z0-9]`)
 	nameIsValid        = regexp.MustCompile(`^[a-zA-ZÀ-ÿ\s]+$`)
@@ -57,7 +59,7 @@ func CreateUserToDomain(name, email, password string) (*User, error) {
 	return u, nil
 }
 
-func IsValidName(u *User) error {
+func (u *User) IsValidName() error {
 	if strings.TrimSpace(u.Name) == "" {
 		return ErrEmptyUserName
 	}
@@ -71,15 +73,15 @@ func IsValidName(u *User) error {
 
 	return nil
 }
-func IsValidPassword(u *User) error {
+func (u *User) IsValidPassword() error {
 	if u.Password == "" {
 		return ErrEmptyUserPassword
 	}
 
-	if len(u.Password) > 72 {
+	if len(u.Password) > passordMaxLength {
 		return ErrUserPasswordTooLong
 	}
-	if len(u.Password) < 8 {
+	if len(u.Password) < passwordMinLength {
 		return ErrUserPasswordTooShort
 	}
 	if !passwordHasUpper.MatchString(u.Password) || !passwordHasSpecial.MatchString(u.Password) {
@@ -88,7 +90,7 @@ func IsValidPassword(u *User) error {
 
 	return nil
 }
-func IsValidEmail(u *User) error {
+func (u *User) IsValidEmail() error {
 	email := strings.TrimSpace(u.Email)
 	if email == "" {
 		return ErrEmptyUserEmail
@@ -122,13 +124,13 @@ func IsValidEmail(u *User) error {
 }
 func (u *User) Validate() error {
 	var errs []error
-	if err := IsValidName(u); err != nil {
+	if err := u.IsValidName(); err != nil {
 		errs = append(errs, err)
 	}
-	if err := IsValidEmail(u); err != nil {
+	if err := u.IsValidEmail(); err != nil {
 		errs = append(errs, err)
 	}
-	if err := IsValidPassword(u); err != nil {
+	if err := u.IsValidPassword(); err != nil {
 		errs = append(errs, err)
 	}
 
