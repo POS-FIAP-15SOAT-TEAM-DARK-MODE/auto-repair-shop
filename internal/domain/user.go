@@ -34,7 +34,7 @@ type UserRepository interface {
 var (
 	passwordHasUpper   = regexp.MustCompile(`[A-Z]`)
 	passwordHasSpecial = regexp.MustCompile(`[^a-zA-Z0-9]`)
-	nameRegex          = regexp.MustCompile(`^[a-zA-ZÀ-ÿ\s]+$`)
+	nameIsValid        = regexp.MustCompile(`^[a-zA-ZÀ-ÿ\s]+$`)
 )
 
 func NewUser(name, email, password string) *User {
@@ -57,37 +57,40 @@ func CreateUserToDomain(name, email, password string) (*User, error) {
 	return u, nil
 }
 
-func IsValidName(name string) error {
-	name = strings.TrimSpace(name)
-
-	if strings.TrimSpace(name) == "" {
+func IsValidName(u *User) error {
+	if strings.TrimSpace(u.Name) == "" {
 		return ErrEmptyUserName
 	}
-	if utf8.RuneCountInString(name) < 3 {
+	if utf8.RuneCountInString(u.Name) < 3 {
 		return ErrInvalidUserName
 	}
 
-	if !nameRegex.MatchString(name) {
+	if !nameIsValid.MatchString(u.Name) {
 		return ErrInvalidUserName
 	}
 
 	return nil
 }
-func IsValidPassword(password string) error {
-	if password == "" {
+func IsValidPassword(u *User) error {
+	if u.Password == "" {
 		return ErrEmptyUserPassword
 	}
 
-	if len(password) < 8 ||
-		!passwordHasUpper.MatchString(password) ||
-		!passwordHasSpecial.MatchString(password) {
+	if len(u.Password) > 72 {
+		return ErrUserPasswordTooLong
+	}
+	if len(u.Password) < 8 {
+		return ErrUserPasswordTooShort
+	}
+	if !passwordHasUpper.MatchString(u.Password) || !passwordHasSpecial.MatchString(u.Password) {
 		return ErrInvalidPassword
 	}
 
 	return nil
 }
-func IsValidEmail(email string) error {
-	if strings.TrimSpace(email) == "" {
+func IsValidEmail(u *User) error {
+	email := strings.TrimSpace(u.Email)
+	if email == "" {
 		return ErrEmptyUserEmail
 	}
 
@@ -119,13 +122,13 @@ func IsValidEmail(email string) error {
 }
 func (u *User) Validate() error {
 	var errs []error
-	if err := IsValidName(u.Name); err != nil {
+	if err := IsValidName(u); err != nil {
 		errs = append(errs, err)
 	}
-	if err := IsValidEmail(u.Email); err != nil {
+	if err := IsValidEmail(u); err != nil {
 		errs = append(errs, err)
 	}
-	if err := IsValidPassword(u.Password); err != nil {
+	if err := IsValidPassword(u); err != nil {
 		errs = append(errs, err)
 	}
 
