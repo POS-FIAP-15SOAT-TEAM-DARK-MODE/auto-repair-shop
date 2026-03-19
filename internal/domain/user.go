@@ -34,6 +34,7 @@ type UserRepository interface {
 var (
 	passwordMinLength  = 8
 	passordMaxLength   = 72
+	minNameLength      = 3
 	passwordHasUpper   = regexp.MustCompile(`[A-Z]`)
 	passwordHasSpecial = regexp.MustCompile(`[^a-zA-Z0-9]`)
 	nameIsValid        = regexp.MustCompile(`^[a-zA-ZÀ-ÿ\s]+$`)
@@ -63,7 +64,7 @@ func (u *User) IsValidName() error {
 	if strings.TrimSpace(u.Name) == "" {
 		return ErrEmptyUserName
 	}
-	if utf8.RuneCountInString(u.Name) < 3 {
+	if utf8.RuneCountInString(u.Name) < minNameLength {
 		return ErrInvalidUserName
 	}
 
