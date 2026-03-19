@@ -1,15 +1,18 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"github.com/google/uuid"
+)
 
 type (
 	Vehicle struct {
-		Id           string `json:"id"`
-		LicensePlate string `json:"license_plate"`
-		Brand        string `json:"brand"`
-		Model        string `json:"model"`
-		Year         string `json:"year"`
-		CostumerId   string `json:"costumer_id"`
+		Id           string
+		LicensePlate string
+		Brand        string
+		Model        string
+		Year         string
+		CostumerId   string
 	}
 
 	VehicleService interface {
@@ -20,3 +23,14 @@ type (
 		Create(ctx context.Context, vehicle *Vehicle) error
 	}
 )
+
+func NewVehicle(plate, brand, model, year, costumerId string) *Vehicle {
+	return &Vehicle{
+		Id:           uuid.New().String(),
+		LicensePlate: plate,
+		Brand:        brand,
+		Model:        model,
+		Year:         year,
+		CostumerId:   costumerId,
+	}
+}
