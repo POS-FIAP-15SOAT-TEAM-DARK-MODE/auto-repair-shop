@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user/dto"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/bind"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
@@ -30,33 +29,49 @@ func HttpHandler(service domain.UserService) *handler {
 	return &handler{service: service}
 }
 
-func (h *Handler) LoginUser(c *gin.Context) {
-	req, err := bind.BindGenericJSON[loginRequestDTO](c)
-	if err != nil {
-		status, response := web.Error(json.CheckJsonError(err))
-		// TODO: add logging
-		c.JSON(status, response)
-		return
+func (h *handler) Login() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		req, err := bind.BindGenericJSON[loginRequestDTO](c)
+		if err != nil {
+			status, response := web.Error(json.CheckJsonError(err))
+			logger.Of(ctx).Debug("Failed to bind login payload",
+				zap.String("operation", "login"),
+				zap.Error(err),
+				zap.String("entity", "user"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		if err := req.validate(); err != nil {
+			status, response := web.Error(err)
+			logger.Of(ctx).Debug("Login validation failed",
+				zap.String("operation", "login"),
+				zap.Error(err),
+				zap.String("entity", "user"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		user := req.dtoToDomain()
+
+		response, err := h.service.Login(ctx, user)
+		if err != nil {
+			status, response := web.Error(err)
+			logger.Of(ctx).Error(err)
+			logger.Of(ctx).Debug("Login failed in service layer",
+				zap.String("operation", "login"),
+				zap.Error(err),
+				zap.String("entity", "user"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		c.JSON(http.StatusOK, response)
 	}
-
-	if err := req.validate(); err != nil {
-		status, response := web.Error(err)
-		// TODO: add logging
-		c.JSON(status, response)
-		return
-	}
-
-	user := req.dtoToDomain()
-
-	response, err := h.service.Login(user)
-	if err != nil {
-		status, response := web.Error(err)
-		// TODO: add logging
-		c.JSON(status, response)
-		return
-	}
-
-	c.JSON(http.StatusOK, response)
 }
 
 func (h *handler) Create() gin.HandlerFunc {
