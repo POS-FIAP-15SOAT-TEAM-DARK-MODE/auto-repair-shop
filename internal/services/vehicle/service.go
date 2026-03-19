@@ -2,6 +2,6 @@ package vehicle
 
 type vehicleService struct{}
 
-func NewVehicleService() *vehicleService {
+func NewService() *vehicleService {
 	return &vehicleService{}
 }

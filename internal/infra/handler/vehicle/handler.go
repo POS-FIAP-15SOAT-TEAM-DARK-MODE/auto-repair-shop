@@ -5,13 +5,15 @@ import (
 	"net/http"
 )
 
-type Handler struct {
+type handler struct {
 }
 
-func NewHandler() *Handler {
-	return &Handler{}
+func HttpHandler() *handler {
+	return &handler{}
 }
 
-func (h *Handler) Create(c *gin.Context) {
-	c.Status(http.StatusNoContent)
+func (h *handler) Create() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Status(http.StatusCreated)
+	}
 }

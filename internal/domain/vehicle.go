@@ -1,5 +1,7 @@
 package domain
 
+import "context"
+
 type (
 	Vehicle struct {
 		Id           string `json:"id"`
@@ -11,9 +13,10 @@ type (
 	}
 
 	VehicleService interface {
-		Create() (string, error)
-		Update() error
-		GetOnce() (Vehicle, error)
-		GetByOwner() ([]Vehicle, error)
+		Create(ctx context.Context) error
+	}
+
+	VehicleRepository interface {
+		Create(ctx context.Context, vehicle *Vehicle) error
 	}
 )

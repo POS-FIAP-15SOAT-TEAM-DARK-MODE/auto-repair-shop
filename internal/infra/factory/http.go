@@ -14,6 +14,8 @@ import (
 	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
 	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
 	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
+
+	vehicleHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/vehicle"
 )
 
 func HttpContainer() *container.HTTP {
@@ -22,6 +24,7 @@ func HttpContainer() *container.HTTP {
 		UserHandler:     newUserHandler(),
 		CustomerHandler: newCustomerHandler(),
 		WorkHandler:     newWorkHandler(),
+		VehicleHandler:  newVehicleHandler(),
 	}
 }
 
@@ -52,4 +55,8 @@ func newWorkHandler() container.WorkHttpHandler {
 	repo := workRepo.Repository()
 	svc := workSvc.Service(uow, repo)
 	return workHandler.HttpHandler(svc)
+}
+
+func newVehicleHandler() container.VehicleHttpHandler {
+	return vehicleHandler.HttpHandler()
 }

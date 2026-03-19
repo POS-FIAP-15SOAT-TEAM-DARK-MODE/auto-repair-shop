@@ -185,6 +185,20 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/vehicle:
+    post:
+      summary: create a new vehicle register
+      description: insert a new vehicle in our database
+      tags:
+        - Vehicle
+      responses:
+        "201":
+          description: Successful created
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
 components:
   schemas:
     UserRegisterRequest:
