@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,28 +12,37 @@ import (
 
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		ctx, reqId := logger.Request(ctx)
+		c.Request = c.Request.WithContext(ctx)
+
+		c.Writer.Header().Set("X-Request-ID", reqId)
+
 		start := time.Now()
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
-
-		c.Next()
-
 		fields := []zap.Field{
-			zap.Int("status", c.Writer.Status()),
 			zap.String("method", c.Request.Method),
 			zap.String("path", path),
 			zap.String("query", query),
 			zap.String("ip", c.ClientIP()),
-			zap.Duration("latency", time.Since(start)),
 		}
+
+		logger.Of(ctx).Info("starting request", fields...)
+
+		c.Next()
+
+		fields = append(fields,
+			zap.Int("status", c.Writer.Status()),
+			zap.Duration("latency", time.Since(start)))
 
 		if len(c.Errors) > 0 {
 			for _, e := range c.Errors.Errors() {
-				logger.Error(e, fields...)
+				logger.Of(ctx).Error(errors.New(e), fields...)
 			}
 			return
 		}
 
-		logger.Info("request", fields...)
+		logger.Of(ctx).Info("ending request", fields...)
 	}
 }

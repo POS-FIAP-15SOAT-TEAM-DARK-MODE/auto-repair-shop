@@ -2,23 +2,54 @@ package factory
 
 import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
-	vehicleHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/vehicle"
-	pingSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/ping"
+	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
+	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
+	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
+	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
+	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
+
+	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
+	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
+	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
 )
 
 func HttpContainer() *container.HTTP {
 	return &container.HTTP{
-		PingHandler:    newPingHandler(),
-		VehicleHandler: newVehicleHandler(),
+		PingHandler:     newPingHandler(),
+		UserHandler:     newUserHandler(),
+		CustomerHandler: newCustomerHandler(),
+		WorkHandler:     newWorkHandler(),
 	}
 }
 
-func newPingHandler() *pingHandler.Handler {
-	pingService := pingSvc.Service()
-	return pingHandler.NewHandler(pingService)
+func newPingHandler() container.PingHttpHandler {
+	return pingHandler.HttpHandler()
 }
 
-func newVehicleHandler() *vehicleHandler.Handler {
-	return vehicleHandler.NewHandler()
+func newUserHandler() container.UserHttpHandler {
+	db := postgres.Connect()
+	uow := postgres.NewTransactionalUoW(db)
+	userRepository := userRepo.Repository()
+	userService := userSvc.Service(uow, userRepository)
+	return userHandler.HttpHandler(userService)
+}
+
+func newCustomerHandler() container.CustomerHttpHandler {
+	db := postgres.Connect()
+	uow := postgres.NewTransactionalUoW(db)
+	userRepository := userRepo.Repository()
+	customerRepository := customerRepo.Repository()
+
+	return customerHandler.NewHandler(customerSvc.Service(uow, userRepository, customerRepository))
+}
+
+func newWorkHandler() container.WorkHttpHandler {
+	db := postgres.Connect()
+	uow := postgres.NewTransactionalUoW(db)
+	repo := workRepo.Repository()
+	svc := workSvc.Service(uow, repo)
+	return workHandler.HttpHandler(svc)
 }
