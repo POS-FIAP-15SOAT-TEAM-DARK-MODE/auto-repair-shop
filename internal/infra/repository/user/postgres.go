@@ -63,8 +63,7 @@ func (u *repo) Create(ctx context.Context, c *domain.User) error {
 	}
 
 	logger.Of(ctx).Debug("Executing query", zap.String("query", createUserQuery), zap.Any("params", c))
-	_, err = tx.ExecContext(ctx, createUserQuery, c.ID, c.Name, c.Email, c.Password)
-	if err != nil {
+	if _, err = tx.ExecContext(ctx, createUserQuery, c.ID, c.Name, c.Email, c.Password); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
 	return nil
