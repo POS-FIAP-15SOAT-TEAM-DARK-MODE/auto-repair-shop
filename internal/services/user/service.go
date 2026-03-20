@@ -27,31 +27,31 @@ func Service(uow uow.Executor, repo domain.UserRepository, expiresIn time.Durati
 	}
 }
 
-func (s *service) Login(ctx context.Context, user *domain.User) (*domain.LoginResponse, error) {
-	if err := user.ValidateLoginCredentials(); err != nil {
-		return nil, err
+func (s *service) Login(ctx context.Context, loggedUser *domain.LoggedUser) error {
+	if err := loggedUser.Validate(); err != nil {
+		return err
 	}
 
-	stored, err := s.authenticateUser(ctx, user)
+	err := s.authenticateUser(ctx, loggedUser)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	roles, err := s.repo.GetRolesById(ctx, stored.ID)
+	roles, err := s.repo.GetRolesById(ctx, loggedUser.User.ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	expiresAt := time.Now().Add(s.expiresIn)
-	token, err := auth.GenerateToken(stored.ID, roles, expiresAt)
+	token, err := auth.GenerateToken(loggedUser.User.ID, roles, expiresAt)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &domain.LoginResponse{
-		Token:     token,
-		ExpiresIn: int(s.expiresIn.Seconds()),
-	}, nil
+	loggedUser.SessionToken = token
+	loggedUser.SessionExpiresIn = int(s.expiresIn.Seconds())
+
+	return nil
 }
 
 func (s *service) Create(ctx context.Context, user *domain.User) error {
@@ -83,19 +83,20 @@ func (s *service) createRepositoryStep(user *domain.User) func(context.Context) 
 	}
 }
 
-func (s *service) authenticateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
-	stored, err := s.repo.GetByEmail(ctx, user.Email)
+func (s *service) authenticateUser(ctx context.Context, loggedUser *domain.LoggedUser) error {
+	stored, err := s.repo.GetByEmail(ctx, loggedUser.User.Email)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if stored == nil {
-		return nil, domain.ErrInvalidUserCredentials
+		return domain.ErrInvalidUserCredentials
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(stored.Password), []byte(user.Password)); err != nil {
-		return nil, domain.ErrInvalidUserCredentials
+	if err := bcrypt.CompareHashAndPassword([]byte(stored.Password), []byte(loggedUser.User.Password)); err != nil {
+		return domain.ErrInvalidUserCredentials
 	}
 
-	return stored, nil
+	loggedUser.User = *stored
+	return nil
 }

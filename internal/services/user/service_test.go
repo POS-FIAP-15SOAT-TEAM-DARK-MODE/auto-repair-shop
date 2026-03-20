@@ -24,31 +24,37 @@ func TestService_Login(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		user          *domain.User
+		loggedUser    *domain.LoggedUser
 		mockRepo      func(t *testing.T) *userMock.UserRepository
 		expectedError error
 	}{
 		{
 			name: "Should fail gracefully when email is empty",
-			user: &domain.User{
-				Email:    "",
-				Password: "password",
+			loggedUser: &domain.LoggedUser{
+				User: domain.User{
+					Email:    "",
+					Password: "password",
+				},
 			},
 			expectedError: domain.ErrEmptyUserEmail,
 		},
 		{
 			name: "Should fail gracefully when password is empty",
-			user: &domain.User{
-				Email:    "test@example.com",
-				Password: "",
+			loggedUser: &domain.LoggedUser{
+				User: domain.User{
+					Email:    "test@example.com",
+					Password: "",
+				},
 			},
 			expectedError: domain.ErrEmptyUserPassword,
 		},
 		{
 			name: "Should fail gracefully when get by email fails",
-			user: &domain.User{
-				Email:    "test@example.com",
-				Password: "password",
+			loggedUser: &domain.LoggedUser{
+				User: domain.User{
+					Email:    "test@example.com",
+					Password: "password",
+				},
 			},
 			mockRepo: func(t *testing.T) *mocks.UserRepository {
 				mockRepo := mocks.NewUserRepository(t)
@@ -59,9 +65,11 @@ func TestService_Login(t *testing.T) {
 		},
 		{
 			name: "Should fail gracefully when get by email returns nil",
-			user: &domain.User{
-				Email:    "test@example.com",
-				Password: "password",
+			loggedUser: &domain.LoggedUser{
+				User: domain.User{
+					Email:    "test@example.com",
+					Password: "password",
+				},
 			},
 			mockRepo: func(t *testing.T) *mocks.UserRepository {
 				mockRepo := mocks.NewUserRepository(t)
@@ -72,9 +80,11 @@ func TestService_Login(t *testing.T) {
 		},
 		{
 			name: "Should fail gracefully when password does not match",
-			user: &domain.User{
-				Email:    "test@example.com",
-				Password: "invalid_password",
+			loggedUser: &domain.LoggedUser{
+				User: domain.User{
+					Email:    "test@example.com",
+					Password: "invalid_password",
+				},
 			},
 			mockRepo: func(t *testing.T) *mocks.UserRepository {
 				mockRepo := mocks.NewUserRepository(t)
@@ -85,9 +95,11 @@ func TestService_Login(t *testing.T) {
 		},
 		{
 			name: "Should fail gracefully when get roles by id fails",
-			user: &domain.User{
-				Email:    "test@example.com",
-				Password: "password",
+			loggedUser: &domain.LoggedUser{
+				User: domain.User{
+					Email:    "test@example.com",
+					Password: "password",
+				},
 			},
 			mockRepo: func(t *testing.T) *mocks.UserRepository {
 				mockRepo := mocks.NewUserRepository(t)
@@ -99,9 +111,11 @@ func TestService_Login(t *testing.T) {
 		},
 		{
 			name: "Should return the token successfully",
-			user: &domain.User{
-				Email:    "test@example.com",
-				Password: "password",
+			loggedUser: &domain.LoggedUser{
+				User: domain.User{
+					Email:    "test@example.com",
+					Password: "password",
+				},
 			},
 			mockRepo: func(t *testing.T) *userMock.UserRepository {
 				mockRepo := userMock.NewUserRepository(t)
@@ -121,7 +135,7 @@ func TestService_Login(t *testing.T) {
 			}
 
 			service := Service(nil, mockRepo, 24*time.Hour)
-			_, err := service.Login(context.Background(), tt.user)
+			err := service.Login(context.Background(), tt.loggedUser)
 			if tt.expectedError != nil {
 				assert.Error(t, err)
 				if err == tt.expectedError {

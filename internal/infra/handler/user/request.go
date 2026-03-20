@@ -20,6 +20,11 @@ type (
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
+
+	loggedUserResponseDTO struct {
+		Token     string `json:"token"`
+		ExpiresIn int    `json:"expires_in"`
+	}
 )
 
 func mapBodyToUserRequestDTO(body *gin.Context) (*userRequestDTO, error) {
@@ -49,9 +54,18 @@ func mapBodyToLoginRequestDTO(body *gin.Context) (*loginRequestDTO, error) {
 	return &req, nil
 }
 
-func (l *loginRequestDTO) mapLoginRequestDTOToDomain() *domain.User {
-	return &domain.User{
-		Email:    l.Email,
-		Password: l.Password,
+func (l *loginRequestDTO) toLoggedUserDomain() *domain.LoggedUser {
+	return &domain.LoggedUser{
+		User: domain.User{
+			Email:    l.Email,
+			Password: l.Password,
+		},
+	}
+}
+
+func loggerUserToResponseDTO(loggedUser *domain.LoggedUser) *loggedUserResponseDTO {
+	return &loggedUserResponseDTO{
+		Token:     loggedUser.SessionToken,
+		ExpiresIn: loggedUser.SessionExpiresIn,
 	}
 }

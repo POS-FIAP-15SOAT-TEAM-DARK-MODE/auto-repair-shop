@@ -37,7 +37,7 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 			mockSvc: func(t *testing.T) *mocks.UserService {
 				svc := mocks.NewUserService(t)
-				svc.On("Login", mock.Anything, mock.Anything).Return(nil, errors.New("service failed"))
+				svc.On("Login", mock.Anything, mock.Anything).Return(errors.New("service failed"))
 				return svc
 			},
 		},
@@ -47,10 +47,11 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			mockSvc: func(t *testing.T) *mocks.UserService {
 				svc := mocks.NewUserService(t)
-				svc.On("Login", mock.Anything, mock.Anything).Return(&domain.LoginResponse{
-					Token:     "success-token",
-					ExpiresIn: 3600,
-				}, nil)
+				svc.On("Login", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+					loggedUser := args[1].(*domain.LoggedUser)
+					loggedUser.SessionToken = "success-token"
+					loggedUser.SessionExpiresIn = 3600
+				}).Return(nil)
 				return svc
 			},
 			expectedResponse: `{"token":"success-token","expires_in":3600}`,

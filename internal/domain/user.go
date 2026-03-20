@@ -22,16 +22,17 @@ type (
 		Password string
 	}
 
-	LoginResponse struct {
-		Token     string `json:"token"`
-		ExpiresIn int    `json:"expires_in"`
+	LoggedUser struct {
+		User
+		SessionToken     string
+		SessionExpiresIn int
 	}
 )
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserService --with-expecter
 type UserService interface {
 	Create(ctx context.Context, req *User) error
-	Login(ctx context.Context, user *User) (*LoginResponse, error)
+	Login(ctx context.Context, loggedUser *LoggedUser) error
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserRepository --with-expecter
@@ -157,12 +158,12 @@ func (u *User) Validate() error {
 
 	return nil
 }
-func (u *User) ValidateLoginCredentials() error {
+func (u *LoggedUser) Validate() error {
 	var errs []error
-	if u.IsEmailEmpty() {
+	if u.User.IsEmailEmpty() {
 		errs = append(errs, ErrEmptyUserEmail)
 	}
-	if u.IsPasswordEmpty() {
+	if u.User.IsPasswordEmpty() {
 		errs = append(errs, ErrEmptyUserPassword)
 	}
 

@@ -35,10 +35,9 @@ func (h *handler) Login() gin.HandlerFunc {
 			return
 		}
 
-		user := req.mapLoginRequestDTOToDomain()
+		user := req.toLoggedUserDomain()
 
-		response, err := h.service.Login(ctx, user)
-		if err != nil {
+		if err := h.service.Login(ctx, user); err != nil {
 			status, response := web.Error(err)
 			logger.Of(ctx).Error(err)
 			logger.Of(ctx).Debug("Login failed in service layer",
@@ -49,6 +48,8 @@ func (h *handler) Login() gin.HandlerFunc {
 			c.JSON(status, response)
 			return
 		}
+
+		response := loggerUserToResponseDTO(user)
 
 		c.JSON(http.StatusOK, response)
 	}
