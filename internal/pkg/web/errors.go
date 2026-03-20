@@ -80,6 +80,7 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrUserPasswordDontMatch) ||
 		errors.Is(err, domain.ErrUserPasswordTooLong) ||
 		errors.Is(err, domain.ErrEmptyUserName) ||
+		errors.Is(err, domain.ErrInvalidUserCredentials) ||
 		errors.Is(err, domain.ErrInvalidUserName) ||
 		errors.Is(err, domain.ErrEmptyUserEmail) ||
 		errors.Is(err, domain.ErrInvalidUserEmail) ||
