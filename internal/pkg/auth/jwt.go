@@ -17,8 +17,10 @@ type UserClaims struct {
 
 var (
 	once      sync.Once
-	secretKey string
+	secretKey []byte
 )
+
+const secretDefaultValue = "your_jwt_secret"
 
 func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, error) {
 	claims := UserClaims{
@@ -36,7 +38,7 @@ func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, 
 
 func getSecretKey() []byte {
 	once.Do(func() {
-		secretKey = env.GetString("JWT_SECRET", "")
+		secretKey = []byte(env.GetString("JWT_SECRET", secretDefaultValue))
 	})
-	return []byte(secretKey)
+	return secretKey
 }
