@@ -68,7 +68,7 @@ func TestService_Login(t *testing.T) {
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(nil, nil)
 				return mockRepo
 			},
-			expectedError: domain.ErrInvalidCredentials,
+			expectedError: domain.ErrInvalidUserCredentials,
 		},
 		{
 			name: "Should fail gracefully when password does not match",
@@ -81,7 +81,7 @@ func TestService_Login(t *testing.T) {
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(validDomainUser, nil)
 				return mockRepo
 			},
-			expectedError: domain.ErrInvalidCredentials,
+			expectedError: domain.ErrInvalidUserCredentials,
 		},
 		{
 			name: "Should fail gracefully when get roles by id fails",

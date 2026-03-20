@@ -90,11 +90,11 @@ func (s *service) authenticateUser(ctx context.Context, user *domain.User) (*dom
 	}
 
 	if stored == nil {
-		return nil, domain.ErrInvalidCredentials
+		return nil, domain.ErrInvalidUserCredentials
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(stored.Password), []byte(user.Password)); err != nil {
-		return nil, domain.ErrInvalidCredentials
+		return nil, domain.ErrInvalidUserCredentials
 	}
 
 	return stored, nil
