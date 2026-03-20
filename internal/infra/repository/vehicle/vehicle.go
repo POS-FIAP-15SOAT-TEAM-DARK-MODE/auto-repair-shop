@@ -22,7 +22,7 @@ func (r *vehicleRepository) Save(ctx context.Context, vehicle *domain.Vehicle) e
 	_, err = tx.ExecContext(
 		ctx,
 		insertNewVehicle,
-		vehicle.Id,
+		vehicle.ID,
 		vehicle.LicensePlate,
 		vehicle.Brand,
 		vehicle.Model,

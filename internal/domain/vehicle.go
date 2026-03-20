@@ -9,17 +9,16 @@ import (
 )
 
 const (
-	FirstCarYear        = 1886
-	NumberOfPlateDigits = 7
+	FirstCarYear = 1886
 )
 
 var (
-	PlatePattern = regexp.MustCompile(`^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$`)
+	platePattern = regexp.MustCompile(`^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$`)
 )
 
 type (
 	Vehicle struct {
-		Id           string
+		ID           string
 		LicensePlate string
 		Brand        string
 		Model        string
@@ -38,7 +37,7 @@ type (
 
 func NewVehicle(plate, brand, model, customerId string, year int) *Vehicle {
 	return &Vehicle{
-		Id:           uuid.New().String(),
+		ID:           uuid.New().String(),
 		LicensePlate: strings.ToUpper(plate),
 		Brand:        brand,
 		Model:        model,
@@ -50,25 +49,20 @@ func NewVehicle(plate, brand, model, customerId string, year int) *Vehicle {
 func (v *Vehicle) Validate() error {
 	var errs []error
 
-	if strings.TrimSpace(v.Brand) == "" {
-		errs = append(errs, ErrRequiredVehicleBrand)
+	v.LicensePlate = strings.TrimSpace(strings.ReplaceAll(v.LicensePlate, "-", ""))
+	if err := ValidateLicensePlate(v.LicensePlate); err != nil {
+		errs = append(errs, err)
 	}
-	if strings.TrimSpace(v.Model) == "" {
-		errs = append(errs, ErrRequiredVehicleModel)
-	}
-	if strings.TrimSpace(v.CustomerId) == "" {
-		errs = append(errs, ErrNoCustomerAssociated)
-	}
-	if len(v.LicensePlate) != NumberOfPlateDigits {
-		errs = append(errs, ErrInvalidPlate)
+	if v.Year < FirstCarYear {
+		errs = append(errs, ErrParamVehicleYear)
 	}
 
 	return errors.Join(errs...)
 }
 
 func ValidateLicensePlate(plate string) error {
-	if !PlatePattern.MatchString(plate) {
-		return ErrInvalidPlate
+	if !platePattern.MatchString(plate) {
+		return ErrVehicleInvalidPlate
 	}
 	return nil
 }

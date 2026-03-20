@@ -6,7 +6,7 @@ import (
 )
 
 type vehicleResponseDTO struct {
-	Id           string `json:"id"`
+	ID           string `json:"id"`
 	LicensePlate string `json:"license_plate"`
 	BrandModel   string `json:"brand_model"`
 	Year         int    `json:"year"`
@@ -15,7 +15,7 @@ type vehicleResponseDTO struct {
 
 func domainToResponseDto(v *domain.Vehicle) vehicleResponseDTO {
 	return vehicleResponseDTO{
-		Id:           v.Id,
+		ID:           v.ID,
 		BrandModel:   fmt.Sprintf("%s - %s", v.Brand, v.Model),
 		Year:         v.Year,
 		LicensePlate: v.LicensePlate,

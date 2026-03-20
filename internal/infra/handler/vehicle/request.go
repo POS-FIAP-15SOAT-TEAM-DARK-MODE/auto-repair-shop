@@ -44,12 +44,14 @@ func reqBodyVehicleToDTO(c *gin.Context) (*vehicleRequestDto, error) {
 func (v *vehicleRequestDto) validate() error {
 	var errs []error
 
-	v.LicensePlate = strings.TrimSpace(strings.ReplaceAll(v.LicensePlate, "-", ""))
-	if err := domain.ValidateLicensePlate(v.LicensePlate); err != nil {
-		errs = append(errs, err)
+	if strings.TrimSpace(v.Brand) == "" {
+		errs = append(errs, domain.ErrRequiredVehicleBrand)
 	}
-	if v.Year < domain.FirstCarYear {
-		errs = append(errs, domain.ErrParamVehicleYear)
+	if strings.TrimSpace(v.Model) == "" {
+		errs = append(errs, domain.ErrRequiredVehicleModel)
+	}
+	if strings.TrimSpace(v.CustomerId) == "" {
+		errs = append(errs, domain.ErrVehicleNoCustomerAssociated)
 	}
 
 	return errors.Join(errs...)
