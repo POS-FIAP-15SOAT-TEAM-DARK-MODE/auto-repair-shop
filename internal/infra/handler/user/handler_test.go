@@ -32,16 +32,6 @@ func TestLoginUser(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "Should fail gracefully when the email is empty",
-			requestBody:    `{"email": "", "password": "password"}`,
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name:           "Should fail gracefully when the password is empty",
-			requestBody:    `{"email": "test@example.com", "password": ""}`,
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
 			name:           "Should fail gracefully when service fails",
 			requestBody:    `{"email": "test@example.com", "password": "password"}`,
 			expectedStatus: http.StatusInternalServerError,

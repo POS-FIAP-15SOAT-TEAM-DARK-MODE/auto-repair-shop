@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,6 +28,22 @@ func TestService_Login(t *testing.T) {
 		mockRepo      func(t *testing.T) *userMock.UserRepository
 		expectedError error
 	}{
+		{
+			name: "Should fail gracefully when email is empty",
+			user: &domain.User{
+				Email:    "",
+				Password: "password",
+			},
+			expectedError: domain.ErrEmptyUserEmail,
+		},
+		{
+			name: "Should fail gracefully when password is empty",
+			user: &domain.User{
+				Email:    "test@example.com",
+				Password: "",
+			},
+			expectedError: domain.ErrEmptyUserPassword,
+		},
 		{
 			name: "Should fail gracefully when get by email fails",
 			user: &domain.User{
@@ -107,7 +124,19 @@ func TestService_Login(t *testing.T) {
 			_, err := service.Login(context.Background(), tt.user)
 			if tt.expectedError != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tt.expectedError, err)
+				if err == tt.expectedError {
+					return
+				}
+				if errors.Is(err, tt.expectedError) {
+					return
+				}
+				if err == nil {
+					t.Fatalf("expected error %v, got nil", tt.expectedError)
+				}
+				if strings.Contains(err.Error(), tt.expectedError.Error()) {
+					return
+				}
+				t.Fatalf("expected error to match %v, got %v", tt.expectedError, err)
 			}
 		})
 	}

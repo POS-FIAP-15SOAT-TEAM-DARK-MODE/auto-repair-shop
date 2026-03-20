@@ -55,15 +55,3 @@ func (l *loginRequestDTO) mapLoginRequestDTOToDomain() *domain.User {
 		Password: l.Password,
 	}
 }
-
-func (l *loginRequestDTO) Validate() error {
-	if strings.TrimSpace(l.Email) == "" {
-		return domain.ErrEmptyUserEmail
-	}
-
-	if strings.TrimSpace(l.Password) == "" {
-		return domain.ErrEmptyUserPassword
-	}
-
-	return nil
-}

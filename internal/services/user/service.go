@@ -28,7 +28,11 @@ func Service(uow uow.Executor, repo domain.UserRepository, expiresIn time.Durati
 }
 
 func (s *service) Login(ctx context.Context, user *domain.User) (*domain.LoginResponse, error) {
-	stored, err := s.validateUserCredentials(ctx, user)
+	if err := user.ValidateLoginCredentials(); err != nil {
+		return nil, err
+	}
+
+	stored, err := s.authenticateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +83,7 @@ func (s *service) createRepositoryStep(user *domain.User) func(context.Context) 
 	}
 }
 
-func (s *service) validateUserCredentials(ctx context.Context, user *domain.User) (*domain.User, error) {
+func (s *service) authenticateUser(ctx context.Context, user *domain.User) (*domain.User, error) {
 	stored, err := s.repo.GetByEmail(ctx, user.Email)
 	if err != nil {
 		return nil, err

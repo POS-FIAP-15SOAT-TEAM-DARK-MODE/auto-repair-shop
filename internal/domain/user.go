@@ -84,8 +84,14 @@ func (u *User) IsValidName() error {
 
 	return nil
 }
+func (u *User) IsPasswordEmpty() bool {
+	return u.Password == ""
+}
+func (u *User) IsEmailEmpty() bool {
+	return u.Email == ""
+}
 func (u *User) IsValidPassword() error {
-	if u.Password == "" {
+	if u.IsPasswordEmpty() {
 		return ErrEmptyUserPassword
 	}
 
@@ -103,7 +109,7 @@ func (u *User) IsValidPassword() error {
 }
 func (u *User) IsValidEmail() error {
 	email := strings.TrimSpace(u.Email)
-	if email == "" {
+	if u.IsEmailEmpty() {
 		return ErrEmptyUserEmail
 	}
 
@@ -143,6 +149,21 @@ func (u *User) Validate() error {
 	}
 	if err := u.IsValidPassword(); err != nil {
 		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	return nil
+}
+func (u *User) ValidateLoginCredentials() error {
+	var errs []error
+	if u.IsEmailEmpty() {
+		errs = append(errs, ErrEmptyUserEmail)
+	}
+	if u.IsPasswordEmpty() {
+		errs = append(errs, ErrEmptyUserPassword)
 	}
 
 	if len(errs) > 0 {

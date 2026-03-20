@@ -35,17 +35,6 @@ func (h *handler) Login() gin.HandlerFunc {
 			return
 		}
 
-		if err := req.Validate(); err != nil {
-			status, response := web.Error(err)
-			logger.Of(ctx).Debug("Login validation failed",
-				zap.String("operation", "login"),
-				zap.Error(err),
-				zap.String("entity", "user"),
-			)
-			c.JSON(status, response)
-			return
-		}
-
 		user := req.mapLoginRequestDTOToDomain()
 
 		response, err := h.service.Login(ctx, user)
