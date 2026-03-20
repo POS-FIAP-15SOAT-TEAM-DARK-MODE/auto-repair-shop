@@ -16,6 +16,8 @@ import (
 	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
 
 	vehicleHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/vehicle"
+	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/vehicle"
+	vehicleSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/vehicle"
 )
 
 func HttpContainer() *container.HTTP {
@@ -58,5 +60,9 @@ func newWorkHandler() container.WorkHttpHandler {
 }
 
 func newVehicleHandler() container.VehicleHttpHandler {
-	return vehicleHandler.HttpHandler()
+	db := postgres.Connect()
+	uow := postgres.NewTransactionalUoW(db)
+	vehicleRepository := vehicleRepo.NewVehicleRepository()
+	service := vehicleSvc.NewService(uow, vehicleRepository)
+	return vehicleHandler.HttpHandler(service)
 }

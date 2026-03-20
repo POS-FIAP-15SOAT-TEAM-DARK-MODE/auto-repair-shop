@@ -1,6 +1,7 @@
 package vehicle
 
 import (
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 	"github.com/gin-gonic/gin"
@@ -9,10 +10,13 @@ import (
 )
 
 type handler struct {
+	service domain.VehicleService
 }
 
-func HttpHandler() *handler {
-	return &handler{}
+func HttpHandler(service domain.VehicleService) *handler {
+	return &handler{
+		service,
+	}
 }
 
 func (h *handler) Create() gin.HandlerFunc {
@@ -31,10 +35,20 @@ func (h *handler) Create() gin.HandlerFunc {
 			return
 		}
 
-		// TODO: check costumer_id is in database
+		vehicleDomain := reqDTO.Domain()
+		if err := h.service.Create(ctx, vehicleDomain); err != nil {
+			status, resp := web.Error(err)
+			logger.Of(ctx).Debug("Vehicle validation error",
+				zap.String("operation", "create_vehicle"),
+				zap.Error(err),
+				zap.String("entity", "vehicle"),
+			)
+			c.JSON(status, resp)
+			return
+		}
 
-		_ = reqDTO.Domain()
+		// TODO: create vehicle in database (use service and repository)
 
-		c.Status(http.StatusCreated)
+		c.JSON(http.StatusCreated, domainToResponseDto(vehicleDomain))
 	}
 }

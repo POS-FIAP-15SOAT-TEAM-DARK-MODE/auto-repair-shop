@@ -54,6 +54,8 @@ var (
 // Vehicle errors
 var (
 	ErrInvalidPlate         = errors.New("invalid vehicle plate")
-	ErrPlateIsRequired      = errors.New("plate is required")
 	ErrNoCustomerAssociated = errors.New("no customer associated to the vehicle")
+	ErrRequiredVehicleBrand = errors.New("brand of the vehicle is required")
+	ErrRequiredVehicleModel = errors.New("model of the vehicle is required")
+	ErrParamVehicleYear     = errors.New("year of the vehicle is not valid")
 )

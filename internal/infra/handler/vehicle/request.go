@@ -1,27 +1,23 @@
 package vehicle
 
 import (
+	"errors"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/gin-gonic/gin"
-	"regexp"
 	"strings"
-)
-
-var (
-	platePattern = regexp.MustCompile(`^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$`)
 )
 
 type vehicleRequestDto struct {
 	LicensePlate string `json:"license_plate"`
 	Brand        string `json:"brand"`
 	Model        string `json:"model"`
-	Year         string `json:"year"`
-	CostumerId   string `json:"costumer_id"`
+	Year         int    `json:"year"`
+	CustomerId   string `json:"customer_id"`
 }
 
 func (v *vehicleRequestDto) Domain() *domain.Vehicle {
-	return domain.NewVehicle(v.LicensePlate, v.Brand, v.Model, v.Year, v.CostumerId)
+	return domain.NewVehicle(v.LicensePlate, v.Brand, v.Model, v.CustomerId, v.Year)
 }
 
 func validateAndCreateDTO(c *gin.Context) (*vehicleRequestDto, error) {
@@ -46,18 +42,15 @@ func reqBodyVehicleToDTO(c *gin.Context) (*vehicleRequestDto, error) {
 }
 
 func (v *vehicleRequestDto) validate() error {
-	plateTrim := strings.TrimSpace(v.LicensePlate)
-	if plateTrim == "" {
-		return domain.ErrPlateIsRequired
+	var errs []error
+
+	v.LicensePlate = strings.TrimSpace(strings.ReplaceAll(v.LicensePlate, "-", ""))
+	if !domain.PlatePattern.MatchString(v.LicensePlate) {
+		errs = append(errs, domain.ErrInvalidPlate)
+	}
+	if v.Year < domain.FirstCarYear {
+		errs = append(errs, domain.ErrParamVehicleYear)
 	}
 
-	if strings.TrimSpace(v.CostumerId) == "" {
-		return domain.ErrNoCustomerAssociated
-	}
-
-	if len(plateTrim) != 7 || !platePattern.MatchString(plateTrim) {
-		return domain.ErrInvalidPlate
-	}
-
-	return nil
+	return errors.Join(errs...)
 }
