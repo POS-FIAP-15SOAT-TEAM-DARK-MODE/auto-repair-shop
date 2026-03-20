@@ -36,9 +36,9 @@ func (h *handler) Create() gin.HandlerFunc {
 		}
 
 		vehicleDomain := reqDTO.Domain()
-		if err := h.service.Create(ctx, vehicleDomain); err != nil {
+		if err = h.service.Create(ctx, vehicleDomain); err != nil {
 			status, resp := web.Error(err)
-			logger.Of(ctx).Debug("Vehicle validation error",
+			logger.Of(ctx).Debug("Vehicle creation error",
 				zap.String("operation", "create_vehicle"),
 				zap.Error(err),
 				zap.String("entity", "vehicle"),
@@ -46,8 +46,6 @@ func (h *handler) Create() gin.HandlerFunc {
 			c.JSON(status, resp)
 			return
 		}
-
-		// TODO: create vehicle in database (use service and repository)
 
 		c.JSON(http.StatusCreated, domainToResponseDto(vehicleDomain))
 	}
