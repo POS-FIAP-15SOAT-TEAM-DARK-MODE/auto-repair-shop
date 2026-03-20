@@ -29,6 +29,7 @@ func (s *vehicleService) Create(ctx context.Context, vehicle *domain.Vehicle) er
 		return errMessage
 	}
 
+	// TODO: validate if customer_id exists in database
 	if err := s.uow.Execute(
 		ctx,
 		s.createInsertStep(vehicle),
