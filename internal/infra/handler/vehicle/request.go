@@ -45,8 +45,8 @@ func (v *vehicleRequestDto) validate() error {
 	var errs []error
 
 	v.LicensePlate = strings.TrimSpace(strings.ReplaceAll(v.LicensePlate, "-", ""))
-	if !domain.PlatePattern.MatchString(v.LicensePlate) {
-		errs = append(errs, domain.ErrInvalidPlate)
+	if err := domain.ValidateLicensePlate(v.LicensePlate); err != nil {
+		errs = append(errs, err)
 	}
 	if v.Year < domain.FirstCarYear {
 		errs = append(errs, domain.ErrParamVehicleYear)

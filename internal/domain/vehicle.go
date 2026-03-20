@@ -65,3 +65,10 @@ func (v *Vehicle) Validate() error {
 
 	return errors.Join(errs...)
 }
+
+func ValidateLicensePlate(plate string) error {
+	if !PlatePattern.MatchString(plate) {
+		return ErrInvalidPlate
+	}
+	return nil
+}
