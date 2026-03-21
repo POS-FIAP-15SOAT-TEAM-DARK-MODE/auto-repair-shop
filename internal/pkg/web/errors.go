@@ -29,6 +29,8 @@ func Error(err error) (int, errorResponse) {
 // getHTTPStatus determines the HTTP status code for a given error.
 func getHTTPStatus(err error) int {
 	switch {
+	case isUnauthorizedError(err):
+		return http.StatusUnauthorized
 	case isBadRequestError(err), IsJoined(err):
 		return http.StatusBadRequest
 	case isInternalServerError(err):
@@ -54,6 +56,8 @@ func IsJoined(err error) bool {
 // buildErrorMessages formats the error messages based on status code.
 func buildErrorMessages(err error, status int) ([]string, string) {
 	switch status {
+	case http.StatusUnauthorized:
+		return unwrapAll(err), ""
 	case http.StatusBadRequest:
 		// For 4XX BadRequest provide stack of errors.
 		return unwrapAll(err), ""
@@ -80,7 +84,6 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrUserPasswordDontMatch) ||
 		errors.Is(err, domain.ErrUserPasswordTooLong) ||
 		errors.Is(err, domain.ErrEmptyUserName) ||
-		errors.Is(err, domain.ErrInvalidUserCredentials) ||
 		errors.Is(err, domain.ErrInvalidUserName) ||
 		errors.Is(err, domain.ErrEmptyUserEmail) ||
 		errors.Is(err, domain.ErrInvalidUserEmail) ||
@@ -97,6 +100,12 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
 		errors.Is(err, json.ErrJSONEmptyBody) ||
 		errors.Is(err, json.ErrWrongPayloadFormat)
+}
+
+func isUnauthorizedError(err error) bool {
+	var validationErr domain.ValidationError
+	return errors.As(err, &validationErr) ||
+		errors.Is(err, domain.ErrInvalidUserCredentials)
 }
 
 func isInternalServerError(err error) bool {
