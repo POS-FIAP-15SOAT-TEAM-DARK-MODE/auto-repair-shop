@@ -58,3 +58,8 @@ func (r *memory_repo) Search(_ context.Context, params *domain.SearchWorkParams)
 
 	return work, nil
 }
+
+func (r *memory_repo) Delete(_ context.Context, id string) error {
+	delete(r.data, id)
+	return nil
+}

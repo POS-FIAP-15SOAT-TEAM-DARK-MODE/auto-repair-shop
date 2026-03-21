@@ -14,8 +14,8 @@ const (
 	CompanyCustomerType    CustomerType = "COMPANY"
 )
 
-//go:generate mockery --name=CustomerService --with-expecter
-//go:generate mockery --name=CustomerRepository --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerService --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerRepository --with-expecter
 type (
 	Customer struct {
 		ID          string

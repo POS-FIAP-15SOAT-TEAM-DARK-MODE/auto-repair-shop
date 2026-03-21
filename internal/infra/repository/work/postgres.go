@@ -106,3 +106,17 @@ func (r *pg_repo) Search(ctx context.Context, params *domain.SearchWorkParams) (
 
 	return works, nil
 }
+
+func (r *pg_repo) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	logger.Of(ctx).Debug("Executing query", zap.String("query", deleteQuery), zap.Any("params", id))
+	if _, err = tx.ExecContext(ctx, deleteQuery, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}

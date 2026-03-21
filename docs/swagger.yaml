@@ -185,6 +185,54 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/services/{id}:
+    put:
+      summary: Update an existing Service
+      description: Endpoint to edit an existing service object.
+      tags:
+        - Service
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of service to be updated.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+      responses:
+        "200":
+          description: Successful updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateServiceResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
+    delete:
+      summary: List Services
+      description: List registered services with pagination and optional status filter.
+      tags:
+        - Service
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of service to be deleted.
+      responses:
+        "204":
+          description: Successful deleted
+        "500":
+          description: Internal Server Error
+
 components:
   schemas:
     UserRegisterRequest:
