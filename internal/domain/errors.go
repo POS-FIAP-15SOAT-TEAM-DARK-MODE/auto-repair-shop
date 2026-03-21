@@ -54,3 +54,12 @@ var (
 	ErrCPFLength           = errors.New("CPF must have 11 digits")
 	ErrCNPJLength          = errors.New("CNPJ must have 14 characters")
 )
+
+// Vehicle errors
+var (
+	ErrVehicleInvalidPlate         = errors.New("invalid vehicle plate")
+	ErrVehicleNoCustomerAssociated = errors.New("no customer associated to the vehicle")
+	ErrRequiredVehicleBrand        = errors.New("brand of the vehicle is required")
+	ErrRequiredVehicleModel        = errors.New("model of the vehicle is required")
+	ErrParamVehicleYear            = errors.New("year of the vehicle is not valid")
+)
