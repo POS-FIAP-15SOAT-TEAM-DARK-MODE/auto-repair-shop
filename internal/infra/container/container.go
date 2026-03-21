@@ -20,6 +20,8 @@ type (
 	WorkHttpHandler interface {
 		Create() gin.HandlerFunc
 		List() gin.HandlerFunc
+		Update() gin.HandlerFunc
+		Delete() gin.HandlerFunc
 	}
 
 	VehicleHttpHandler interface {

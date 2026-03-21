@@ -98,3 +98,27 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListWorkP
 		PageSize:   params.PageSize,
 	}, nil
 }
+
+func (s *service) Delete(c context.Context, id string) error {
+	if err := s.uow.Execute(c, func(ctx context.Context) error { return s.repo.Delete(ctx, id) }); err != nil {
+		logger.Of(c).Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) Update(ctx context.Context, work *domain.Work) error {
+	if err := work.Validate(); err != nil {
+		err = fmt.Errorf("work validation failed: %w", err)
+		logger.Of(ctx).Error(err)
+		return err
+	}
+
+	if err := s.uow.Execute(ctx, s.saveRepositoryStep(work)); err != nil {
+		logger.Of(ctx).Error(err)
+		return err
+	}
+
+	return nil
+}

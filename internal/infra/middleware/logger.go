@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,12 @@ import (
 
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.Contains(path, "swagger") {
+			c.Next()
+			return
+		}
+
 		ctx := c.Request.Context()
 		ctx, reqId := logger.Request(ctx)
 		c.Request = c.Request.WithContext(ctx)
@@ -19,7 +26,6 @@ func Logger() gin.HandlerFunc {
 		c.Writer.Header().Set("X-Request-ID", reqId)
 
 		start := time.Now()
-		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 		fields := []zap.Field{
 			zap.String("method", c.Request.Method),

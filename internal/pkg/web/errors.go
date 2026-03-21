@@ -80,13 +80,17 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrUserPasswordDontMatch) ||
 		errors.Is(err, domain.ErrUserPasswordTooLong) ||
 		errors.Is(err, domain.ErrEmptyUserName) ||
+		errors.Is(err, domain.ErrInvalidUserName) ||
 		errors.Is(err, domain.ErrEmptyUserEmail) ||
+		errors.Is(err, domain.ErrInvalidUserEmail) ||
 		errors.Is(err, domain.ErrEmptyUserPassword) ||
+		errors.Is(err, domain.ErrInvalidPassword) ||
 		errors.Is(err, domain.ErrUserPasswordTooShort) ||
 		errors.Is(err, domain.ErrEmptyWorkName) ||
 		errors.Is(err, domain.ErrWorkNameShorterThenRequired) ||
 		errors.Is(err, domain.ErrEmptyWorkDescription) ||
 		errors.Is(err, domain.ErrWorkDescriptionShorterThenRequired) ||
+		errors.Is(err, domain.ErrInvalidWorkId) ||
 		errors.Is(err, json.ErrJSONSyntax) ||
 		errors.Is(err, json.ErrJSONType) ||
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
