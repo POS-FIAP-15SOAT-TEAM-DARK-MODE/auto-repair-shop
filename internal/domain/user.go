@@ -39,7 +39,7 @@ type UserService interface {
 type UserRepository interface {
 	Create(ctx context.Context, c *User) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
-	GetRolesById(ctx context.Context, id string) ([]string, error)
+	GetRolesByUserId(ctx context.Context, id string) ([]string, error)
 }
 
 var (

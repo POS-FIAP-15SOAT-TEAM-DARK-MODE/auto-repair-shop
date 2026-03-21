@@ -37,7 +37,7 @@ func (s *service) Login(ctx context.Context, loggedUser *domain.LoggedUser) erro
 		return err
 	}
 
-	roles, err := s.repo.GetRolesById(ctx, loggedUser.User.ID)
+	roles, err := s.repo.GetRolesByUserId(ctx, loggedUser.User.ID)
 	if err != nil {
 		return err
 	}

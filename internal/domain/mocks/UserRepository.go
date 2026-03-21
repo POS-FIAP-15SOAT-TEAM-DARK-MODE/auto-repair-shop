@@ -128,12 +128,12 @@ func (_c *UserRepository_GetByEmail_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
-// GetRolesById provides a mock function with given fields: ctx, id
-func (_m *UserRepository) GetRolesById(ctx context.Context, id string) ([]string, error) {
+// GetRolesByUserId provides a mock function with given fields: ctx, id
+func (_m *UserRepository) GetRolesByUserId(ctx context.Context, id string) ([]string, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetRolesById")
+		panic("no return value specified for GetRolesByUserId")
 	}
 
 	var r0 []string
@@ -158,31 +158,31 @@ func (_m *UserRepository) GetRolesById(ctx context.Context, id string) ([]string
 	return r0, r1
 }
 
-// UserRepository_GetRolesById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRolesById'
-type UserRepository_GetRolesById_Call struct {
+// UserRepository_GetRolesByUserId_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRolesByUserId'
+type UserRepository_GetRolesByUserId_Call struct {
 	*mock.Call
 }
 
-// GetRolesById is a helper method to define mock.On call
+// GetRolesByUserId is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id string
-func (_e *UserRepository_Expecter) GetRolesById(ctx interface{}, id interface{}) *UserRepository_GetRolesById_Call {
-	return &UserRepository_GetRolesById_Call{Call: _e.mock.On("GetRolesById", ctx, id)}
+func (_e *UserRepository_Expecter) GetRolesByUserId(ctx interface{}, id interface{}) *UserRepository_GetRolesByUserId_Call {
+	return &UserRepository_GetRolesByUserId_Call{Call: _e.mock.On("GetRolesByUserId", ctx, id)}
 }
 
-func (_c *UserRepository_GetRolesById_Call) Run(run func(ctx context.Context, id string)) *UserRepository_GetRolesById_Call {
+func (_c *UserRepository_GetRolesByUserId_Call) Run(run func(ctx context.Context, id string)) *UserRepository_GetRolesByUserId_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *UserRepository_GetRolesById_Call) Return(_a0 []string, _a1 error) *UserRepository_GetRolesById_Call {
+func (_c *UserRepository_GetRolesByUserId_Call) Return(_a0 []string, _a1 error) *UserRepository_GetRolesByUserId_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserRepository_GetRolesById_Call) RunAndReturn(run func(context.Context, string) ([]string, error)) *UserRepository_GetRolesById_Call {
+func (_c *UserRepository_GetRolesByUserId_Call) RunAndReturn(run func(context.Context, string) ([]string, error)) *UserRepository_GetRolesByUserId_Call {
 	_c.Call.Return(run)
 	return _c
 }

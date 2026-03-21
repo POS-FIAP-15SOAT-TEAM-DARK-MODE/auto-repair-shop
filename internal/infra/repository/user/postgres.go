@@ -31,7 +31,7 @@ func (u *repo) GetByEmail(ctx context.Context, email string) (*domain.User, erro
 	return &user, nil
 }
 
-func (u *repo) GetRolesById(ctx context.Context, id string) ([]string, error) {
+func (u *repo) GetRolesByUserId(ctx context.Context, id string) ([]string, error) {
 	db, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err

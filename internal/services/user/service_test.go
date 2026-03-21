@@ -104,7 +104,7 @@ func TestService_Login(t *testing.T) {
 			mockRepo: func(t *testing.T) *mocks.UserRepository {
 				mockRepo := mocks.NewUserRepository(t)
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(validDomainUser, nil)
-				mockRepo.On("GetRolesById", mock.Anything, "123").Return(nil, errors.New("repository failed"))
+				mockRepo.On("GetRolesByUserId", mock.Anything, "123").Return(nil, errors.New("repository failed"))
 				return mockRepo
 			},
 			expectedError: errors.New("repository failed"),
