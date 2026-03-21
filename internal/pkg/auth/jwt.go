@@ -3,8 +3,6 @@ package auth
 import (
 	"time"
 
-	"sync"
-
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -15,12 +13,13 @@ type UserClaims struct {
 	jwt.RegisteredClaims
 }
 
-var (
-	once      sync.Once
-	secretKey []byte
-)
+var secretKey []byte
 
 const secretDefaultValue = "your_jwt_secret"
+
+func init() {
+	secretKey = []byte(env.GetString("JWT_SECRET", secretDefaultValue))
+}
 
 func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, error) {
 	claims := UserClaims{
@@ -33,12 +32,5 @@ func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(getSecretKey())
-}
-
-func getSecretKey() []byte {
-	once.Do(func() {
-		secretKey = []byte(env.GetString("JWT_SECRET", secretDefaultValue))
-	})
-	return secretKey
+	return token.SignedString(secretKey)
 }
