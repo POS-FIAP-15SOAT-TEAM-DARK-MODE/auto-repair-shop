@@ -91,6 +91,7 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrWorkNameShorterThenRequired) ||
 		errors.Is(err, domain.ErrEmptyWorkDescription) ||
 		errors.Is(err, domain.ErrWorkDescriptionShorterThenRequired) ||
+		errors.Is(err, domain.ErrInvalidWorkId) ||
 		errors.Is(err, json.ErrJSONSyntax) ||
 		errors.Is(err, json.ErrJSONType) ||
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||

@@ -69,6 +69,53 @@ func (_c *WorkService_Create_Call) RunAndReturn(run func(context.Context, *domai
 	return _c
 }
 
+// Delete provides a mock function with given fields: _a0, _a1
+func (_m *WorkService) Delete(_a0 context.Context, _a1 string) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WorkService_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type WorkService_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *WorkService_Expecter) Delete(_a0 interface{}, _a1 interface{}) *WorkService_Delete_Call {
+	return &WorkService_Delete_Call{Call: _e.mock.On("Delete", _a0, _a1)}
+}
+
+func (_c *WorkService_Delete_Call) Run(run func(_a0 context.Context, _a1 string)) *WorkService_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *WorkService_Delete_Call) Return(_a0 error) *WorkService_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *WorkService_Delete_Call) RunAndReturn(run func(context.Context, string) error) *WorkService_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function with given fields: _a0, _a1
 func (_m *WorkService) List(_a0 context.Context, _a1 *domain.ListWorkParams) (*domain.PaginatorResponse[domain.Work], error) {
 	ret := _m.Called(_a0, _a1)
@@ -124,6 +171,53 @@ func (_c *WorkService_List_Call) Return(_a0 *domain.PaginatorResponse[domain.Wor
 }
 
 func (_c *WorkService_List_Call) RunAndReturn(run func(context.Context, *domain.ListWorkParams) (*domain.PaginatorResponse[domain.Work], error)) *WorkService_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: _a0, _a1
+func (_m *WorkService) Update(_a0 context.Context, _a1 *domain.Work) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Work) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WorkService_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type WorkService_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *domain.Work
+func (_e *WorkService_Expecter) Update(_a0 interface{}, _a1 interface{}) *WorkService_Update_Call {
+	return &WorkService_Update_Call{Call: _e.mock.On("Update", _a0, _a1)}
+}
+
+func (_c *WorkService_Update_Call) Run(run func(_a0 context.Context, _a1 *domain.Work)) *WorkService_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Work))
+	})
+	return _c
+}
+
+func (_c *WorkService_Update_Call) Return(_a0 error) *WorkService_Update_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *WorkService_Update_Call) RunAndReturn(run func(context.Context, *domain.Work) error) *WorkService_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -2,7 +2,7 @@ package work
 
 const (
 	upsertQuery = `
-		INSERT INTO "service" (id, name, description, unit_price, status)
+		INSERT INTO "work" (id, name, description, unit_price, status)
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (id) DO UPDATE
 		SET
@@ -13,10 +13,12 @@ const (
 			updated_at  = NOW();
 	`
 
-	countQuery = `SELECT COUNT(s.id) FROM "service" s`
+	countQuery = `SELECT COUNT(s.id) FROM "work" s`
 
 	searchQuery = `
-		SELECT s.id, s.name, s.description, s.unit_price, s.status
-		FROM "service" s
+	SELECT s.id, s.name, s.description, s.unit_price, s.status
+	FROM "work" s
 	`
+
+	deleteQuery = `DELETE FROM "work" s where s.id = $1`
 )

@@ -222,6 +222,77 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/vehicle:
+    post:
+      summary: create a new vehicle register
+      description: insert a new vehicle in our database
+      tags:
+        - Vehicle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRequest'
+      responses:
+        "201":
+          description: Successful created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
+  /v1/services/{id}:
+    put:
+      summary: Update an existing Service
+      description: Endpoint to edit an existing service object.
+      tags:
+        - Service
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of service to be updated.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+      responses:
+        "200":
+          description: Successful updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateServiceResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
+    delete:
+      summary: List Services
+      description: List registered services with pagination and optional status filter.
+      tags:
+        - Service
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of service to be deleted.
+      responses:
+        "204":
+          description: Successful deleted
+        "500":
+          description: Internal Server Error
+
 components:
   schemas:
     UserRegisterRequest:
@@ -447,3 +518,56 @@ components:
         - totalPages
         - pageSize
         - page
+
+    VehicleRequest:
+      type: object
+      required:
+        - brand
+        - license_plate
+        - customer_id
+        - model
+        - year
+      properties:
+        brand:
+          type: string
+          example: chevrolet
+        license_plate:
+          type: string
+          example: aaa-2a22
+        customer_id:
+          type: string
+          format: uuid
+          example: b8415e84-730a-4624-a1c3-74cf59b95d6d
+        model:
+          type: string
+          example: onix
+        year:
+          type: integer
+          example: 2019
+
+    VehicleResponse:
+      type: object
+      required:
+        - id
+        - license_plate
+        - brand_model
+        - year
+        - customer_id
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 55160da4-d243-4920-9426-5ce97aefb2fc
+        license_plate:
+          type: string
+          example: AAA2A22
+        brand_model:
+          type: string
+          example: chevrolet - onix
+        year:
+          type: integer
+          example: 2019
+        customer_id:
+          type: string
+          format: uuid
+          example: b8415e84-730a-4624-a1c3-74cf59b95d6d
