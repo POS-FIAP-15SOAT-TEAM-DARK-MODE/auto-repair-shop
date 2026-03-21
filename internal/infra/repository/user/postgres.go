@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -25,6 +27,10 @@ func (u *repo) GetByEmail(ctx context.Context, email string) (*domain.User, erro
 	var user domain.User
 	err = db.QueryRowContext(ctx, getUserByEmail, email).Scan(&user.ID, &user.Name, &user.Email, &user.Password)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrInvalidUserCredentials
+		}
+
 		return nil, pgPkg.Error(ctx, err)
 	}
 
