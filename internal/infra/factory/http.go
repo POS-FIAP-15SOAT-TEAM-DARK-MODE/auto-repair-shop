@@ -1,6 +1,8 @@
 package factory
 
 import (
+	"time"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
@@ -8,6 +10,7 @@ import (
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
 	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
 	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
 
@@ -37,8 +40,11 @@ func newPingHandler() container.PingHttpHandler {
 func newUserHandler() container.UserHttpHandler {
 	db := postgres.Connect()
 	uow := postgres.NewTransactionalUoW(db)
+
+	expiresIn := env.GetTimeDuration("JWT_EXPIRES_IN", 24*time.Hour)
+
 	userRepository := userRepo.Repository()
-	userService := userSvc.Service(uow, userRepository)
+	userService := userSvc.Service(uow, userRepository, expiresIn)
 	return userHandler.HttpHandler(userService)
 }
 

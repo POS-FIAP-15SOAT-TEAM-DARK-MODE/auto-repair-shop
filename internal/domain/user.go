@@ -14,21 +14,32 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type User struct {
-	ID       string
-	Name     string
-	Email    string
-	Password string
-}
+type (
+	User struct {
+		ID       string
+		Name     string
+		Email    string
+		Password string
+	}
+
+	LoggedUser struct {
+		User
+		SessionToken     string
+		SessionExpiresIn int
+	}
+)
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserService --with-expecter
 type UserService interface {
 	Create(ctx context.Context, req *User) error
+	Login(ctx context.Context, loggedUser *LoggedUser) error
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserRepository --with-expecter
 type UserRepository interface {
 	Create(ctx context.Context, c *User) error
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetRolesByUserId(ctx context.Context, id string) ([]string, error)
 }
 
 var (
@@ -74,8 +85,14 @@ func (u *User) IsValidName() error {
 
 	return nil
 }
+func (u *User) IsPasswordEmpty() bool {
+	return u.Password == ""
+}
+func (u *User) IsEmailEmpty() bool {
+	return u.Email == ""
+}
 func (u *User) IsValidPassword() error {
-	if u.Password == "" {
+	if u.IsPasswordEmpty() {
 		return ErrEmptyUserPassword
 	}
 
@@ -86,14 +103,14 @@ func (u *User) IsValidPassword() error {
 		return ErrUserPasswordTooShort
 	}
 	if !passwordHasUpper.MatchString(u.Password) || !passwordHasSpecial.MatchString(u.Password) {
-		return ErrInvalidPassword
+		return ErrInvalidUserPassword
 	}
 
 	return nil
 }
 func (u *User) IsValidEmail() error {
 	email := strings.TrimSpace(u.Email)
-	if email == "" {
+	if u.IsEmailEmpty() {
 		return ErrEmptyUserEmail
 	}
 
@@ -133,6 +150,21 @@ func (u *User) Validate() error {
 	}
 	if err := u.IsValidPassword(); err != nil {
 		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+
+	return nil
+}
+func (u *LoggedUser) Validate() error {
+	var errs []error
+	if u.User.IsEmailEmpty() {
+		errs = append(errs, ErrEmptyUserEmail)
+	}
+	if u.User.IsPasswordEmpty() {
+		errs = append(errs, ErrEmptyUserPassword)
 	}
 
 	if len(errs) > 0 {
