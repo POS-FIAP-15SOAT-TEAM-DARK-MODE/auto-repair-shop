@@ -27,7 +27,7 @@ var (
 	ErrEmptyUserEmail         = errors.New("user email cannot be empty")
 	ErrInvalidUserEmail       = errors.New("invalid user email format")
 	ErrEmptyUserPassword      = errors.New("user password cannot be empty")
-	ErrInvalidPassword        = errors.New("password must have at least 8 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
+	ErrInvalidUserPassword    = errors.New("password must have at least 8 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
 	ErrUserPasswordDontMatch  = errors.New("user passwords do not match")
 	ErrUserPasswordTooLong    = errors.New("user password too long")
 	ErrUserPasswordTooShort   = errors.New("user password too short")

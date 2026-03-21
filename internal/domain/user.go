@@ -103,7 +103,7 @@ func (u *User) IsValidPassword() error {
 		return ErrUserPasswordTooShort
 	}
 	if !passwordHasUpper.MatchString(u.Password) || !passwordHasSpecial.MatchString(u.Password) {
-		return ErrInvalidPassword
+		return ErrInvalidUserPassword
 	}
 
 	return nil
