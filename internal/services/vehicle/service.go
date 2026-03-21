@@ -9,16 +9,14 @@ import (
 )
 
 type vehicleService struct {
-	uow                uow.Executor
-	vehicleRepository  domain.VehicleRepository
-	customerRepository domain.CustomerRepository
+	uow               uow.Executor
+	vehicleRepository domain.VehicleRepository
 }
 
-func NewService(uow uow.Executor, vehicleRepository domain.VehicleRepository, customerRepository domain.CustomerRepository) *vehicleService {
+func NewService(uow uow.Executor, vehicleRepository domain.VehicleRepository) *vehicleService {
 	return &vehicleService{
-		uow:                uow,
-		vehicleRepository:  vehicleRepository,
-		customerRepository: customerRepository,
+		uow:               uow,
+		vehicleRepository: vehicleRepository,
 	}
 }
 

@@ -16,6 +16,8 @@ var (
 	platePattern = regexp.MustCompile(`^[A-Za-z]{3}[0-9][A-Za-z0-9][0-9]{2}$`)
 )
 
+//go:generate go run github.com/vektra/mockery/v2@latest --name=VehicleService --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=VehicleRepository --with-expecter
 type (
 	Vehicle struct {
 		ID           string

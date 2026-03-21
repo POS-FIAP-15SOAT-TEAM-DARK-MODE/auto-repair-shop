@@ -63,7 +63,6 @@ func newVehicleHandler() container.VehicleHttpHandler {
 	db := postgres.Connect()
 	uow := postgres.NewTransactionalUoW(db)
 	vehicleRepository := vehicleRepo.NewVehicleRepository()
-	customerRepository := customerRepo.Repository()
-	service := vehicleSvc.NewService(uow, vehicleRepository, customerRepository)
+	service := vehicleSvc.NewService(uow, vehicleRepository)
 	return vehicleHandler.HttpHandler(service)
 }
