@@ -25,7 +25,9 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 	v1.POST("/auth/register", c.UserHandler.Create())
 	v1.POST("/auth/login", c.UserHandler.Login())
 
-	v1.POST("/customers", c.CustomerHandler.Create())
+	v1.POST("/customers", c.CustomerHandler.Create)
+	v1.GET("/customers/:id", c.CustomerHandler.GetByID)
+	v1.GET("/customers", c.CustomerHandler.GetByDocument)
 
 	v1.POST("/services", c.WorkHandler.Create())
 	v1.GET("/services", c.WorkHandler.List())

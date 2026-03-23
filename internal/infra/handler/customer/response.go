@@ -2,7 +2,7 @@ package customer
 
 import "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 
-type createCustomerResponse struct {
+type customerResponse struct {
 	ID          string              `json:"id"`
 	Name        string              `json:"name"`
 	Email       string              `json:"email"`
@@ -12,7 +12,7 @@ type createCustomerResponse struct {
 	Phone       string              `json:"phone"`
 }
 
-func toResponse(c domain.Customer) createCustomerResponse {
+func toResponse(c domain.Customer) customerResponse {
 	var document string
 	if c.Type == domain.IndividualCustomerType {
 		document = c.CPF
@@ -20,7 +20,7 @@ func toResponse(c domain.Customer) createCustomerResponse {
 		document = c.CNPJ
 	}
 
-	return createCustomerResponse{
+	return customerResponse{
 		ID:          c.ID,
 		Name:        c.User.Name,
 		Email:       c.User.Email,

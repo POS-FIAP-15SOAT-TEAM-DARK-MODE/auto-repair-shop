@@ -47,13 +47,15 @@ var (
 
 // Customer errors
 var (
-	ErrPhoneRequired       = errors.New("phone is required")
-	ErrCompanyNameRequired = errors.New("company_name is required for COMPANY type")
-	ErrInvalidCustomerType = errors.New("invalid customer type")
-	ErrInvalidCPF          = errors.New("invalid CPF")
-	ErrInvalidCNPJ         = errors.New("invalid CNPJ")
-	ErrCPFLength           = errors.New("CPF must have 11 digits")
-	ErrCNPJLength          = errors.New("CNPJ must have 14 characters")
+	ErrPhoneRequired         = errors.New("phone is required")
+	ErrCompanyNameRequired   = errors.New("company_name is required for COMPANY type")
+	ErrInvalidCustomerType   = errors.New("invalid customer type")
+	ErrInvalidCPF            = errors.New("invalid CPF")
+	ErrInvalidCNPJ           = errors.New("invalid CNPJ")
+	ErrCPFLength             = errors.New("CPF must have 11 digits")
+	ErrCNPJLength            = errors.New("CNPJ must have 14 characters")
+	ErrCustomerNotFound      = errors.New("customer not found")
+	ErrInvalidDocumentFormat = ValidationError{Message: "document must be a valid CPF (11 digits) or CNPJ (14 characters)"}
 )
 
 // Vehicle errors

@@ -103,9 +103,7 @@ func isBadRequestError(err error) bool {
 }
 
 func isUnauthorizedError(err error) bool {
-	var validationErr domain.ValidationError
-	return errors.As(err, &validationErr) ||
-		errors.Is(err, domain.ErrInvalidUserCredentials)
+	return errors.Is(err, domain.ErrInvalidUserCredentials)
 }
 
 func isInternalServerError(err error) bool {
