@@ -99,7 +99,8 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, json.ErrJSONType) ||
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
 		errors.Is(err, json.ErrJSONEmptyBody) ||
-		errors.Is(err, json.ErrWrongPayloadFormat)
+		errors.Is(err, json.ErrWrongPayloadFormat) ||
+		errors.Is(err, domain.ErrPhoneRequired)
 }
 
 func isUnauthorizedError(err error) bool {
@@ -114,7 +115,8 @@ func isInternalServerError(err error) bool {
 
 func isConflictError(err error) bool {
 	return errors.Is(err, domain.ErrDataConflict) ||
-		errors.Is(err, domain.ErrInfraConflict)
+		errors.Is(err, domain.ErrInfraConflict) ||
+		errors.Is(err, domain.ErrCustomerHasServiceOrders)
 }
 
 func isUnprocessableEntityError(err error) bool {

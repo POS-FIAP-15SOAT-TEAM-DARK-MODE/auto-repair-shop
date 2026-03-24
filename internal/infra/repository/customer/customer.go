@@ -5,12 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"go.uber.org/zap"
-
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 )
 
 type repository struct{}
@@ -35,15 +32,7 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 		customer.Phone,
 	)
 	if err != nil {
-		mapped := pgPkg.Error(ctx, err)
-		if mapped != domain.ErrDataConflict && mapped != domain.ErrDataViolation {
-			logger.Of(ctx).Warn("customer repository: failed to create customer",
-				zap.String("operation", "create_customer"),
-				zap.String("entity_id", customer.ID),
-				zap.Error(err),
-			)
-		}
-		return mapped
+		return pgPkg.Error(ctx, err)
 	}
 
 	return nil
@@ -67,11 +56,6 @@ func (r *repository) GetByID(ctx context.Context, id string) (domain.Customer, e
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Customer{}, domain.ErrCustomerNotFound
 		}
-		logger.Of(ctx).Warn("customer repository: failed to get customer by id",
-			zap.String("operation", "get_customer_by_id"),
-			zap.String("entity_id", id),
-			zap.Error(err),
-		)
 		return domain.Customer{}, pgPkg.Error(ctx, err)
 	}
 
@@ -97,15 +81,45 @@ func (r *repository) GetByDocument(ctx context.Context, document string) (domain
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Customer{}, domain.ErrCustomerNotFound
 		}
-		logger.Of(ctx).Warn("customer repository: failed to get customer by document",
-			zap.String("operation", "get_customer_by_document"),
-			zap.Error(err),
-		)
 		return domain.Customer{}, pgPkg.Error(ctx, err)
 	}
 
 	c.User.ID = c.UserID
 	return c, nil
+}
+
+func (r *repository) Update(ctx context.Context, id, phone string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, updateCustomerQuery, phone, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (r *repository) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	var count int
+	if err = tx.QueryRowContext(ctx, countServiceOrdersByCustomerQuery, id).Scan(&count); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	if count > 0 {
+		return domain.ErrCustomerHasServiceOrders
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteCustomerQuery, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
 }
 
 // nullableString converts an empty string to nil so the DB receives NULL

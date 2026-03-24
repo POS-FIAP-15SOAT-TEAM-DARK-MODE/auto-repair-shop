@@ -26,8 +26,12 @@ func setupRouter(svc *domainmocks.CustomerService) *gin.Engine {
 	r.POST("/customers", h.Create)
 	r.GET("/customers/:id", h.GetByID)
 	r.GET("/customers", h.GetByDocument)
+	r.PUT("/customers/:id", h.Update)
+	r.DELETE("/customers/:id", h.Delete)
 	return r
 }
+
+func strPtr(s string) *string { return &s }
 
 func validCustomer() domain.Customer {
 	return domain.Customer{
@@ -194,6 +198,169 @@ func TestGetByID(t *testing.T) {
 				assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 				tt.assertBody(t, body)
 			}
+		})
+	}
+}
+
+// --- Update ---
+
+func TestUpdate(t *testing.T) {
+	tests := []struct {
+		name           string
+		id             string
+		body           map[string]any
+		mockSetup      func(*domainmocks.CustomerService)
+		expectedStatus int
+		assertBody     func(t *testing.T, body map[string]any)
+	}{
+		{
+			name: "success_all_fields",
+			id:   "uuid-individual",
+			body: map[string]any{"name": "Novo Nome", "email": "novo@example.com", "phone": "11888888888"},
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Update(mock.Anything, "uuid-individual", strPtr("Novo Nome"), strPtr("novo@example.com"), strPtr("11888888888")).
+					Return(validCustomer(), nil)
+			},
+			expectedStatus: http.StatusOK,
+			assertBody: func(t *testing.T, body map[string]any) {
+				assert.Equal(t, "uuid-individual", body["id"])
+			},
+		},
+		{
+			name: "success_partial_only_phone",
+			id:   "uuid-individual",
+			body: map[string]any{"phone": "11777777777"},
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Update(mock.Anything, "uuid-individual", (*string)(nil), (*string)(nil), strPtr("11777777777")).
+					Return(validCustomer(), nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "not_found_returns_204",
+			id:   "unknown",
+			body: map[string]any{"name": "Novo Nome"},
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Update(mock.Anything, "unknown", strPtr("Novo Nome"), (*string)(nil), (*string)(nil)).
+					Return(domain.Customer{}, domain.ErrCustomerNotFound)
+			},
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name:           "invalid_name_returns_400",
+			id:             "uuid-individual",
+			body:           map[string]any{"name": "A"},
+			mockSetup:      func(_ *domainmocks.CustomerService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "empty_phone_returns_400",
+			id:             "uuid-individual",
+			body:           map[string]any{"phone": ""},
+			mockSetup:      func(_ *domainmocks.CustomerService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid_json_returns_400",
+			id:             "uuid-individual",
+			body:           nil,
+			mockSetup:      func(_ *domainmocks.CustomerService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "duplicate_email_returns_409",
+			id:   "uuid-individual",
+			body: map[string]any{"email": "duplicate@example.com"},
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Update(mock.Anything, "uuid-individual", (*string)(nil), strPtr("duplicate@example.com"), (*string)(nil)).
+					Return(domain.Customer{}, domain.ErrDataConflict)
+			},
+			expectedStatus: http.StatusConflict,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := domainmocks.NewCustomerService(t)
+			tt.mockSetup(svc)
+
+			var reqBody *bytes.Reader
+			if tt.body != nil {
+				payload, _ := json.Marshal(tt.body)
+				reqBody = bytes.NewReader(payload)
+			} else {
+				reqBody = bytes.NewReader([]byte("invalid-json{"))
+			}
+
+			req := httptest.NewRequest(http.MethodPut, "/customers/"+tt.id, reqBody)
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			setupRouter(svc).ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+
+			if tt.assertBody != nil {
+				var body map[string]any
+				assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+				tt.assertBody(t, body)
+			}
+		})
+	}
+}
+
+// --- Delete ---
+
+func TestDelete(t *testing.T) {
+	tests := []struct {
+		name           string
+		id             string
+		mockSetup      func(*domainmocks.CustomerService)
+		expectedStatus int
+	}{
+		{
+			name: "success_returns_204",
+			id:   "uuid-individual",
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Delete(mock.Anything, "uuid-individual").Return(nil)
+			},
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name: "not_found_returns_204",
+			id:   "unknown",
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Delete(mock.Anything, "unknown").Return(domain.ErrCustomerNotFound)
+			},
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name: "has_service_orders_returns_409",
+			id:   "uuid-individual",
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Delete(mock.Anything, "uuid-individual").Return(domain.ErrCustomerHasServiceOrders)
+			},
+			expectedStatus: http.StatusConflict,
+		},
+		{
+			name: "service_error_returns_500",
+			id:   "uuid-individual",
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Delete(mock.Anything, "uuid-individual").Return(assert.AnError)
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := domainmocks.NewCustomerService(t)
+			tt.mockSetup(svc)
+
+			req := httptest.NewRequest(http.MethodDelete, "/customers/"+tt.id, nil)
+			rec := httptest.NewRecorder()
+			setupRouter(svc).ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
 		})
 	}
 }

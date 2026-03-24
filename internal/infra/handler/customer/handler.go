@@ -76,6 +76,67 @@ func (h *handler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, toResponse(customer))
 }
 
+func (h *handler) Update(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	idReq := getCustomerByIDRequest{ID: c.Param("id")}
+	if err := idReq.validate(); err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	var body updateCustomerRequest
+	if err := c.ShouldBindJSON(&body); err != nil {
+		status, response := web.Error(pkgjson.CheckJsonError(err))
+		c.JSON(status, response)
+		return
+	}
+
+	if err := body.validate(); err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	customer, err := h.service.Update(ctx, idReq.ID, body.Name, body.Email, body.Phone)
+	if errors.Is(err, domain.ErrCustomerNotFound) {
+		c.Status(http.StatusNoContent)
+		return
+	}
+	if err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	c.JSON(http.StatusOK, toResponse(customer))
+}
+
+func (h *handler) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	req := getCustomerByIDRequest{ID: c.Param("id")}
+	if err := req.validate(); err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	err := h.service.Delete(ctx, req.ID)
+	if errors.Is(err, domain.ErrCustomerNotFound) {
+		c.Status(http.StatusNoContent)
+		return
+	}
+	if err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func (h *handler) GetByDocument(c *gin.Context) {
 	ctx := c.Request.Context()
 

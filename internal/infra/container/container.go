@@ -18,6 +18,8 @@ type (
 		Create(c *gin.Context)
 		GetByID(c *gin.Context)
 		GetByDocument(c *gin.Context)
+		Update(c *gin.Context)
+		Delete(c *gin.Context)
 	}
 
 	WorkHttpHandler interface {

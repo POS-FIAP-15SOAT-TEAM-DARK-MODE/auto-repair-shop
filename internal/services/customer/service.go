@@ -43,3 +43,49 @@ func (s *service) GetByDocument(ctx context.Context, rawDocument string) (domain
 	}
 	return s.customerRepo.GetByDocument(ctx, document)
 }
+
+func (s *service) Update(ctx context.Context, id string, name, email, phone *string) (domain.Customer, error) {
+	customer, err := s.customerRepo.GetByID(ctx, id)
+	if err != nil {
+		return domain.Customer{}, err
+	}
+
+	updatedName := customer.User.Name
+	if name != nil {
+		updatedName = *name
+	}
+	updatedEmail := customer.User.Email
+	if email != nil {
+		updatedEmail = *email
+	}
+	updatedPhone := customer.Phone
+	if phone != nil {
+		updatedPhone = *phone
+	}
+
+	if err := s.uow.Execute(ctx,
+		func(txCtx context.Context) error {
+			return s.userRepo.Update(txCtx, customer.UserID, updatedName, updatedEmail)
+		},
+		func(txCtx context.Context) error { return s.customerRepo.Update(txCtx, id, updatedPhone) },
+	); err != nil {
+		return domain.Customer{}, err
+	}
+
+	customer.User.Name = updatedName
+	customer.User.Email = updatedEmail
+	customer.Phone = updatedPhone
+	return customer, nil
+}
+
+func (s *service) Delete(ctx context.Context, id string) error {
+	customer, err := s.customerRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return s.uow.Execute(ctx,
+		func(txCtx context.Context) error { return s.customerRepo.Delete(txCtx, id) },
+		func(txCtx context.Context) error { return s.userRepo.Delete(txCtx, customer.UserID) },
+	)
+}

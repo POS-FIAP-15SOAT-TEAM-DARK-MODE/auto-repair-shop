@@ -74,3 +74,29 @@ func (u *repo) Create(ctx context.Context, c *domain.User) error {
 	}
 	return nil
 }
+
+func (u *repo) Update(ctx context.Context, id, name, email string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, updateUserQuery, name, email, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (u *repo) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteUserQuery, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
