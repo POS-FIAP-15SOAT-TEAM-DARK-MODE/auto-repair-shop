@@ -12,6 +12,9 @@ type CustomerType string
 const (
 	IndividualCustomerType CustomerType = "INDIVIDUAL"
 	CompanyCustomerType    CustomerType = "COMPANY"
+
+	cpfLength  = 11
+	cnpjLength = 14
 )
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerService --with-expecter
@@ -233,12 +236,12 @@ func ParseDocument(raw string) (CustomerType, string, error) {
 	// CNPJ sanitizer strips all non-alphanumeric chars and uppercases — safe for CPF too.
 	sanitized := sanitizeCNPJ(raw)
 	switch len(sanitized) {
-	case 11:
+	case cpfLength:
 		if err := validateCPF(sanitized); err != nil {
 			return "", "", err
 		}
 		return IndividualCustomerType, sanitized, nil
-	case 14:
+	case cnpjLength:
 		if err := validateCNPJ(sanitized); err != nil {
 			return "", "", err
 		}
