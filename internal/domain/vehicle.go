@@ -66,7 +66,8 @@ func (v *Vehicle) Validate() error {
 }
 
 func NormalizeLicensePlate(licensePlate string) string {
-	return strings.ToUpper(strings.TrimSpace(strings.ReplaceAll(licensePlate, "-", "")))
+	licensePlate = strings.ReplaceAll(licensePlate, " ", "")
+	return strings.ToUpper(strings.ReplaceAll(licensePlate, "-", ""))
 }
 
 func ValidateLicensePlate(plate string) error {
