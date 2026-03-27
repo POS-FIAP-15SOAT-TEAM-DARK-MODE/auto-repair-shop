@@ -39,6 +39,8 @@ func getHTTPStatus(err error) int {
 		return http.StatusConflict
 	case isUnprocessableEntityError(err):
 		return http.StatusUnprocessableEntity
+	case isNotFoundError(err):
+		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
 	}
@@ -56,9 +58,7 @@ func IsJoined(err error) bool {
 // buildErrorMessages formats the error messages based on status code.
 func buildErrorMessages(err error, status int) ([]string, string) {
 	switch status {
-	case http.StatusUnauthorized:
-		return unwrapAll(err), ""
-	case http.StatusBadRequest:
+	case http.StatusUnauthorized, http.StatusBadRequest, http.StatusNotFound:
 		// For 4XX BadRequest provide stack of errors.
 		return unwrapAll(err), ""
 	case http.StatusConflict, http.StatusUnprocessableEntity, http.StatusInternalServerError:
@@ -99,7 +99,8 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, json.ErrJSONType) ||
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
 		errors.Is(err, json.ErrJSONEmptyBody) ||
-		errors.Is(err, json.ErrWrongPayloadFormat)
+		errors.Is(err, json.ErrWrongPayloadFormat) ||
+		errors.Is(err, domain.ErrVehicleInvalidPlate)
 }
 
 func isUnauthorizedError(err error) bool {
@@ -124,6 +125,10 @@ func isUnprocessableEntityError(err error) bool {
 		errors.Is(err, domain.ErrWorkPriceLessThenOrEqualZero) ||
 		errors.Is(err, domain.ErrInvalidWorkPriceValue) ||
 		errors.Is(err, domain.ErrInvalidWorkStatusValue)
+}
+
+func isNotFoundError(err error) bool {
+	return errors.Is(err, domain.ErrVehicleNotFound)
 }
 
 func unwrapAll(err error) []string {

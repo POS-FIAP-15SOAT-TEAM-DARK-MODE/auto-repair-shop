@@ -9,10 +9,10 @@ type (
 		Ping() gin.HandlerFunc
 	}
 
- UserHttpHandler interface {
-	Create() gin.HandlerFunc
-	Login() gin.HandlerFunc
-}
+	UserHttpHandler interface {
+		Create() gin.HandlerFunc
+		Login() gin.HandlerFunc
+	}
 
 	CustomerHttpHandler interface {
 		Create() gin.HandlerFunc
@@ -27,6 +27,7 @@ type (
 
 	VehicleHttpHandler interface {
 		Create() gin.HandlerFunc
+		FindByLicensePlate() gin.HandlerFunc
 	}
 )
 

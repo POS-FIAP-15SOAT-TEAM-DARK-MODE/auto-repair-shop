@@ -33,6 +33,7 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 	v1.DELETE("/services/:id", c.WorkHandler.Delete())
 
 	v1.POST("/vehicle", c.VehicleHandler.Create())
+	v1.GET("/vehicle/:plate", c.VehicleHandler.FindByLicensePlate())
 
 	return router
 }

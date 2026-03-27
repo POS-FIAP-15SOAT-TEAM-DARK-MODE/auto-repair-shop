@@ -2,9 +2,21 @@ package vehicle
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
+	"go.uber.org/zap"
+)
+
+const (
+	plateLen     = 7
+	ID           = "id"
+	licensePlate = "license_plate"
 )
 
 type vehicleRepository struct{}
@@ -34,4 +46,27 @@ func (r *vehicleRepository) Save(ctx context.Context, vehicle *domain.Vehicle) e
 	}
 
 	return nil
+}
+
+func (r *vehicleRepository) Find(ctx context.Context, search string) (*domain.Vehicle, error) {
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query := fmt.Sprintf(selectVehicle, ID)
+	if len(search) == plateLen {
+		query = fmt.Sprintf(selectVehicle, licensePlate)
+	}
+
+	v := &domain.Vehicle{}
+	if err = tx.QueryRowContext(ctx, query, search).Scan(&v.ID, &v.LicensePlate, &v.Brand, &v.Model, &v.Year, &v.CustomerId); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrVehicleNotFound
+		}
+		logger.Of(ctx).Warn("vehicle repository", zap.String("operation", "get_vehicle"), zap.Error(err))
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	return v, nil
 }
