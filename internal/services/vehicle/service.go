@@ -3,6 +3,7 @@ package vehicle
 import (
 	"context"
 	"fmt"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
@@ -44,4 +45,27 @@ func (s *vehicleService) createInsertStep(v *domain.Vehicle) func(ctx context.Co
 		}
 		return nil
 	}
+}
+
+func (s *vehicleService) FindByLicensePlate(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
+	if err := domain.ValidateLicensePlate(licensePlate); err != nil {
+		return nil, err
+	}
+
+	var result *domain.Vehicle
+
+	err := s.uow.Execute(ctx, func(ctx context.Context) error {
+		vehicle, err := s.vehicleRepository.Find(ctx, licensePlate)
+		if err != nil {
+			return err
+		}
+		result = vehicle
+		return nil
+	})
+	if err != nil {
+		logger.Of(ctx).Error(fmt.Errorf("error find vehicle: %w", err))
+		return nil, err
+	}
+
+	return result, nil
 }

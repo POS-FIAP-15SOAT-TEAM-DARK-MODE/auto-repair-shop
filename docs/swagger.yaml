@@ -9,7 +9,9 @@ servers:
     variables:
       PORT:
         default: "8080"
-        description: Port number for the server
+        description: Port number for the server  
+security:
+  - SessionToken: []
 paths:
   /v1/customers:
     post:
@@ -17,6 +19,8 @@ paths:
       description: Creates a new customer along with a linked user account. Supports both individual (CPF) and company (CNPJ) types. Alphanumeric CNPJ format is supported (RFB 2243/2024).
       tags:
         - Customers
+      security:
+        - SessionToken: []
       requestBody:
         required: true
         content:
@@ -74,6 +78,7 @@ paths:
       description: Health check endpoint that returns a simple message.
       tags:
         - Health
+      security: []
       responses:
         "200":
           description: Successful ping
@@ -93,6 +98,7 @@ paths:
       description: Logs in a user and returns a JWT token. Requires email and password.
       tags:
         - Auth
+      security: []
       requestBody:
         required: true
         content:
@@ -271,6 +277,39 @@ paths:
           description: Internal Server Error
 
   /v1/vehicle:
+    get:
+      summary: Get vehicle by license plate
+      description: Retrieve a vehicle by its normalized license plate. The license plate must follow supported formats (old or Mercosul).
+      tags:
+        - Vehicle
+      security:
+        - SessionToken: []
+      parameters:
+        - in: query
+          name: plate
+          required: true
+          schema:
+            type: string
+          description: License plate (supports old and Mercosul formats)
+      responses:
+        "200":
+          description: Vehicle found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        "404":
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       summary: create a new vehicle register
       description: insert a new vehicle in our database
@@ -294,6 +333,11 @@ paths:
           description: Invalid Body Content
 
 components:
+  securitySchemes:
+      SessionToken:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
   schemas:
     UserRegisterRequest:
       type: object
