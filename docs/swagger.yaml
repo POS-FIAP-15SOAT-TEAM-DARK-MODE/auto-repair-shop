@@ -282,9 +282,10 @@ paths:
       description: Retrieve a vehicle by its normalized license plate. The license plate must follow supported formats (old or Mercosul).
       tags:
         - Vehicle
-      security: [] # public endpoint
+      security:
+        - SessionToken: []
       parameters:
-        - in: path
+        - in: query
           name: plate
           required: true
           schema:
