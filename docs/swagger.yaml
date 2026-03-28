@@ -271,6 +271,38 @@ paths:
           description: Internal Server Error
 
   /v1/vehicle:
+    get:
+      summary: Get vehicle by license plate
+      description: Retrieve a vehicle by its normalized license plate. The license plate must follow supported formats (old or Mercosul).
+      tags:
+        - Vehicle
+      security: [] # public endpoint
+      parameters:
+        - in: path
+          name: plate
+          required: true
+          schema:
+            type: string
+          description: License plate (supports old and Mercosul formats)
+      responses:
+        "200":
+          description: Vehicle found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        "404":
+          description: Vehicle not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       summary: create a new vehicle register
       description: insert a new vehicle in our database
@@ -292,6 +324,7 @@ paths:
           description: Internal Server Error
         "400":
           description: Invalid Body Content
+    
 
 components:
   schemas:
