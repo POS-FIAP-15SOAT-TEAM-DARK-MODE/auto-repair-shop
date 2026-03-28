@@ -91,7 +91,7 @@ func TestHandler_Create(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			c.Request = req
 
-			handlerFunc := h.Create()
+			handlerFunc := h.Create
 			handlerFunc(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)

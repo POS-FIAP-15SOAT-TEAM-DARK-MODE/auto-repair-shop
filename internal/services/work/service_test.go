@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -421,4 +422,96 @@ func TestService_List_EmptyResult(t *testing.T) {
 	if got.TotalPages != 0 {
 		t.Fatalf("expected 0 total pages, got %d", got.TotalPages)
 	}
+}
+
+func TestService_Delete_Success(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewWorkRepository(t)
+
+	id := "work-id"
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	repo.EXPECT().Delete(ctx, id).Return(nil)
+
+	appService := Service(exec, repo)
+	err := appService.Delete(ctx, id)
+
+	assert.NoError(t, err)
+}
+
+func TestService_Delete_Error(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewWorkRepository(t)
+
+	id := "work-id"
+	expectedErr := errors.New("delete failed")
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	appService := Service(exec, repo)
+	err := appService.Delete(ctx, id)
+
+	assert.ErrorIs(t, err, expectedErr)
+}
+
+func TestService_Update_Success(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewWorkRepository(t)
+
+	work, _ := domain.NewWork("Updated Name", "Updated Description", "99.99", domain.ACTIVE)
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	repo.EXPECT().Save(ctx, work).Return(nil)
+
+	appService := Service(exec, repo)
+	err := appService.Update(ctx, work)
+
+	assert.NoError(t, err)
+}
+
+func TestService_Update_ValidationError(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewWorkRepository(t)
+
+	work := &domain.Work{Name: ""} // Invalid
+
+	appService := Service(exec, repo)
+	err := appService.Update(ctx, work)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "work validation failed")
+}
+
+func TestService_Update_UnitOfWorkError(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewWorkRepository(t)
+
+	work, _ := domain.NewWork("Updated Name", "Updated Description", "99.99", domain.ACTIVE)
+	expectedErr := errors.New("uow execute failed")
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	appService := Service(exec, repo)
+	err := appService.Update(ctx, work)
+
+	assert.ErrorIs(t, err, expectedErr)
 }

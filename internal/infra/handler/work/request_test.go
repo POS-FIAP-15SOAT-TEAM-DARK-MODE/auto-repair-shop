@@ -207,3 +207,17 @@ func TestMapListParamsToDomain_ZeroPageFallsBackToDefault(t *testing.T) {
 		t.Fatalf("expected fallback page size 10 for pageSize=0, got %d", captured.PageSize)
 	}
 }
+
+func TestCreateWorkReqDTO_MapToDomain_ValidPrice(t *testing.T) {
+	dto := &createWorkReqDTO{
+		Name:        "Oil Change",
+		Description: "Complete synthetic oil change",
+		Price:       "99.99",
+		Status:      domain.ActiveString,
+	}
+
+	work := dto.MapToDomain()
+	if work == nil {
+		t.Fatal("expected non-nil work from MapToDomain with valid price")
+	}
+}

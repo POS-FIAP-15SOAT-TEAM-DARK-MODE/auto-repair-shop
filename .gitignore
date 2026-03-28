@@ -29,5 +29,6 @@ go.work.sum
 
 # Editor/IDE
 .idea/
+.abacusai/
 .vscode/
 .DS_Store
