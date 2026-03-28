@@ -23,6 +23,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1 := router.Group("/v1")
 
 	v1.POST("/auth/register", c.UserHandler.Create())
+	v1.POST("/auth/login", c.UserHandler.Login())
 
 	v1.POST("/customers", c.CustomerHandler.Create())
 
@@ -30,6 +31,8 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.GET("/works", c.WorkHandler.List())
 	v1.PUT("/works/:id", c.WorkHandler.Update())
 	v1.DELETE("/works/:id", c.WorkHandler.Delete())
+
+	v1.POST("/vehicle", c.VehicleHandler.Create())
 
 	return router
 }

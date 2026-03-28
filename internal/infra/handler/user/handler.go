@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 )
@@ -17,6 +18,41 @@ type handler struct {
 
 func HttpHandler(service domain.UserService) *handler {
 	return &handler{service: service}
+}
+
+func (h *handler) Login() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		req, err := mapBodyToLoginRequestDTO(c)
+		if err != nil {
+			status, response := web.Error(json.CheckJsonError(err))
+			logger.Of(ctx).Debug("Failed to bind login payload",
+				zap.String("operation", "login"),
+				zap.Error(err),
+				zap.String("entity", "user"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		user := req.toLoggedUserDomain()
+
+		if err := h.service.Login(ctx, user); err != nil {
+			status, response := web.Error(err)
+			logger.Of(ctx).Error(err)
+			logger.Of(ctx).Debug("Login failed in service layer",
+				zap.String("operation", "login"),
+				zap.Error(err),
+				zap.String("entity", "user"),
+			)
+			c.JSON(status, response)
+			return
+		}
+
+		response := loggerUserToResponseDTO(user)
+
+		c.JSON(http.StatusOK, response)
+	}
 }
 
 func (h *handler) Create() gin.HandlerFunc {

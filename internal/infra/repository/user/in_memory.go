@@ -20,3 +20,16 @@ func (r *memory_repo) Create(_ context.Context, u *domain.User) error {
 	r.data[u.ID] = *u
 	return nil
 }
+
+func (r *memory_repo) GetByEmail(_ context.Context, email string) (*domain.User, error) {
+	for _, u := range r.data {
+		if u.Email == email {
+			return &u, nil
+		}
+	}
+	return nil, nil
+}
+
+func (r *memory_repo) GetRolesByUserId(_ context.Context, _ string) ([]string, error) {
+	return []string{}, nil
+}

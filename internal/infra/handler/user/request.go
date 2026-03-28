@@ -8,12 +8,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type userRequestDTO struct {
-	Name            string `json:"name"`
-	Email           string `json:"email"`
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirm_password"`
-}
+type (
+	userRequestDTO struct {
+		Name            string `json:"name"`
+		Email           string `json:"email"`
+		Password        string `json:"password"`
+		ConfirmPassword string `json:"confirm_password"`
+	}
+
+	loginRequestDTO struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+)
 
 func mapBodyToUserRequestDTO(body *gin.Context) (*userRequestDTO, error) {
 	var req userRequestDTO
@@ -32,4 +39,21 @@ func (u *userRequestDTO) Validate() error {
 		return domain.ErrUserPasswordDontMatch
 	}
 	return nil
+}
+
+func mapBodyToLoginRequestDTO(body *gin.Context) (*loginRequestDTO, error) {
+	var req loginRequestDTO
+	if err := body.ShouldBindJSON(&req); err != nil {
+		return nil, json.CheckJsonError(err)
+	}
+	return &req, nil
+}
+
+func (l *loginRequestDTO) toLoggedUserDomain() *domain.LoggedUser {
+	return &domain.LoggedUser{
+		User: domain.User{
+			Email:    l.Email,
+			Password: l.Password,
+		},
+	}
 }

@@ -68,6 +68,53 @@ func (_c *UserHandler_Create_Call) RunAndReturn(run func() gin.HandlerFunc) *Use
 	return _c
 }
 
+// Login provides a mock function with no fields
+func (_m *UserHandler) Login() gin.HandlerFunc {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for Login")
+	}
+
+	var r0 gin.HandlerFunc
+	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(gin.HandlerFunc)
+		}
+	}
+
+	return r0
+}
+
+// UserHandler_Login_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Login'
+type UserHandler_Login_Call struct {
+	*mock.Call
+}
+
+// Login is a helper method to define mock.On call
+func (_e *UserHandler_Expecter) Login() *UserHandler_Login_Call {
+	return &UserHandler_Login_Call{Call: _e.mock.On("Login")}
+}
+
+func (_c *UserHandler_Login_Call) Run(run func()) *UserHandler_Login_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *UserHandler_Login_Call) Return(_a0 gin.HandlerFunc) *UserHandler_Login_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *UserHandler_Login_Call) RunAndReturn(run func() gin.HandlerFunc) *UserHandler_Login_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewUserHandler creates a new instance of UserHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserHandler(t interface {

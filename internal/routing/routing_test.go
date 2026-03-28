@@ -19,20 +19,24 @@ func TestSetupRouter(t *testing.T) {
 	mockUser := mocks.NewUserHandler(t)
 	mockCustomer := mocks.NewCustomerHandler(t)
 	mockWork := mocks.NewWorkHandler(t)
+	mockVehicle := mocks.NewVehicleHandler(t)
 
 	mockPing.EXPECT().Ping().Return(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockUser.EXPECT().Create().Return(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
+	mockUser.EXPECT().Login().Return(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockCustomer.EXPECT().Create().Return(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockWork.EXPECT().Create().Return(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockWork.EXPECT().List().Return(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockWork.EXPECT().Update().Return(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockWork.EXPECT().Delete().Return(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockVehicle.EXPECT().Create().Return(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 
 	c := &http.HandlersWrapper{
 		PingHandler:     mockPing,
 		UserHandler:     mockUser,
 		CustomerHandler: mockCustomer,
 		WorkHandler:     mockWork,
+		VehicleHandler:  mockVehicle,
 	}
 
 	m := &http.Middlewares{

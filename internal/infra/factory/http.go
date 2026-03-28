@@ -2,6 +2,7 @@ package factory
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
@@ -20,6 +21,10 @@ import (
 	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
 	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
 	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
+
+	vehicleHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/vehicle"
+	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/vehicle"
+	vehicleSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/vehicle"
 )
 
 func HTTPServer() server.Server {
@@ -46,6 +51,7 @@ func httpContainer(db *sql.DB) *container.HandlersWrapper {
 		UserHandler:     newUserHandler(db),
 		CustomerHandler: newCustomerHandler(db),
 		WorkHandler:     newWorkHandler(db),
+		VehicleHandler:  newVehicleHandler(db),
 	}
 }
 
@@ -55,8 +61,11 @@ func newPingHandler() container.PingHandler {
 
 func newUserHandler(db *sql.DB) container.UserHandler {
 	uow := postgres.NewTransactionalUoW(db)
+
+	expiresIn := env.GetTimeDuration("JWT_EXPIRES_IN", 24*time.Hour)
+
 	userRepository := userRepo.Repository()
-	userService := userSvc.Service(uow, userRepository)
+	userService := userSvc.Service(uow, userRepository, expiresIn)
 	return userHandler.HttpHandler(userService)
 }
 
@@ -73,4 +82,11 @@ func newWorkHandler(db *sql.DB) container.WorkHandler {
 	repo := workRepo.Repository()
 	svc := workSvc.Service(uow, repo)
 	return workHandler.HttpHandler(svc)
+}
+
+func newVehicleHandler(db *sql.DB) container.VehicleHandler {
+	uow := postgres.NewTransactionalUoW(db)
+	vehicleRepository := vehicleRepo.NewVehicleRepository()
+	service := vehicleSvc.NewService(uow, vehicleRepository)
+	return vehicleHandler.HttpHandler(service)
 }
