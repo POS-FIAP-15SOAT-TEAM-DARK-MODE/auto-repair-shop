@@ -11,28 +11,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var (
-	publicRoutes = map[string]struct{}{
-		"/v1/auth/login":    {},
-		"/v1/auth/register": {},
-		"/ping":             {},
-	}
-
-	privateRoutes = map[string]map[string][]string{
-		"POST": {
-			"/v1/customers": {"ADMIN", "ATTENDANT"},
-			"/v1/services":  {"ADMIN", "ATTENDANT"},
-		},
-		"GET": {
-			"/v1/services": {"ADMIN", "ATTENDANT"},
-		},
-		"PUT": {
-			"/v1/services/:id": {"ADMIN", "ATTENDANT"},
-		},
-		"DELETE": {
-			"/v1/services/:id": {"ADMIN"},
-		},
-	}
+const (
+	authorizationHeader = "Authorization"
+	bearerPrefix        = "Bearer "
 )
 
 func Auth() gin.HandlerFunc {
