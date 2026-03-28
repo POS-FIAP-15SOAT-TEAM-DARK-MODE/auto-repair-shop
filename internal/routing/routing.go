@@ -4,7 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	role "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/container"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/middleware"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 )
 
@@ -29,7 +31,7 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 
 	v1.POST("/services", c.WorkHandler.Create())
 	v1.GET("/services", c.WorkHandler.List())
-	v1.PUT("/services/:id", c.WorkHandler.Update())
+	v1.PUT("/services/:id", middleware.Auth(role.ADMIN, role.ATTENDANT), c.WorkHandler.Update())
 	v1.DELETE("/services/:id", c.WorkHandler.Delete())
 
 	v1.POST("/vehicle", c.VehicleHandler.Create())
