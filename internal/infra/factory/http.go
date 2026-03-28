@@ -34,7 +34,6 @@ import (
 func HTTPServer() server.Server {
 	middlewares := middlewaresContainer()
 	db := postgres.Connect()
-	defer func() { _ = db.Close() }()
 	routes := httpContainer(db)
 	router := routing.SetupRouter(routes, middlewares)
 
@@ -99,7 +98,13 @@ func newVehicleHandler(db *sql.DB) container.VehicleHandler {
 
 func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	uow := postgres.NewTransactionalUoW(db)
+
 	repo := soRepo.Repository()
-	svc := soSvc.Service(uow, repo)
+	userRepository := userRepo.Repository()
+	customerRepository := customerRepo.Repository()
+
+	customer := customerSvc.Service(uow, userRepository, customerRepository)
+	svc := soSvc.Service(uow, repo, customer)
+
 	return soHandler.HttpHandler(svc)
 }
