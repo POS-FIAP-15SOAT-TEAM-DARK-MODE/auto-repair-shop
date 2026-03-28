@@ -2,7 +2,6 @@ package customer_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,7 +37,7 @@ func validIndividualCustomer() domain.Customer {
 			ID:       "uuid-individual",
 			Name:     "João Silva",
 			Email:    "joao@example.com",
-			Password: "secret123",
+			Password: "Senha@123",
 		},
 	}
 }
@@ -55,73 +54,205 @@ func validCompanyCustomer() domain.Customer {
 			ID:       "uuid-company",
 			Name:     "Empresa SA",
 			Email:    "empresa@example.com",
-			Password: "secret123",
+			Password: "Senha@123",
 		},
 	}
 }
 
-func TestService_Create_Individual_Success(t *testing.T) {
-	userRepo := domainmocks.NewUserRepository(t)
-	customerRepo := domainmocks.NewCustomerRepository(t)
-	executor := uowmocks.NewExecutor(t)
+// --- Create ---
 
-	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
-	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
-	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+func TestService_Create(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     domain.Customer
+		mockSetup func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository)
+		wantErr   error
+	}{
+		{
+			name:  "success_individual",
+			input: validIndividualCustomer(),
+			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
+				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+		},
+		{
+			name:  "success_company",
+			input: validCompanyCustomer(),
+			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
+				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+		},
+		{
+			name:  "duplicate_email_returns_conflict",
+			input: validIndividualCustomer(),
+			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, _ *domainmocks.CustomerRepository) {
+				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(domain.ErrDataConflict)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+			wantErr: domain.ErrDataConflict,
+		},
+		{
+			name:  "duplicate_cpf_returns_conflict",
+			input: validIndividualCustomer(),
+			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
+				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(domain.ErrDataConflict)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+			wantErr: domain.ErrDataConflict,
+		},
+		{
+			name:  "transaction_failure_returns_error",
+			input: validIndividualCustomer(),
+			mockSetup: func(executor *uowmocks.Executor, _ *domainmocks.UserRepository, _ *domainmocks.CustomerRepository) {
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).
+					Return(assert.AnError)
+			},
+			wantErr: assert.AnError,
+		},
+	}
 
-	input := validIndividualCustomer()
-	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), input)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			executor := uowmocks.NewExecutor(t)
+			userRepo := domainmocks.NewUserRepository(t)
+			customerRepo := domainmocks.NewCustomerRepository(t)
 
-	assert.NoError(t, err)
+			tt.mockSetup(executor, userRepo, customerRepo)
+
+			err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), tt.input)
+
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
 
-func TestService_Create_Company_Success(t *testing.T) {
-	userRepo := domainmocks.NewUserRepository(t)
-	customerRepo := domainmocks.NewCustomerRepository(t)
-	executor := uowmocks.NewExecutor(t)
+// --- GetByID ---
 
-	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
-	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
-	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+func TestService_GetByID(t *testing.T) {
+	tests := []struct {
+		name         string
+		id           string
+		mockSetup    func(*domainmocks.CustomerRepository)
+		wantCustomer domain.Customer
+		wantErr      error
+	}{
+		{
+			name: "success",
+			id:   "uuid-individual",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByID(mock.Anything, "uuid-individual").Return(validIndividualCustomer(), nil)
+			},
+			wantCustomer: validIndividualCustomer(),
+		},
+		{
+			name: "not_found",
+			id:   "unknown-id",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByID(mock.Anything, "unknown-id").Return(domain.Customer{}, domain.ErrCustomerNotFound)
+			},
+			wantErr: domain.ErrCustomerNotFound,
+		},
+		{
+			name: "repository_error",
+			id:   "any-id",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByID(mock.Anything, "any-id").Return(domain.Customer{}, assert.AnError)
+			},
+			wantErr: assert.AnError,
+		},
+	}
 
-	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), validCompanyCustomer())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			customerRepo := domainmocks.NewCustomerRepository(t)
+			tt.mockSetup(customerRepo)
 
-	assert.NoError(t, err)
+			result, err := svc.Service(nil, nil, customerRepo).GetByID(context.Background(), tt.id)
+
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantCustomer.ID, result.ID)
+			}
+		})
+	}
 }
 
-func TestService_Create_DuplicateEmail_ReturnsConflict(t *testing.T) {
-	userRepo := domainmocks.NewUserRepository(t)
-	customerRepo := domainmocks.NewCustomerRepository(t) // Create must NOT be called
-	executor := uowmocks.NewExecutor(t)
+// --- GetByDocument ---
 
-	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(domain.ErrDataConflict)
-	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+func TestService_GetByDocument(t *testing.T) {
+	tests := []struct {
+		name         string
+		rawDocument  string
+		mockSetup    func(*domainmocks.CustomerRepository)
+		wantCustomer domain.Customer
+		wantErr      error
+	}{
+		{
+			name:        "success_cpf_with_formatting",
+			rawDocument: "111.444.777-35",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				// Service sanitizes "111.444.777-35" → "11144477735" before calling repo
+				repo.EXPECT().GetByDocument(mock.Anything, "11144477735").Return(validIndividualCustomer(), nil)
+			},
+			wantCustomer: validIndividualCustomer(),
+		},
+		{
+			name:        "success_cnpj_with_formatting",
+			rawDocument: "11.222.333/0001-81",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				// Service sanitizes "11.222.333/0001-81" → "11222333000181" before calling repo
+				repo.EXPECT().GetByDocument(mock.Anything, "11222333000181").Return(validCompanyCustomer(), nil)
+			},
+			wantCustomer: validCompanyCustomer(),
+		},
+		{
+			name:        "invalid_document_format",
+			rawDocument: "123",
+			mockSetup:   func(_ *domainmocks.CustomerRepository) {},
+			wantErr:     domain.ErrInvalidDocumentFormat,
+		},
+		{
+			name:        "not_found",
+			rawDocument: "111.444.777-35",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByDocument(mock.Anything, "11144477735").Return(domain.Customer{}, domain.ErrCustomerNotFound)
+			},
+			wantErr: domain.ErrCustomerNotFound,
+		},
+		{
+			name:        "repository_error",
+			rawDocument: "111.444.777-35",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByDocument(mock.Anything, mock.Anything).Return(domain.Customer{}, assert.AnError)
+			},
+			wantErr: assert.AnError,
+		},
+	}
 
-	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			customerRepo := domainmocks.NewCustomerRepository(t)
+			tt.mockSetup(customerRepo)
 
-	assert.ErrorIs(t, err, domain.ErrDataConflict)
-}
+			result, err := svc.Service(nil, nil, customerRepo).GetByDocument(context.Background(), tt.rawDocument)
 
-func TestService_Create_DuplicateCPF_ReturnsConflict(t *testing.T) {
-	userRepo := domainmocks.NewUserRepository(t)
-	customerRepo := domainmocks.NewCustomerRepository(t)
-	executor := uowmocks.NewExecutor(t)
-
-	userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
-	customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(domain.ErrDataConflict)
-	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
-
-	err := svc.Service(executor, userRepo, customerRepo).Create(context.Background(), validIndividualCustomer())
-
-	assert.ErrorIs(t, err, domain.ErrDataConflict)
-}
-
-func TestService_Create_TransactionFailure_ReturnsError(t *testing.T) {
-	executor := uowmocks.NewExecutor(t)
-	executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).
-		Return(errors.New("db connection lost"))
-
-	err := svc.Service(executor, nil, nil).Create(context.Background(), validIndividualCustomer())
-
-	assert.Error(t, err)
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantCustomer.ID, result.ID)
+			}
+		})
+	}
 }

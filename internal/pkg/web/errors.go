@@ -33,6 +33,8 @@ func getHTTPStatus(err error) int {
 		return http.StatusUnauthorized
 	case isBadRequestError(err), IsJoined(err):
 		return http.StatusBadRequest
+	case isNotFoundError(err):
+		return http.StatusNotFound
 	case isInternalServerError(err):
 		return http.StatusInternalServerError
 	case isConflictError(err):
@@ -58,9 +60,11 @@ func IsJoined(err error) bool {
 // buildErrorMessages formats the error messages based on status code.
 func buildErrorMessages(err error, status int) ([]string, string) {
 	switch status {
-	case http.StatusUnauthorized, http.StatusBadRequest, http.StatusNotFound:
+	case http.StatusUnauthorized, http.StatusBadRequest:
 		// For 4XX BadRequest provide stack of errors.
 		return unwrapAll(err), ""
+	case http.StatusNotFound:
+		return nil, err.Error()
 	case http.StatusConflict, http.StatusUnprocessableEntity, http.StatusInternalServerError:
 		// For 409/422 and 5XX unwrap recursively and return the innermost (root cause) error message.
 		root := err
@@ -103,10 +107,12 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrVehicleInvalidPlate)
 }
 
+func isNotFoundError(err error) bool {
+	return errors.Is(err, domain.ErrCustomerNotFound) || errors.Is(err, domain.ErrVehicleNotFound)
+}
+
 func isUnauthorizedError(err error) bool {
-	var validationErr domain.ValidationError
-	return errors.As(err, &validationErr) ||
-		errors.Is(err, domain.ErrInvalidUserCredentials)
+	return errors.Is(err, domain.ErrInvalidUserCredentials)
 }
 
 func isInternalServerError(err error) bool {
@@ -125,10 +131,6 @@ func isUnprocessableEntityError(err error) bool {
 		errors.Is(err, domain.ErrWorkPriceLessThenOrEqualZero) ||
 		errors.Is(err, domain.ErrInvalidWorkPriceValue) ||
 		errors.Is(err, domain.ErrInvalidWorkStatusValue)
-}
-
-func isNotFoundError(err error) bool {
-	return errors.Is(err, domain.ErrVehicleNotFound)
 }
 
 func unwrapAll(err error) []string {

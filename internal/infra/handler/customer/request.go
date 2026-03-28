@@ -20,7 +20,7 @@ type createCustomerRequest struct {
 // document is validated here because the domain only knows CPF and CNPJ, not a raw document field.
 func (r *createCustomerRequest) validate() error {
 	if strings.TrimSpace(r.Document) == "" {
-		return domain.ValidationError{Message: "document is required"}
+		return ErrDocumentRequired
 	}
 	return nil
 }
@@ -31,4 +31,26 @@ func (r *createCustomerRequest) Domain() (domain.Customer, error) {
 		return domain.Customer{}, domain.ValidationError{Message: err.Error()}
 	}
 	return customer, nil
+}
+
+type getCustomerByIDRequest struct {
+	ID string
+}
+
+func (r *getCustomerByIDRequest) validate() error {
+	if strings.TrimSpace(r.ID) == "" {
+		return ErrIDRequired
+	}
+	return nil
+}
+
+type getCustomerByDocumentRequest struct {
+	Document string
+}
+
+func (r *getCustomerByDocumentRequest) validate() error {
+	if strings.TrimSpace(r.Document) == "" {
+		return ErrDocumentQueryRequired
+	}
+	return nil
 }

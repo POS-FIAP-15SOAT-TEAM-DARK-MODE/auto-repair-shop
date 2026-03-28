@@ -14,16 +14,18 @@ import (
 )
 
 type service struct {
-	repo      domain.UserRepository
-	expiresIn time.Duration
-	uow       uow.Executor
+	uow          uow.Executor
+	repo         domain.UserRepository
+	expiresIn    time.Duration
+	hashPassword func(*domain.User, context.Context) error
 }
 
 func Service(uow uow.Executor, repo domain.UserRepository, expiresIn time.Duration) domain.UserService {
 	return &service{
-		uow:       uow,
-		repo:      repo,
-		expiresIn: expiresIn,
+		uow:          uow,
+		repo:         repo,
+		expiresIn:    expiresIn,
+		hashPassword: (*domain.User).HashPassword,
 	}
 }
 
@@ -37,13 +39,13 @@ func (s *service) Login(ctx context.Context, loggedUser *domain.LoggedUser) erro
 		return err
 	}
 
-	roles, err := s.repo.GetRolesByUserId(ctx, loggedUser.User.ID)
+	roles, err := s.repo.GetRolesByUserId(ctx, loggedUser.ID)
 	if err != nil {
 		return err
 	}
 
 	expiresAt := time.Now().Add(s.expiresIn)
-	token, err := auth.GenerateToken(loggedUser.User.ID, roles, expiresAt)
+	token, err := auth.GenerateToken(loggedUser.ID, roles, expiresAt)
 	if err != nil {
 		return err
 	}
@@ -60,7 +62,7 @@ func (s *service) Create(ctx context.Context, user *domain.User) error {
 		logger.Of(ctx).Error(err)
 		return err
 	}
-	if err := user.HashPassword(ctx); err != nil {
+	if err := s.hashPassword(user, ctx); err != nil {
 		err = fmt.Errorf("user password hashing failed: %w", err)
 		logger.Of(ctx).Error(err)
 		return err
@@ -84,7 +86,7 @@ func (s *service) createRepositoryStep(user *domain.User) func(context.Context) 
 }
 
 func (s *service) authenticateUser(ctx context.Context, loggedUser *domain.LoggedUser) error {
-	stored, err := s.repo.GetByEmail(ctx, loggedUser.User.Email)
+	stored, err := s.repo.GetByEmail(ctx, loggedUser.Email)
 	if err != nil {
 		return err
 	}
@@ -93,7 +95,7 @@ func (s *service) authenticateUser(ctx context.Context, loggedUser *domain.Logge
 		return domain.ErrInvalidUserCredentials
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(stored.Password), []byte(loggedUser.User.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(stored.Password), []byte(loggedUser.Password)); err != nil {
 		return domain.ErrInvalidUserCredentials
 	}
 

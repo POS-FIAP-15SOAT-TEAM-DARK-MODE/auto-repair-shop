@@ -160,10 +160,10 @@ func (u *User) Validate() error {
 }
 func (u *LoggedUser) Validate() error {
 	var errs []error
-	if u.User.IsEmailEmpty() {
+	if u.IsEmailEmpty() {
 		errs = append(errs, ErrEmptyUserEmail)
 	}
-	if u.User.IsPasswordEmpty() {
+	if u.IsPasswordEmpty() {
 		errs = append(errs, ErrEmptyUserPassword)
 	}
 
@@ -185,9 +185,6 @@ func (u *User) HashPassword(ctx context.Context) error {
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
 			return ErrUserPasswordTooLong
-		}
-		if errors.Is(err, bcrypt.ErrHashTooShort) {
-			return ErrUserPasswordTooShort
 		}
 
 		logger.Of(ctx).Warn("HashPassword failed: bcrypt error", zap.String("email", u.Email), zap.Error(err))

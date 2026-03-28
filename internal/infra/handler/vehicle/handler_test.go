@@ -92,7 +92,7 @@ func TestHandler_Create(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			c.Request = req
 
-			handlerFunc := h.Create()
+			handlerFunc := h.Create
 			handlerFunc(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
@@ -187,7 +187,7 @@ func TestHandler_FindByLicensePlate(t *testing.T) {
 			req, _ := http.NewRequest(http.MethodGet, "/", nil)
 			c.Request = req
 
-			handlerFunc := h.FindByLicensePlate()
+			handlerFunc := h.FindByLicensePlate
 			handlerFunc(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)

@@ -3,10 +3,7 @@ package customer
 import (
 	"context"
 
-	"go.uber.org/zap"
-
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 )
 
@@ -25,7 +22,7 @@ func Service(uow uow.Executor, userRepo domain.UserRepository, customerRepo doma
 }
 
 func (s *service) Create(ctx context.Context, customer domain.Customer) error {
-	err := s.uow.Execute(ctx,
+	return s.uow.Execute(ctx,
 		func(txCtx context.Context) error {
 			return s.userRepo.Create(txCtx, customer.User)
 		},
@@ -33,14 +30,16 @@ func (s *service) Create(ctx context.Context, customer domain.Customer) error {
 			return s.customerRepo.Create(txCtx, &customer)
 		},
 	)
+}
 
+func (s *service) GetByID(ctx context.Context, id string) (domain.Customer, error) {
+	return s.customerRepo.GetByID(ctx, id)
+}
+
+func (s *service) GetByDocument(ctx context.Context, rawDocument string) (domain.Customer, error) {
+	_, document, err := domain.ParseDocument(rawDocument)
 	if err != nil {
-		return err
+		return domain.Customer{}, err
 	}
-
-	logger.Of(ctx).Info("customer created",
-		zap.String("operation", "create_customer"),
-		zap.String("entity_id", customer.ID),
-	)
-	return nil
+	return s.customerRepo.GetByDocument(ctx, document)
 }

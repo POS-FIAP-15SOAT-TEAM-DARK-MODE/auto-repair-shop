@@ -24,50 +24,51 @@ func HttpHandler(service domain.VehicleService) *handler {
 	}
 }
 
-func (h *handler) Create() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := c.Request.Context()
+func (h *handler) Create(c *gin.Context) {
+	ctx := c.Request.Context()
 
-		reqDTO, err := validateAndCreateDTO(c)
-		if err != nil {
-			status, resp := web.Error(err)
-			logger.Of(ctx).Debug("Vehicle validation error",
-				zap.String("operation", "create_vehicle"),
-				zap.Error(err),
-				zap.String("entity", "vehicle"),
-			)
-			c.JSON(status, resp)
-			return
-		}
-
-		vehicleDomain := reqDTO.Domain()
-		if err = h.service.Create(ctx, vehicleDomain); err != nil {
-			status, resp := web.Error(err)
-			logger.Of(ctx).Debug("Vehicle creation error",
-				zap.String("operation", "create_vehicle"),
-				zap.Error(err),
-				zap.String("entity", "vehicle"),
-			)
-			c.JSON(status, resp)
-			return
-		}
-
-		c.JSON(http.StatusCreated, domainToResponseDto(vehicleDomain))
+	reqDTO, err := validateAndCreateDTO(c)
+	if err != nil {
+		status, resp := web.Error(err)
+		logger.Of(ctx).Debug("Vehicle validation error",
+			zap.String("operation", "create_vehicle"),
+			zap.Error(err),
+			zap.String("entity", "vehicle"),
+		)
+		c.JSON(status, resp)
+		return
 	}
+
+	vehicleDomain := reqDTO.Domain()
+	if err = h.service.Create(ctx, vehicleDomain); err != nil {
+		status, resp := web.Error(err)
+		logger.Of(ctx).Debug("Vehicle creation error",
+			zap.String("operation", "create_vehicle"),
+			zap.Error(err),
+			zap.String("entity", "vehicle"),
+		)
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusCreated, domainToResponseDto(vehicleDomain))
 }
 
-func (h *handler) FindByLicensePlate() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx := c.Request.Context()
-		plate := domain.NormalizeLicensePlate(c.Param(plateParam))
+func (h *handler) FindByLicensePlate(c *gin.Context) {
+	ctx := c.Request.Context()
+	plate := domain.NormalizeLicensePlate(c.Param(plateParam))
 
-		vehicle, err := h.service.FindByLicensePlate(ctx, plate)
-		if err != nil {
-			status, resp := web.Error(err)
-			c.JSON(status, resp)
-			return
-		}
-
-		c.JSON(http.StatusOK, domainToResponseDto(vehicle))
+	vehicle, err := h.service.FindByLicensePlate(ctx, plate)
+	if err != nil {
+		status, resp := web.Error(err)
+		logger.Of(ctx).Debug("Search vehicle by license plate error",
+			zap.String("operation", "find_by_license_plate"),
+			zap.Error(err),
+			zap.String("entity", "vehicle"),
+		)
+		c.JSON(status, resp)
+		return
 	}
+
+	c.JSON(http.StatusOK, domainToResponseDto(vehicle))
 }
