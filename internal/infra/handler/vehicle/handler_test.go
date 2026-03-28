@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 )
 
@@ -179,12 +179,8 @@ func TestHandler_FindByLicensePlate(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			// set param
-			c.Params = gin.Params{
-				{Key: plateParam, Value: tt.param},
-			}
-
-			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+			// set query parameter ?plate=...
+			req, _ := http.NewRequest(http.MethodGet, "/?"+plateParam+"="+tt.param, nil)
 			c.Request = req
 
 			handlerFunc := h.FindByLicensePlate

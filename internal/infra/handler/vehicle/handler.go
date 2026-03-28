@@ -56,7 +56,7 @@ func (h *handler) Create(c *gin.Context) {
 
 func (h *handler) FindByLicensePlate(c *gin.Context) {
 	ctx := c.Request.Context()
-	plate := domain.NormalizeLicensePlate(c.Param(plateParam))
+	plate := domain.NormalizeLicensePlate(c.Query(plateParam))
 
 	vehicle, err := h.service.FindByLicensePlate(ctx, plate)
 	if err != nil {
