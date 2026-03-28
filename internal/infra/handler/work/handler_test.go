@@ -1,4 +1,4 @@
-package work_test
+package work
 
 import (
 	"bytes"
@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	inmemoryuow "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/in_memory"
-	handler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
 	memrepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
 	appwork "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
 	"github.com/shopspring/decimal"
@@ -26,10 +26,10 @@ func TestCreateWorkHandler_Success_Integration(t *testing.T) {
 	uow := inmemoryuow.NewInMemoryUoW()
 	repo := memrepo.MemoryRepository()
 	workService := appwork.Service(uow, repo)
-	h := handler.HttpHandler(workService)
+	h := HttpHandler(workService)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
+	router.POST("/works", h.Create)
 
 	body := map[string]any{
 		"name":        "Oil Change",
@@ -54,11 +54,11 @@ func TestCreateWorkHandler_Success_Integration(t *testing.T) {
 	}
 
 	var resp struct {
-		ID          string  `json:"id"`
-		Name        string  `json:"name"`
-		Description string  `json:"description"`
-		Price       float64 `json:"price"`
-		Status      string  `json:"status"`
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Price       string `json:"price"`
+		Status      string `json:"status"`
 	}
 
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -77,8 +77,10 @@ func TestCreateWorkHandler_Success_Integration(t *testing.T) {
 		t.Errorf("expected description %q, got %q", body["description"], resp.Description)
 	}
 
-	if resp.Price != 199.90 {
-		t.Errorf("expected price %f, got %f", 199.90, resp.Price)
+	// Accept possible "199.9" or "199.90" response due to decimal canonicalization
+	expectedPrice := "199.90"
+	if resp.Price != expectedPrice && resp.Price != "199.9" {
+		t.Errorf("expected price %s or %s, got %s", expectedPrice, "199.9", resp.Price)
 	}
 
 	if resp.Status != "ACTIVE" {
@@ -90,10 +92,10 @@ func TestCreateWorkHandler_InvalidStatus(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockWork := domainmocks.NewWorkService(t)
-	h := handler.HttpHandler(mockWork)
+	h := HttpHandler(mockWork)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
+	router.POST("/works", h.Create)
 
 	body := map[string]any{
 		"name":        "Alignment",
@@ -143,10 +145,10 @@ func TestCreateWorkHandler_InvalidJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockWork := domainmocks.NewWorkService(t)
-	h := handler.HttpHandler(mockWork)
+	h := HttpHandler(mockWork)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
+	router.POST("/works", h.Create)
 
 	req := httptest.NewRequest(http.MethodPost, "/works", bytes.NewBufferString(`{invalid-json`))
 	req.Header.Set("Content-Type", "application/json")
@@ -178,11 +180,11 @@ func TestCreateWorkHandler_InvalidJSON(t *testing.T) {
 func TestCreateWorkHandler_InvalidPrice_MapToDomainError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	// svc will never be called because MapToDomain fails before service.Create is invoked.
-	h := handler.HttpHandler(nil)
+	// svc will never be called because Validate catches invalid price before MapToDomain is invoked.
+	h := HttpHandler(nil)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
+	router.POST("/works", h.Create)
 
 	body := map[string]any{
 		"name":        "Oil Change",
@@ -240,10 +242,10 @@ func TestCreateWorkHandler_Unit_Success(t *testing.T) {
 		Create(mock.Anything, mock.AnythingOfType("*domain.Work")).
 		Return(nil)
 
-	h := handler.HttpHandler(mockWork)
+	h := HttpHandler(mockWork)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
+	router.POST("/works", h.Create)
 
 	body := map[string]any{
 		"name":        "Oil Change",
@@ -268,11 +270,11 @@ func TestCreateWorkHandler_Unit_Success(t *testing.T) {
 	}
 
 	var resp struct {
-		ID          string  `json:"id"`
-		Name        string  `json:"name"`
-		Description string  `json:"description"`
-		Price       float64 `json:"price"`
-		Status      string  `json:"status"`
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Price       string `json:"price"`
+		Status      string `json:"status"`
 	}
 
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -291,9 +293,8 @@ func TestCreateWorkHandler_Unit_Success(t *testing.T) {
 		t.Errorf("expected description %q, got %q", createdWork.Description, resp.Description)
 	}
 
-	price, _ := createdWork.Price.Float64()
-	if resp.Price != price {
-		t.Errorf("expected price %f, got %f", price, resp.Price)
+	if resp.Price != createdWork.Price.String() {
+		t.Errorf("expected price %q, got %q", createdWork.Price.String(), resp.Price)
 	}
 
 	if resp.Status != createdWork.Status.String() {
@@ -321,10 +322,10 @@ func TestCreateWorkHandler_Unit_Success_Inactive(t *testing.T) {
 		Create(mock.Anything, mock.AnythingOfType("*domain.Work")).
 		Return(nil)
 
-	h := handler.HttpHandler(mockWork)
+	h := HttpHandler(mockWork)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
+	router.POST("/works", h.Create)
 
 	body := map[string]any{
 		"name":        "Wheel Alignment",
@@ -349,11 +350,11 @@ func TestCreateWorkHandler_Unit_Success_Inactive(t *testing.T) {
 	}
 
 	var resp struct {
-		ID          string  `json:"id"`
-		Name        string  `json:"name"`
-		Description string  `json:"description"`
-		Price       float64 `json:"price"`
-		Status      string  `json:"status"`
+		ID          string `json:"id"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Price       string `json:"price"`
+		Status      string `json:"status"`
 	}
 
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
@@ -377,10 +378,10 @@ func TestCreateWorkHandler_Unit_WorkError(t *testing.T) {
 		Create(mock.Anything, mock.AnythingOfType("*domain.Work")).
 		Return(expectedErr)
 
-	h := handler.HttpHandler(mockWork)
+	h := HttpHandler(mockWork)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
+	router.POST("/works", h.Create)
 
 	body := map[string]any{
 		"name":        "Oil Change",
@@ -436,10 +437,10 @@ func TestListWorkHandler_Success(t *testing.T) {
 		List(mock.Anything, mock.AnythingOfType("*domain.ListWorkParams")).
 		Return(expectedResponse, nil)
 
-	h := handler.HttpHandler(mockWork)
+	h := HttpHandler(mockWork)
 
 	router := gin.New()
-	router.GET("/works", h.List())
+	router.GET("/works", h.List)
 
 	req := httptest.NewRequest(http.MethodGet, "/works?page=1&pageSize=10", nil)
 	rec := httptest.NewRecorder()
@@ -477,10 +478,10 @@ func TestListWorkHandler_ServiceError(t *testing.T) {
 		List(mock.Anything, mock.AnythingOfType("*domain.ListWorkParams")).
 		Return(nil, expectedErr)
 
-	h := handler.HttpHandler(mockWork)
+	h := HttpHandler(mockWork)
 
 	router := gin.New()
-	router.GET("/works", h.List())
+	router.GET("/works", h.List)
 
 	req := httptest.NewRequest(http.MethodGet, "/works", nil)
 	rec := httptest.NewRecorder()
@@ -509,11 +510,11 @@ func TestListWorkHandler_Integration(t *testing.T) {
 	uow := inmemoryuow.NewInMemoryUoW()
 	repo := memrepo.MemoryRepository()
 	workService := appwork.Service(uow, repo)
-	h := handler.HttpHandler(workService)
+	h := HttpHandler(workService)
 
 	router := gin.New()
-	router.POST("/works", h.Create())
-	router.GET("/works", h.List())
+	router.POST("/works", h.Create)
+	router.GET("/works", h.List)
 
 	createBody := map[string]any{
 		"name":        "Oil Change",
@@ -551,4 +552,209 @@ func TestListWorkHandler_Integration(t *testing.T) {
 	if len(resp.Items) != 1 {
 		t.Fatalf("expected 1 item, got %d", len(resp.Items))
 	}
+}
+
+func TestUpdateWorkHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := domainmocks.NewWorkService(t)
+	h := HttpHandler(mockService)
+
+	mockService.EXPECT().Update(mock.Anything, mock.AnythingOfType("*domain.Work")).Return(nil)
+
+	router := gin.New()
+	router.PUT("/works/:id", h.Update)
+
+	body := map[string]any{
+		"name":        "Updated Name",
+		"description": "Updated Description",
+		"price":       "99.99",
+		"status":      "ACTIVE",
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	req := httptest.NewRequest(http.MethodPut, "/works/work-id", bytes.NewBuffer(jsonBody))
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestUpdateWorkHandler_InvalidStatus(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := HttpHandler(nil)
+
+	router := gin.New()
+	router.PUT("/works/:id", h.Update)
+
+	body := map[string]any{
+		"name":        "Valid Name",
+		"description": "Valid Description",
+		"price":       "99.99",
+		"status":      "INVALID",
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	req := httptest.NewRequest(http.MethodPut, "/works/work-id", bytes.NewBuffer(jsonBody))
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdateWorkHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := domainmocks.NewWorkService(t)
+	h := HttpHandler(mockService)
+
+	mockService.EXPECT().Update(mock.Anything, mock.AnythingOfType("*domain.Work")).Return(errors.New("internal error"))
+
+	router := gin.New()
+	router.PUT("/works/:id", h.Update)
+
+	body := map[string]any{
+		"name":        "Updated Name",
+		"description": "Updated Description",
+		"price":       "99.99",
+		"status":      "ACTIVE",
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	req := httptest.NewRequest(http.MethodPut, "/works/work-id", bytes.NewBuffer(jsonBody))
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}
+
+func TestDeleteWorkHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := domainmocks.NewWorkService(t)
+	h := HttpHandler(mockService)
+
+	mockService.EXPECT().Delete(mock.Anything, "work-id").Return(nil)
+
+	router := gin.New()
+	router.DELETE("/works/:id", h.Delete)
+
+	req := httptest.NewRequest(http.MethodDelete, "/works/work-id", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestDeleteWorkHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := domainmocks.NewWorkService(t)
+	h := HttpHandler(mockService)
+
+	mockService.EXPECT().Delete(mock.Anything, "work-id").Return(errors.New("internal error"))
+
+	router := gin.New()
+	router.DELETE("/works/:id", h.Delete)
+
+	req := httptest.NewRequest(http.MethodDelete, "/works/work-id", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}
+
+func TestUpdateWorkHandler_InvalidJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := HttpHandler(nil)
+
+	router := gin.New()
+	router.PUT("/works/:id", h.Update)
+
+	req := httptest.NewRequest(http.MethodPut, "/works/work-id", bytes.NewBufferString(`{invalid-json`))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdateWorkHandler_InvalidPrice(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := HttpHandler(nil)
+
+	router := gin.New()
+	router.PUT("/works/:id", h.Update)
+
+	body := map[string]any{
+		"name":        "Oil Change",
+		"description": "Complete synthetic oil change",
+		"price":       "invalid-price",
+		"status":      "ACTIVE",
+	}
+	jsonBody, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPut, "/works/work-id", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdateWorkHandler_EmptyID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := HttpHandler(nil)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request, _ = http.NewRequest(http.MethodPut, "/works/", bytes.NewBufferString(`{"name":"N","description":"D","price":"10.00","status":"ACTIVE"}`))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	h.Update(c)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestDeleteWorkHandler_EmptyID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := HttpHandler(nil)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request, _ = http.NewRequest(http.MethodDelete, "/works/", nil)
+
+	h.Delete(c)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestCreate_InvalidPriceReturnsBadRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	h := &handler{svc: nil}
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request, _ = http.NewRequest(http.MethodPost, "/works", bytes.NewBufferString(
+		`{"name":"Oil Change","description":"Complete synthetic oil change","price":"not-a-decimal","status":"ACTIVE"}`,
+	))
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	h.Create(c)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestUpdate_InvalidPriceReturnsBadRequest(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	h := &handler{svc: nil}
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request, _ = http.NewRequest(http.MethodPut, "/works/work-id", bytes.NewBufferString(
+		`{"name":"Oil Change","description":"Complete synthetic oil change","price":"not-a-decimal","status":"ACTIVE"}`,
+	))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: "work-id"}}
+
+	h.Update(c)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }

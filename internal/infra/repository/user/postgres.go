@@ -1,4 +1,4 @@
-package repository
+package user
 
 import (
 	"context"
@@ -37,22 +37,22 @@ func (u *repo) GetByEmail(ctx context.Context, email string) (*domain.User, erro
 	return &user, nil
 }
 
-func (u *repo) GetRolesByUserId(ctx context.Context, id string) ([]string, error) {
+func (u *repo) GetRolesByUserId(ctx context.Context, id string) ([]domain.Role, error) {
 	db, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var roles []string
+	var roles []domain.Role
 	rows, err := db.QueryContext(ctx, getRolesById, id)
 	if err != nil {
 		return nil, pgPkg.Error(ctx, err)
 	}
 
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
-		var role string
+		var role domain.Role
 		if err := rows.Scan(&role); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}

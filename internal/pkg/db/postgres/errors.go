@@ -33,19 +33,9 @@ func Error(ctx context.Context, err error) error {
 
 	switch pgErr.Code {
 	case pgUniqueViolation:
-		logger.Of(ctx).Warn("PostgreSQL unique constraint violation",
-			zap.String("code", string(pgErr.Code)),
-			zap.String("constraint", pgErr.Constraint),
-			zap.String("message", pgErr.Message),
-		)
 		return domain.ErrDataConflict
 
 	case pgCheckViolation, pgForeignKeyViolation, pgNotNullViolation, pgExclusionViolation:
-		logger.Of(ctx).Warn("PostgreSQL data violation",
-			zap.String("code", string(pgErr.Code)),
-			zap.String("constraint", pgErr.Constraint),
-			zap.String("message", pgErr.Message),
-		)
 		return domain.ErrDataViolation
 
 	case pgSerializationFailure, pgDeadlockDetected:

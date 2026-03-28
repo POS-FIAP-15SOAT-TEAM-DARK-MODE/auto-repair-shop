@@ -33,6 +33,8 @@ func getHTTPStatus(err error) int {
 		return http.StatusUnauthorized
 	case isBadRequestError(err), IsJoined(err):
 		return http.StatusBadRequest
+	case isNotFoundError(err):
+		return http.StatusNotFound
 	case isInternalServerError(err):
 		return http.StatusInternalServerError
 	case isConflictError(err):
@@ -61,6 +63,8 @@ func buildErrorMessages(err error, status int) ([]string, string) {
 	case http.StatusBadRequest:
 		// For 4XX BadRequest provide stack of errors.
 		return unwrapAll(err), ""
+	case http.StatusNotFound:
+		return nil, err.Error()
 	case http.StatusConflict, http.StatusUnprocessableEntity, http.StatusInternalServerError:
 		// For 409/422 and 5XX unwrap recursively and return the innermost (root cause) error message.
 		root := err
@@ -102,10 +106,12 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, json.ErrWrongPayloadFormat)
 }
 
+func isNotFoundError(err error) bool {
+	return errors.Is(err, domain.ErrCustomerNotFound)
+}
+
 func isUnauthorizedError(err error) bool {
-	var validationErr domain.ValidationError
-	return errors.As(err, &validationErr) ||
-		errors.Is(err, domain.ErrInvalidUserCredentials)
+	return errors.Is(err, domain.ErrInvalidUserCredentials)
 }
 
 func isInternalServerError(err error) bool {

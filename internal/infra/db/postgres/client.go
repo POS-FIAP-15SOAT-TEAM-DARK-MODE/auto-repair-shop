@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	instance *sql.DB
-	once     sync.Once
+	instance  *sql.DB
+	once      sync.Once
+	sqlOpenFn = sql.Open
 )
 
 func Connect() *sql.DB {
@@ -28,7 +29,7 @@ func Connect() *sql.DB {
 		)
 
 		logger.Global().Debug("Database conn str", zap.String("value", connStr))
-		conn, err := sql.Open("postgres", connStr)
+		conn, err := sqlOpenFn("postgres", connStr)
 		if err != nil {
 			if conn != nil {
 				_ = conn.Close()
@@ -48,4 +49,10 @@ func Connect() *sql.DB {
 	})
 
 	return instance
+}
+
+func ConnectWithDB(db *sql.DB) {
+	once.Do(func() {
+		instance = db
+	})
 }

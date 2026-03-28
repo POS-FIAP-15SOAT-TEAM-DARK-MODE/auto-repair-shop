@@ -2,6 +2,7 @@ package work
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -40,9 +41,14 @@ func (r *pg_repo) Save(ctx context.Context, w *domain.Work) error {
 }
 
 func (r *pg_repo) Count(ctx context.Context, params *domain.SearchWorkParams) (int64, error) {
-	tx, err := postgres.GetOneTimeTransaction(ctx)
-	if err != nil {
-		return 0, err
+	var runner interface {
+		QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	}
+
+	if tx, err := postgres.GetTransaction(ctx); err == nil {
+		runner = tx
+	} else {
+		runner = postgres.Connect()
 	}
 
 	queryBuilder := db.QueryBuilder(countQuery)
@@ -53,9 +59,8 @@ func (r *pg_repo) Count(ctx context.Context, params *domain.SearchWorkParams) (i
 
 	query, args := queryBuilder.Build()
 
-	logger.Of(ctx).Debug("Executing query", zap.String("query", countQuery), zap.Any("params", args))
 	var total int64
-	if err = tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+	if err := runner.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
 		return 0, pgPkg.Error(ctx, err)
 	}
 
