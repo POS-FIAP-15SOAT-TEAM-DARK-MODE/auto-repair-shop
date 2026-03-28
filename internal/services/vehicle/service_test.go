@@ -249,7 +249,7 @@ func TestService_FindByLicensePlate_Success(t *testing.T) {
 
 	repo.
 		EXPECT().
-		Find(ctx, plate).
+		Find(ctx, domain.FindVehicleParams{LicensePlate: plate}).
 		Return(expectedVehicle, nil)
 
 	service := NewService(exec, repo)
@@ -312,7 +312,7 @@ func TestService_FindByLicensePlate_RepositoryError(t *testing.T) {
 
 	repo.
 		EXPECT().
-		Find(ctx, plate).
+		Find(ctx, domain.FindVehicleParams{LicensePlate: plate}).
 		Return(nil, expectedErr)
 
 	service := NewService(exec, repo)

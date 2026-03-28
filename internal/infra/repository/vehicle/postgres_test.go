@@ -131,7 +131,7 @@ func TestPostgresRepository_Find(t *testing.T) {
 				tt.mockSetup(mock, tt.search)
 			}
 
-			v, err := repo.Find(context.Background(), tt.search)
+			v, err := repo.Find(context.Background(), domain.FindVehicleParams{LicensePlate: tt.search})
 			if tt.expectError {
 				if tt.expectNotFound {
 					assert.ErrorIs(t, err, domain.ErrVehicleNotFound)

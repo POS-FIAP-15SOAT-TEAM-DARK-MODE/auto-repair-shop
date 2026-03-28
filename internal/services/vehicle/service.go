@@ -55,7 +55,7 @@ func (s *vehicleService) FindByLicensePlate(ctx context.Context, licensePlate st
 	var result *domain.Vehicle
 
 	err := s.uow.Execute(ctx, func(ctx context.Context) error {
-		vehicle, err := s.vehicleRepository.Find(ctx, licensePlate)
+		vehicle, err := s.vehicleRepository.Find(ctx, domain.FindVehicleParams{LicensePlate: licensePlate})
 		if err != nil {
 			return err
 		}

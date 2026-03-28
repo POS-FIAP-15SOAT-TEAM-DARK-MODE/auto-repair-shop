@@ -22,9 +22,9 @@ func (_m *VehicleRepository) EXPECT() *VehicleRepository_Expecter {
 	return &VehicleRepository_Expecter{mock: &_m.Mock}
 }
 
-// Find provides a mock function with given fields: ctx, search
-func (_m *VehicleRepository) Find(ctx context.Context, search string) (*domain.Vehicle, error) {
-	ret := _m.Called(ctx, search)
+// Find provides a mock function with given fields: ctx, params
+func (_m *VehicleRepository) Find(ctx context.Context, params domain.FindVehicleParams) (*domain.Vehicle, error) {
+	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Find")
@@ -32,19 +32,19 @@ func (_m *VehicleRepository) Find(ctx context.Context, search string) (*domain.V
 
 	var r0 *domain.Vehicle
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Vehicle, error)); ok {
-		return rf(ctx, search)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.FindVehicleParams) (*domain.Vehicle, error)); ok {
+		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Vehicle); ok {
-		r0 = rf(ctx, search)
+	if rf, ok := ret.Get(0).(func(context.Context, domain.FindVehicleParams) *domain.Vehicle); ok {
+		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Vehicle)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, search)
+	if rf, ok := ret.Get(1).(func(context.Context, domain.FindVehicleParams) error); ok {
+		r1 = rf(ctx, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -59,14 +59,14 @@ type VehicleRepository_Find_Call struct {
 
 // Find is a helper method to define mock.On call
 //   - ctx context.Context
-//   - search string
-func (_e *VehicleRepository_Expecter) Find(ctx interface{}, search interface{}) *VehicleRepository_Find_Call {
-	return &VehicleRepository_Find_Call{Call: _e.mock.On("Find", ctx, search)}
+//   - params domain.FindVehicleParams
+func (_e *VehicleRepository_Expecter) Find(ctx interface{}, params interface{}) *VehicleRepository_Find_Call {
+	return &VehicleRepository_Find_Call{Call: _e.mock.On("Find", ctx, params)}
 }
 
-func (_c *VehicleRepository_Find_Call) Run(run func(ctx context.Context, search string)) *VehicleRepository_Find_Call {
+func (_c *VehicleRepository_Find_Call) Run(run func(ctx context.Context, params domain.FindVehicleParams)) *VehicleRepository_Find_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(domain.FindVehicleParams))
 	})
 	return _c
 }
@@ -76,7 +76,7 @@ func (_c *VehicleRepository_Find_Call) Return(_a0 *domain.Vehicle, _a1 error) *V
 	return _c
 }
 
-func (_c *VehicleRepository_Find_Call) RunAndReturn(run func(context.Context, string) (*domain.Vehicle, error)) *VehicleRepository_Find_Call {
+func (_c *VehicleRepository_Find_Call) RunAndReturn(run func(context.Context, domain.FindVehicleParams) (*domain.Vehicle, error)) *VehicleRepository_Find_Call {
 	_c.Call.Return(run)
 	return _c
 }
