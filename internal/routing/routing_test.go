@@ -35,6 +35,8 @@ func TestSetupRouter(t *testing.T) {
 	mockCustomer.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockCustomer.EXPECT().GetByID(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockCustomer.EXPECT().GetByDocument(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockCustomer.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockCustomer.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Work (Service Order)
 	mockWork.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -75,6 +77,8 @@ func TestSetupRouter(t *testing.T) {
 		{goHttp.MethodPost, "/v1/customers", goHttp.StatusCreated},
 		{goHttp.MethodGet, "/v1/customers/:id", goHttp.StatusOK},
 		{goHttp.MethodGet, "/v1/customers", goHttp.StatusOK},
+		{goHttp.MethodPut, "/v1/customers/:id", goHttp.StatusOK},
+		{goHttp.MethodDelete, "/v1/customers/:id", goHttp.StatusNoContent},
 
 		// Work (Service Order)
 		{goHttp.MethodPost, "/v1/works", goHttp.StatusCreated},
