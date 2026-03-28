@@ -27,14 +27,14 @@ func SetupRouter(c *container.HTTP, m *container.Middlewares) *gin.Engine {
 	v1.POST("/auth/register", middleware.Auth(role.ADMIN), c.UserHandler.Create())
 	v1.POST("/auth/login", c.UserHandler.Login())
 
-	v1.POST("/customers", middleware.Auth(role.ADMIN, role.ATTENDANT), c.CustomerHandler.Create())
+	v1.POST("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Create())
 
-	v1.POST("/services", middleware.Auth(role.ADMIN, role.ATTENDANT), c.WorkHandler.Create())
-	v1.GET("/services", middleware.Auth(role.ADMIN, role.ATTENDANT, role.MECHANIC), c.WorkHandler.List())
-	v1.PUT("/services/:id", middleware.Auth(role.ADMIN, role.ATTENDANT, role.MECHANIC), c.WorkHandler.Update())
-	v1.DELETE("/services/:id", middleware.Auth(role.ADMIN, role.ATTENDANT, role.MECHANIC), c.WorkHandler.Delete())
+	v1.POST("/services", middleware.Auth(role.AttendantRoles...), c.WorkHandler.Create())
+	v1.GET("/services", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.List())
+	v1.PUT("/services/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.Update())
+	v1.DELETE("/services/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.Delete())
 
-	v1.POST("/vehicle", middleware.Auth(role.ADMIN, role.ATTENDANT, role.MECHANIC), c.VehicleHandler.Create())
+	v1.POST("/vehicle", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.Create())
 
 	return router
 }
