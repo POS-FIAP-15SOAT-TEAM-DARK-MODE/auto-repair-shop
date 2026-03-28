@@ -30,6 +30,6 @@ func (r *memory_repo) GetByEmail(_ context.Context, email string) (*domain.User,
 	return nil, nil
 }
 
-func (r *memory_repo) GetRolesByUserId(_ context.Context, _ string) ([]string, error) {
-	return []string{}, nil
+func (r *memory_repo) GetRolesByUserId(_ context.Context, _ string) ([]domain.Role, error) {
+	return []domain.Role{}, nil
 }
