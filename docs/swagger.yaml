@@ -209,7 +209,7 @@ paths:
 
     delete:
       summary: Delete a customer
-      description: Removes the customer and its associated user account in a single transaction. Returns 204 whether the customer exists or not (idempotent). Blocked with 409 if the customer has linked service orders.
+      description: Removes the customer and its associated user account in a single transaction. Returns 204 on success or when the customer does not exist (idempotent). Returns an error for business rule violations (e.g. linked service orders).
       tags:
         - Customers
       parameters:
@@ -223,7 +223,7 @@ paths:
           example: d290f1ee-6c54-4b01-90e6-d701748f0851
       responses:
         "204":
-          description: Customer deleted (or not found)
+          description: Customer deleted or not found
         "409":
           description: Customer has linked service orders
           content:

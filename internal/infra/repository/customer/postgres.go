@@ -36,7 +36,7 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 	)
 	if err != nil {
 		mapped := pgPkg.Error(ctx, err)
-		if mapped != domain.ErrDataConflict && mapped != domain.ErrDataViolation {
+		if !errors.Is(mapped, domain.ErrDataConflict) && !errors.Is(mapped, domain.ErrDataViolation) {
 			logger.Of(ctx).Warn("customer repository: failed to create customer",
 				zap.String("operation", "create_customer"),
 				zap.String("entity_id", customer.ID),

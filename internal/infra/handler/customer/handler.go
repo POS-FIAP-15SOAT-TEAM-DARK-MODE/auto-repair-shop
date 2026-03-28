@@ -120,11 +120,7 @@ func (h *handler) Delete(c *gin.Context) {
 	}
 
 	err := h.service.Delete(ctx, req.ID)
-	if errors.Is(err, domain.ErrCustomerNotFound) {
-		c.Status(http.StatusNoContent)
-		return
-	}
-	if err != nil {
+	if err != nil && !errors.Is(err, domain.ErrCustomerNotFound) {
 		status, response := web.Error(err)
 		c.JSON(status, response)
 		return
