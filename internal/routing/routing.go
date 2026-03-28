@@ -37,7 +37,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.DELETE("/works/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.Delete)
 
 	v1.POST("/vehicle", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.Create)
-	v1.GET("/vehicle", c.VehicleHandler.FindByLicensePlate)
+	v1.GET("/vehicle", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.FindByLicensePlate)
 
 	return router
 }
