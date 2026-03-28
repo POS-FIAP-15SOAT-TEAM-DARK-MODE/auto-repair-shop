@@ -1,7 +1,6 @@
 package customer
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -63,10 +62,6 @@ func (h *handler) GetByID(c *gin.Context) {
 	}
 
 	customer, err := h.service.GetByID(ctx, req.ID)
-	if errors.Is(err, domain.ErrCustomerNotFound) {
-		c.Status(http.StatusNoContent)
-		return
-	}
 	if err != nil {
 		status, response := web.Error(err)
 		c.JSON(status, response)
@@ -87,10 +82,6 @@ func (h *handler) GetByDocument(c *gin.Context) {
 	}
 
 	customer, err := h.service.GetByDocument(ctx, req.Document)
-	if errors.Is(err, domain.ErrCustomerNotFound) {
-		c.Status(http.StatusNoContent)
-		return
-	}
 	if err != nil {
 		status, response := web.Error(err)
 		c.JSON(status, response)
