@@ -9,6 +9,7 @@ import (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=WorkHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=VehicleHandler --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHandler --with-expecter
 type (
 	PingHandler interface {
 		Ping(*gin.Context)
@@ -36,12 +37,17 @@ type (
 		Create(*gin.Context)
 		FindByLicensePlate(*gin.Context)
 	}
+
+	ServiceOrderHandler interface {
+		Create(*gin.Context)
+	}
 )
 
 type HandlersWrapper struct {
-	PingHandler     PingHandler
-	UserHandler     UserHandler
-	CustomerHandler CustomerHandler
-	WorkHandler     WorkHandler
-	VehicleHandler  VehicleHandler
+	PingHandler         PingHandler
+	UserHandler         UserHandler
+	CustomerHandler     CustomerHandler
+	WorkHandler         WorkHandler
+	VehicleHandler      VehicleHandler
+	ServiceOrderHandler ServiceOrderHandler
 }
