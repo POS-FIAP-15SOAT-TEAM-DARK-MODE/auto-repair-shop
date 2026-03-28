@@ -2,6 +2,8 @@ package customer
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"go.uber.org/zap"
 
@@ -23,7 +25,6 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 		return err
 	}
 
-	logger.Of(ctx).Debug("Executing query", zap.String("query", createCustomerQuery), zap.Any("params", customer))
 	_, err = tx.ExecContext(ctx, createCustomerQuery,
 		customer.ID,
 		customer.UserID,
@@ -34,15 +35,77 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 		customer.Phone,
 	)
 	if err != nil {
-		logger.Of(ctx).Warn("customer repository: failed to create customer",
-			zap.String("operation", "create_customer"),
-			zap.String("entity_id", customer.ID),
-			zap.Error(err),
-		)
-		return pgPkg.Error(ctx, err)
+		mapped := pgPkg.Error(ctx, err)
+		if mapped != domain.ErrDataConflict && mapped != domain.ErrDataViolation {
+			logger.Of(ctx).Warn("customer repository: failed to create customer",
+				zap.String("operation", "create_customer"),
+				zap.String("entity_id", customer.ID),
+				zap.Error(err),
+			)
+		}
+		return mapped
 	}
 
 	return nil
+}
+
+func (r *repository) GetByID(ctx context.Context, id string) (domain.Customer, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return domain.Customer{}, err
+	}
+
+	var c domain.Customer
+	c.User = &domain.User{}
+
+	err = db.QueryRowContext(ctx, getCustomerByIDQuery, id).Scan(
+		&c.ID, &c.UserID, &c.Type,
+		&c.CPF, &c.CNPJ, &c.CompanyName, &c.Phone,
+		&c.User.Name, &c.User.Email,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Customer{}, domain.ErrCustomerNotFound
+		}
+		logger.Of(ctx).Warn("customer repository: failed to get customer by id",
+			zap.String("operation", "get_customer_by_id"),
+			zap.String("entity_id", id),
+			zap.Error(err),
+		)
+		return domain.Customer{}, pgPkg.Error(ctx, err)
+	}
+
+	c.User.ID = c.UserID
+	return c, nil
+}
+
+func (r *repository) GetByDocument(ctx context.Context, document string) (domain.Customer, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return domain.Customer{}, err
+	}
+
+	var c domain.Customer
+	c.User = &domain.User{}
+
+	err = db.QueryRowContext(ctx, getCustomerByDocumentQuery, document).Scan(
+		&c.ID, &c.UserID, &c.Type,
+		&c.CPF, &c.CNPJ, &c.CompanyName, &c.Phone,
+		&c.User.Name, &c.User.Email,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Customer{}, domain.ErrCustomerNotFound
+		}
+		logger.Of(ctx).Warn("customer repository: failed to get customer by document",
+			zap.String("operation", "get_customer_by_document"),
+			zap.Error(err),
+		)
+		return domain.Customer{}, pgPkg.Error(ctx, err)
+	}
+
+	c.User.ID = c.UserID
+	return c, nil
 }
 
 // nullableString converts an empty string to nil so the DB receives NULL

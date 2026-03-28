@@ -9,13 +9,15 @@ type (
 		Ping() gin.HandlerFunc
 	}
 
- UserHttpHandler interface {
-	Create() gin.HandlerFunc
-	Login() gin.HandlerFunc
-}
+	UserHttpHandler interface {
+		Create() gin.HandlerFunc
+		Login() gin.HandlerFunc
+	}
 
 	CustomerHttpHandler interface {
-		Create() gin.HandlerFunc
+		Create(c *gin.Context)
+		GetByID(c *gin.Context)
+		GetByDocument(c *gin.Context)
 	}
 
 	WorkHttpHandler interface {

@@ -50,7 +50,7 @@ func onSuccess(ctx context.Context) error {
 	return nil
 }
 
-func onFailure(ctx context.Context, cause error) error {
+func onFailure(ctx context.Context, _ error) error {
 	tx, found := txFrom(ctx)
 	if !found {
 		logger.Global().Debug("postgres transaction not found on failure", zap.String("operation", "uow_onFailure"))
@@ -82,7 +82,7 @@ func GetTransaction(ctx context.Context) (*sql.Tx, error) {
 	return tx, nil
 }
 
-func GetOneTimeTransaction(ctx context.Context) (*sql.DB, error) {
+func GetOneTimeTransaction(_ context.Context) (*sql.DB, error) {
 	db := Connect()
 	return db, nil
 }
