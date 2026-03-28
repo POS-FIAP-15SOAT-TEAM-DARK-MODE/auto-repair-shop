@@ -141,7 +141,7 @@ func TestParseToken(t *testing.T) {
 			if err != nil {
 				t.Fatalf("token maker error: %v", err)
 			}
-			claims, err := ParseToken(token)
+			claims, err := GetClaims(token)
 			if tt.expectError {
 				if err == nil {
 					t.Fatalf("expected error parsing token, got nil")

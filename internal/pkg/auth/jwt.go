@@ -37,7 +37,7 @@ func GenerateToken(userId string, roles []domain.Role, expiresAt time.Time) (str
 	return token.SignedString(secretKey)
 }
 
-func ParseToken(token string) (*UserClaims, error) {
+func GetClaims(token string) (*UserClaims, error) {
 	claims := &UserClaims{}
 	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
 		return secretKey, nil
