@@ -54,6 +54,39 @@ func (_c *VehicleHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *Vehi
 	return _c
 }
 
+// FindByLicensePlate provides a mock function with given fields: _a0
+func (_m *VehicleHandler) FindByLicensePlate(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// VehicleHandler_FindByLicensePlate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindByLicensePlate'
+type VehicleHandler_FindByLicensePlate_Call struct {
+	*mock.Call
+}
+
+// FindByLicensePlate is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *VehicleHandler_Expecter) FindByLicensePlate(_a0 interface{}) *VehicleHandler_FindByLicensePlate_Call {
+	return &VehicleHandler_FindByLicensePlate_Call{Call: _e.mock.On("FindByLicensePlate", _a0)}
+}
+
+func (_c *VehicleHandler_FindByLicensePlate_Call) Run(run func(_a0 *gin.Context)) *VehicleHandler_FindByLicensePlate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *VehicleHandler_FindByLicensePlate_Call) Return() *VehicleHandler_FindByLicensePlate_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *VehicleHandler_FindByLicensePlate_Call) RunAndReturn(run func(*gin.Context)) *VehicleHandler_FindByLicensePlate_Call {
+	_c.Run(run)
+	return _c
+}
+
 // NewVehicleHandler creates a new instance of VehicleHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewVehicleHandler(t interface {

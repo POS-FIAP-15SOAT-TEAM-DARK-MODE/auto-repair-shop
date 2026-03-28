@@ -4,9 +4,12 @@ import (
 	goHttp "net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/mocks"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -61,6 +64,13 @@ func TestSetupRouter(t *testing.T) {
 
 	router := routing.SetupRouter(c, m)
 
+	// create a long-lived token that includes all roles so tests can call protected routes
+	allRoles := []domain.Role{domain.ADMIN, domain.ATTENDANT, domain.MECHANIC, domain.CUSTOMER}
+	testToken, err := auth.GenerateToken("test-user", allRoles, time.Now().Add(100*365*24*time.Hour))
+	if err != nil {
+		t.Fatalf("failed to generate test token: %v", err)
+	}
+
 	tests := []struct {
 		method string
 		path   string
@@ -101,6 +111,8 @@ func TestSetupRouter(t *testing.T) {
 		path = replacePathParamsWithSampleValues(path)
 		t.Run(path, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, path, nil)
+			// add Authorization header with long-lived token so protected routes pass
+			req.Header.Set("Authorization", "Bearer "+testToken)
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 			assert.Equal(t, tt.status, rec.Code)

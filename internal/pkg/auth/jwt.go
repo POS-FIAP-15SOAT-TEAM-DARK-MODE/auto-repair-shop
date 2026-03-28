@@ -1,15 +1,17 @@
 package auth
 
 import (
+	"slices"
 	"time"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type UserClaims struct {
-	UserId string   `json:"user_id"`
-	Roles  []string `json:"roles"`
+	UserId string        `json:"user_id"`
+	Roles  []domain.Role `json:"roles"`
 	jwt.RegisteredClaims
 }
 
@@ -21,7 +23,7 @@ func init() {
 	secretKey = []byte(env.GetString("JWT_SECRET", secretDefaultValue))
 }
 
-func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, error) {
+func GenerateToken(userId string, roles []domain.Role, expiresAt time.Time) (string, error) {
 	claims := UserClaims{
 		UserId: userId,
 		Roles:  roles,
@@ -33,4 +35,21 @@ func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, 
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
+}
+
+func GetClaims(token string) (*UserClaims, error) {
+	claims := &UserClaims{}
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
+		return secretKey, nil
+	})
+	return claims, err
+}
+
+func HasRequiredRoles(userRoles []domain.Role, rolesNeeded []domain.Role) bool {
+	for _, role := range userRoles {
+		if slices.Contains(rolesNeeded, role) {
+			return true
+		}
+	}
+	return false
 }

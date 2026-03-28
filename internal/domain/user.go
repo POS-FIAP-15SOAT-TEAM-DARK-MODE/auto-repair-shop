@@ -35,13 +35,11 @@ type UserService interface {
 	Login(ctx context.Context, loggedUser *LoggedUser) error
 }
 
-const RoleCustomer = "CUSTOMER"
-
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserRepository --with-expecter
 type UserRepository interface {
 	Create(ctx context.Context, c *User) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
-	GetRolesByUserId(ctx context.Context, id string) ([]string, error)
+	GetRolesByUserId(ctx context.Context, id string) ([]Role, error)
 	AssignRole(ctx context.Context, userID, roleName string) error
 	Update(ctx context.Context, id, name, email string) error
 	Delete(ctx context.Context, id string) error

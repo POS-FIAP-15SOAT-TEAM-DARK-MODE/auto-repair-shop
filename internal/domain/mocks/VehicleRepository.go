@@ -22,6 +22,65 @@ func (_m *VehicleRepository) EXPECT() *VehicleRepository_Expecter {
 	return &VehicleRepository_Expecter{mock: &_m.Mock}
 }
 
+// Find provides a mock function with given fields: ctx, search
+func (_m *VehicleRepository) Find(ctx context.Context, search string) (*domain.Vehicle, error) {
+	ret := _m.Called(ctx, search)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Find")
+	}
+
+	var r0 *domain.Vehicle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Vehicle, error)); ok {
+		return rf(ctx, search)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Vehicle); ok {
+		r0 = rf(ctx, search)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Vehicle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, search)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleRepository_Find_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Find'
+type VehicleRepository_Find_Call struct {
+	*mock.Call
+}
+
+// Find is a helper method to define mock.On call
+//   - ctx context.Context
+//   - search string
+func (_e *VehicleRepository_Expecter) Find(ctx interface{}, search interface{}) *VehicleRepository_Find_Call {
+	return &VehicleRepository_Find_Call{Call: _e.mock.On("Find", ctx, search)}
+}
+
+func (_c *VehicleRepository_Find_Call) Run(run func(ctx context.Context, search string)) *VehicleRepository_Find_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *VehicleRepository_Find_Call) Return(_a0 *domain.Vehicle, _a1 error) *VehicleRepository_Find_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleRepository_Find_Call) RunAndReturn(run func(context.Context, string) (*domain.Vehicle, error)) *VehicleRepository_Find_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Save provides a mock function with given fields: ctx, vehicle
 func (_m *VehicleRepository) Save(ctx context.Context, vehicle *domain.Vehicle) error {
 	ret := _m.Called(ctx, vehicle)

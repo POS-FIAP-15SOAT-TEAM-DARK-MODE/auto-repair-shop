@@ -234,7 +234,7 @@ func TestService_Login(t *testing.T) {
 			mockRepo: func(t *testing.T) *domainmocks.UserRepository {
 				mockRepo := domainmocks.NewUserRepository(t)
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(validDomainUser, nil)
-				mockRepo.On("GetRolesByUserId", mock.Anything, "123").Return([]string{"user"}, nil)
+				mockRepo.On("GetRolesByUserId", mock.Anything, "123").Return([]domain.Role{domain.ADMIN}, nil)
 				return mockRepo
 			},
 			expectedError: nil,

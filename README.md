@@ -1,14 +1,14 @@
 # Auto Repair Shop
 
-Monolithic layered backend for an auto repair shop management system. Manages service orders (SO), clients, vehicles, parts/stock, and administrative operations.
+Monolithic layered backend for an auto repair shop management system. Manages service orders (SO), customers, vehicles, parts/stock, and administrative operations.
 
 **Stack:** Go · Gin · PostgreSQL · JWT · Swagger
 
 ## Domain
 
 - **SO (Service Order)** — Service order, the central aggregate
-- **Client** — Client identified by CPF (individual) or CNPJ (company)
-- **Vehicle** — Vehicle (plate, brand, model, year), linked to a Client
+- **Customer** — Customer identified by CPF (individual) or CNPJ (company)
+- **Vehicle** — Vehicle (plate, brand, model, year), linked to a Customer
 - **Service** — Billable service (name, description, unit price)
 - **Part/Supply** — Part or supply with stock quantity and unit price
 - **Budget** — Budget, auto-calculated from services and parts on a SO
@@ -20,7 +20,7 @@ Monolithic layered backend for an auto repair shop management system. Manages se
 RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
 ```
 
-`REJECTED` is a terminal state reached when the client rejects the budget (from `AWAITING_APPROVAL`).
+`REJECTED` is a terminal state reached when the customer rejects the budget (from `AWAITING_APPROVAL`).
 
 ## Project Structure
 
@@ -124,6 +124,18 @@ make migrate-down
 make migrate-status
 ```
 
+### Metodo de Criptografia
+Senhas de usuários são protegidas usando bcrypt (golang.org/x/crypto/bcrypt).
+
+Detalhes principais:
+- Tipo: hash one‑way (não é reversível). O resultado inclui salt interno e metadados.
+- Implementação: usamos `bcrypt.GenerateFromPassword` ao criar/atualizar senhas e `bcrypt.CompareHashAndPassword` para validação.
+- Fator de custo: controlado pela variável de ambiente `BCRYPT_COST` (ver seção Environment Variables). Recomenda‑se um custo mínimo de 12 em produção — aumente conforme a capacidade da infra.
+
+Notas:
+- Para customers criados automaticamente, a senha padrão (CPF/CNPJ) também é imediatamente hasheada antes de persistir.
+- Bcrypt já aplica salt de forma segura; não é necessário gerir salt manualmente.
+
 ### Adding New Migrations
 
 When adding schema changes, create migration files following the naming convention:
@@ -153,17 +165,17 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 | Method | Path                 | Description         |
 |--------|----------------------|---------------------|
 | POST   | `/v1/auth/login`     | Get JWT             |
-| GET    | `/v1/so/:id/status`  | Client SO tracking  |
+| GET    | `/v1/so/:id/status`  | Customer SO tracking  |
 
-### Clients
+### Customers
 
-| Method | Path               | Roles               |
-|--------|--------------------|----------------------|
-| POST   | `/v1/clients`      | ADMIN, ATTENDANT     |
-| GET    | `/v1/clients`      | ADMIN, ATTENDANT     |
-| GET    | `/v1/clients/:id`  | ADMIN, ATTENDANT     |
-| PUT    | `/v1/clients/:id`  | ADMIN, ATTENDANT     |
-| DELETE | `/v1/clients/:id`  | ADMIN                |
+| Method | Path                  | Roles               |
+|--------|-----------------------|----------------------|
+| POST   | `/v1/customers`       | ADMIN, ATTENDANT     |
+| GET    | `/v1/customers`       | ADMIN, ATTENDANT     |
+| GET    | `/v1/customers/:id`   | ADMIN, ATTENDANT     |
+| PUT    | `/v1/customers/:id`   | ADMIN, ATTENDANT     |
+| DELETE | `/v1/customers/:id`   | ADMIN                |
 
 ### Service Orders (SO)
 
@@ -173,8 +185,8 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 | GET    | `/v1/so`                | ADMIN, ATTENDANT, MECHANIC     |
 | GET    | `/v1/so/:id`            | ADMIN, ATTENDANT, MECHANIC     |
 | PATCH  | `/v1/so/:id/status`     | ADMIN, ATTENDANT, MECHANIC     |
-| POST   | `/v1/so/:id/approve`    | CLIENT (own SO only)           |
-| POST   | `/v1/so/:id/reject`     | CLIENT (own SO only)           |
+| POST   | `/v1/so/:id/approve`    | CUSTOMER (own SO only)         |
+| POST   | `/v1/so/:id/reject`     | CUSTOMER (own SO only)         |
 
 ### Admin
 
@@ -189,9 +201,9 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 | Role       | Description                                          |
 |------------|------------------------------------------------------|
 | ADMIN      | Unrestricted access (exclusive, cannot combine)      |
-| ATTENDANT  | Clients, vehicles, SO, budgets, reports              |
+| ATTENDANT  | Customers, vehicles, SO, budgets, reports            |
 | MECHANIC   | SO queries, add services/parts, status transitions   |
-| CLIENT     | Own SO tracking and budget approve/reject only       |
+| CUSTOMER   | Own SO tracking and budget approve/reject only       |
 
 ## License
 

@@ -2,8 +2,9 @@ package domain
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateLicensePlate(t *testing.T) {
@@ -152,6 +153,73 @@ func TestNewVehicle(t *testing.T) {
 			assert.Equal(t, tt.model, v.Model)
 			assert.Equal(t, tt.year, v.Year)
 			assert.Equal(t, tt.customerId, v.CustomerId)
+		})
+	}
+}
+
+func TestNormalizeLicensePlate(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "already normalized",
+			input:    "ABC1D23",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "lowercase plate",
+			input:    "abc1d23",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "with hyphen",
+			input:    "ABC-1D23",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "with spaces",
+			input:    "  ABC1D23  ",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "lowercase with spaces and hyphen",
+			input:    "  abc-1d23  ",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "multiple hyphens",
+			input:    "A-B-C-1-D-2-3",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "only spaces",
+			input:    "     ",
+			expected: "",
+		},
+		{
+			name:     "only hyphens",
+			input:    "-----",
+			expected: "",
+		},
+		{
+			name:     "mixed invalid format still normalized",
+			input:    " a-b c-1d 2-3 ",
+			expected: "ABC1D23",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NormalizeLicensePlate(tt.input)
+
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

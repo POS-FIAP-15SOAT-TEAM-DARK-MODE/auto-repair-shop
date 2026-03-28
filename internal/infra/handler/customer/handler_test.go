@@ -116,6 +116,18 @@ func TestCreate(t *testing.T) {
 			},
 			expectedStatus: http.StatusConflict,
 		},
+		{
+			name: "service_error_returns_500",
+			body: map[string]any{
+				"name": "João Silva", "email": "joao@example.com",
+				"password": "Senha@123", "type": "INDIVIDUAL",
+				"document": "111.444.777-35", "phone": "11999999999",
+			},
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Create(mock.Anything, mock.AnythingOfType("domain.Customer")).Return(assert.AnError)
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
 	}
 
 	for _, tt := range tests {
@@ -277,6 +289,23 @@ func TestUpdate(t *testing.T) {
 			},
 			expectedStatus: http.StatusConflict,
 		},
+		{
+			name:           "invalid_email_returns_400",
+			id:             "uuid-individual",
+			body:           map[string]any{"email": "not-an-email"},
+			mockSetup:      func(_ *domainmocks.CustomerService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "service_error_returns_500",
+			id:   "uuid-individual",
+			body: map[string]any{"phone": "11888888888"},
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().Update(mock.Anything, "uuid-individual", (*string)(nil), (*string)(nil), strPtr("11888888888")).
+					Return(domain.Customer{}, assert.AnError)
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
 	}
 
 	for _, tt := range tests {
@@ -409,6 +438,15 @@ func TestGetByDocument(t *testing.T) {
 				svc.EXPECT().GetByDocument(mock.Anything, mock.Anything).Return(domain.Customer{}, domain.ErrInvalidDocumentFormat)
 			},
 			expectedStatus: http.StatusBadRequest,
+			assertBody:     nil,
+		},
+		{
+			name:       "service_error_returns_500",
+			queryParam: "document=111.444.777-35",
+			mockSetup: func(svc *domainmocks.CustomerService) {
+				svc.EXPECT().GetByDocument(mock.Anything, mock.Anything).Return(domain.Customer{}, assert.AnError)
+			},
+			expectedStatus: http.StatusInternalServerError,
 			assertBody:     nil,
 		},
 	}
