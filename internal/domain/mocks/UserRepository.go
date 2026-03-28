@@ -129,23 +129,23 @@ func (_c *UserRepository_GetByEmail_Call) RunAndReturn(run func(context.Context,
 }
 
 // GetRolesByUserId provides a mock function with given fields: ctx, id
-func (_m *UserRepository) GetRolesByUserId(ctx context.Context, id string) ([]string, error) {
+func (_m *UserRepository) GetRolesByUserId(ctx context.Context, id string) ([]domain.Role, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRolesByUserId")
 	}
 
-	var r0 []string
+	var r0 []domain.Role
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.Role, error)); ok {
 		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.Role); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
+			r0 = ret.Get(0).([]domain.Role)
 		}
 	}
 
@@ -177,12 +177,12 @@ func (_c *UserRepository_GetRolesByUserId_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *UserRepository_GetRolesByUserId_Call) Return(_a0 []string, _a1 error) *UserRepository_GetRolesByUserId_Call {
+func (_c *UserRepository_GetRolesByUserId_Call) Return(_a0 []domain.Role, _a1 error) *UserRepository_GetRolesByUserId_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserRepository_GetRolesByUserId_Call) RunAndReturn(run func(context.Context, string) ([]string, error)) *UserRepository_GetRolesByUserId_Call {
+func (_c *UserRepository_GetRolesByUserId_Call) RunAndReturn(run func(context.Context, string) ([]domain.Role, error)) *UserRepository_GetRolesByUserId_Call {
 	_c.Call.Return(run)
 	return _c
 }
