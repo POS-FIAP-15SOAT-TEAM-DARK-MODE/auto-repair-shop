@@ -1,4 +1,4 @@
-package user
+package user_test
 
 import (
 	"context"
@@ -8,11 +8,125 @@ import (
 	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
-	userMock "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
+	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	uowmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow/mocks"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func TestService_Create_Success(t *testing.T) {
+	mockExecutor := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewUserRepository(t)
+	svc := user.Service(mockExecutor, repo, time.Minute)
+
+	mockExecutor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, steps ...uow.Step) error {
+		for _, step := range steps {
+			if err := step(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	repo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+
+	u := &domain.User{
+		Name:     "Test User",
+		Email:    "test@example.com",
+		Password: "Secret@123",
+	}
+
+	err := svc.Create(context.Background(), u)
+
+	assert.NoError(t, err)
+}
+
+func TestService_Create_ValidationError(t *testing.T) {
+	mockExecutor := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewUserRepository(t)
+	svc := user.Service(mockExecutor, repo, time.Minute)
+
+	u := &domain.User{
+		Name:     "Ts", // too short
+		Email:    "test@example.com",
+		Password: "Secret@123",
+	}
+
+	err := svc.Create(context.Background(), u)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "user validation failed")
+}
+
+func TestService_Create_TransactionError(t *testing.T) {
+	mockExecutor := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewUserRepository(t)
+	svc := user.Service(mockExecutor, repo, time.Minute)
+
+	mockExecutor.EXPECT().Execute(mock.Anything, mock.Anything).Return(errors.New("db error"))
+
+	u := &domain.User{
+		Name:     "Test User",
+		Email:    "test@example.com",
+		Password: "Secret@123",
+	}
+
+	err := svc.Create(context.Background(), u)
+
+	assert.Error(t, err)
+	assert.Equal(t, "db error", err.Error())
+}
+
+func TestService_Create_RepoError(t *testing.T) {
+	mockExecutor := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewUserRepository(t)
+	svc := user.Service(mockExecutor, repo, time.Minute)
+
+	mockExecutor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, steps ...uow.Step) error {
+		for _, step := range steps {
+			if err := step(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	repo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(errors.New("repo error"))
+
+	u := &domain.User{
+		Name:     "Test User",
+		Email:    "test@example.com",
+		Password: "Secret@123",
+	}
+
+	err := svc.Create(context.Background(), u)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "repository.Create failed")
+}
+
+func TestService_Create_HashPasswordError(t *testing.T) {
+	mockExecutor := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewUserRepository(t)
+
+	expectedErr := errors.New("hashing failed")
+	// Using the exported test constructor to inject the mock hashPassword function
+	svc := user.NewServiceForTest(mockExecutor, repo, time.Minute, func(u *domain.User, ctx context.Context) error {
+		return expectedErr
+	})
+
+	u := &domain.User{
+		Name:     "Test User",
+		Email:    "test@example.com",
+		Password: "Secret@123",
+	}
+
+	err := svc.Create(context.Background(), u)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "user password hashing failed")
+	assert.ErrorIs(t, err, expectedErr)
+}
 
 func TestService_Login(t *testing.T) {
 	validDomainUser := &domain.User{
@@ -25,7 +139,7 @@ func TestService_Login(t *testing.T) {
 	tests := []struct {
 		name          string
 		loggedUser    *domain.LoggedUser
-		mockRepo      func(t *testing.T) *userMock.UserRepository
+		mockRepo      func(t *testing.T) *domainmocks.UserRepository
 		expectedError error
 	}{
 		{
@@ -56,8 +170,8 @@ func TestService_Login(t *testing.T) {
 					Password: "password",
 				},
 			},
-			mockRepo: func(t *testing.T) *mocks.UserRepository {
-				mockRepo := mocks.NewUserRepository(t)
+			mockRepo: func(t *testing.T) *domainmocks.UserRepository {
+				mockRepo := domainmocks.NewUserRepository(t)
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(nil, errors.New("repository failed"))
 				return mockRepo
 			},
@@ -71,8 +185,8 @@ func TestService_Login(t *testing.T) {
 					Password: "password",
 				},
 			},
-			mockRepo: func(t *testing.T) *mocks.UserRepository {
-				mockRepo := mocks.NewUserRepository(t)
+			mockRepo: func(t *testing.T) *domainmocks.UserRepository {
+				mockRepo := domainmocks.NewUserRepository(t)
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(nil, nil)
 				return mockRepo
 			},
@@ -86,8 +200,8 @@ func TestService_Login(t *testing.T) {
 					Password: "invalid_password",
 				},
 			},
-			mockRepo: func(t *testing.T) *mocks.UserRepository {
-				mockRepo := mocks.NewUserRepository(t)
+			mockRepo: func(t *testing.T) *domainmocks.UserRepository {
+				mockRepo := domainmocks.NewUserRepository(t)
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(validDomainUser, nil)
 				return mockRepo
 			},
@@ -101,8 +215,8 @@ func TestService_Login(t *testing.T) {
 					Password: "password",
 				},
 			},
-			mockRepo: func(t *testing.T) *mocks.UserRepository {
-				mockRepo := mocks.NewUserRepository(t)
+			mockRepo: func(t *testing.T) *domainmocks.UserRepository {
+				mockRepo := domainmocks.NewUserRepository(t)
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(validDomainUser, nil)
 				mockRepo.On("GetRolesByUserId", mock.Anything, "123").Return(nil, errors.New("repository failed"))
 				return mockRepo
@@ -117,8 +231,8 @@ func TestService_Login(t *testing.T) {
 					Password: "password",
 				},
 			},
-			mockRepo: func(t *testing.T) *userMock.UserRepository {
-				mockRepo := userMock.NewUserRepository(t)
+			mockRepo: func(t *testing.T) *domainmocks.UserRepository {
+				mockRepo := domainmocks.NewUserRepository(t)
 				mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(validDomainUser, nil)
 				mockRepo.On("GetRolesByUserId", mock.Anything, "123").Return([]domain.Role{domain.ADMIN}, nil)
 				return mockRepo
@@ -129,12 +243,12 @@ func TestService_Login(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &mocks.UserRepository{}
+			mockRepo := &domainmocks.UserRepository{}
 			if tt.mockRepo != nil {
 				mockRepo = tt.mockRepo(t)
 			}
 
-			service := Service(nil, mockRepo, 24*time.Hour)
+			service := user.Service(nil, mockRepo, 24*time.Hour)
 			err := service.Login(context.Background(), tt.loggedUser)
 			if tt.expectedError != nil {
 				assert.Error(t, err)

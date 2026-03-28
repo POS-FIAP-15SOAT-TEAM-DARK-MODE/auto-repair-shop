@@ -1,7 +1,55 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # Integrated Auto Repair Shop System — Claude Code Rules
 
 ## Project Overview
 Monolithic layered backend for an auto repair shop. Manages service orders, customers, vehicles, parts/stock, and administrative operations. Database: PostgreSQL. Auth: JWT. API: RESTful + Swagger.
+
+**Tech stack:** Go 1.26 · Gin · PostgreSQL 15 · `lib/pq` (raw SQL) · `golang-migrate` · JWT (`golang-jwt/jwt/v5`) · Zap logger · Testify · Mockery v2 · `shopspring/decimal` (monetary values)
+
+## Development Commands
+
+```bash
+make run              # go run cmd/service/main.go (port 8080)
+make test             # run all tests with race detector (LOG_LEVEL=PANIC suppresses noise)
+make coverage         # generate coverage.out; open with: go tool cover -html=coverage.out
+make docker-up        # docker-compose up --build (app + PostgreSQL)
+make docker-down      # docker-compose down
+make mockgen          # regenerate all mocks via go generate ./...
+make migrate-install  # install golang-migrate CLI (once per machine)
+make migrate-up       # apply pending migrations
+make migrate-down     # roll back last migration
+make migrate-status   # show current migration version
+```
+
+Run a single test or package:
+```bash
+go test ./internal/domain/... -run TestCustomer_Validate -v
+go test ./internal/services/customer/... -v --race
+```
+
+Swagger UI is available at `http://localhost:8080/swagger/index.html` when the app is running.
+
+## Code Architecture
+
+Layered hexagonal architecture — no framework leakage into inner layers:
+
+```
+HTTP → Handler (infra/handler/*) → Service (internal/services/*) → Repository (infra/repository/*) → PostgreSQL
+                                        ↕
+                              Domain (internal/domain/*)
+```
+
+- **`internal/domain/`** — Framework-free structs with validation methods and interfaces (`CustomerService`, `CustomerRepository`, etc.). Mocks are generated here (`domain/mocks/`).
+- **`internal/services/`** — All business logic, status transitions, budget calculation, stock checks. Services receive repository interfaces and use the Unit of Work pattern (`internal/pkg/uow/`) for transactions.
+- **`internal/infra/repository/`** — All raw SQL queries via `lib/pq`. Repositories implement domain interfaces. Use `SELECT FOR UPDATE` for pessimistic locking on stock.
+- **`internal/infra/handler/`** — Gin handlers that parse/validate input and call services. Zero business logic here.
+- **`internal/infra/container/` + `infra/factory/`** — Dependency injection wiring; handlers get services, services get repositories.
+- **`internal/pkg/`** — Shared utilities: `auth/` (JWT), `uow/` (unit of work/transactions), `logger/` (Zap), `env/` (env vars), `web/` (HTTP response helpers), `json/` (validation).
+- **`migrations/`** — Versioned SQL migration files (`NNNNNN_description.up.sql` / `.down.sql`). All schema changes must go through new migration files.
+- **`cmd/service/main.go`** — Entrypoint: loads env, initialises logger, wires container, starts Gin router.
 
 ## Domain Language (Ubiquitous Language)
 - **Service Order (SO)** — service order, the central aggregate

@@ -69,6 +69,120 @@ func (_c *CustomerRepository_Create_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// GetByDocument provides a mock function with given fields: ctx, document
+func (_m *CustomerRepository) GetByDocument(ctx context.Context, document string) (domain.Customer, error) {
+	ret := _m.Called(ctx, document)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByDocument")
+	}
+
+	var r0 domain.Customer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Customer, error)); ok {
+		return rf(ctx, document)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Customer); ok {
+		r0 = rf(ctx, document)
+	} else {
+		r0 = ret.Get(0).(domain.Customer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, document)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CustomerRepository_GetByDocument_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByDocument'
+type CustomerRepository_GetByDocument_Call struct {
+	*mock.Call
+}
+
+// GetByDocument is a helper method to define mock.On call
+//   - ctx context.Context
+//   - document string
+func (_e *CustomerRepository_Expecter) GetByDocument(ctx interface{}, document interface{}) *CustomerRepository_GetByDocument_Call {
+	return &CustomerRepository_GetByDocument_Call{Call: _e.mock.On("GetByDocument", ctx, document)}
+}
+
+func (_c *CustomerRepository_GetByDocument_Call) Run(run func(ctx context.Context, document string)) *CustomerRepository_GetByDocument_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerRepository_GetByDocument_Call) Return(_a0 domain.Customer, _a1 error) *CustomerRepository_GetByDocument_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CustomerRepository_GetByDocument_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerRepository_GetByDocument_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetByID provides a mock function with given fields: ctx, id
+func (_m *CustomerRepository) GetByID(ctx context.Context, id string) (domain.Customer, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
+	var r0 domain.Customer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Customer, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Customer); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(domain.Customer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CustomerRepository_GetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByID'
+type CustomerRepository_GetByID_Call struct {
+	*mock.Call
+}
+
+// GetByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *CustomerRepository_Expecter) GetByID(ctx interface{}, id interface{}) *CustomerRepository_GetByID_Call {
+	return &CustomerRepository_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
+}
+
+func (_c *CustomerRepository_GetByID_Call) Run(run func(ctx context.Context, id string)) *CustomerRepository_GetByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerRepository_GetByID_Call) Return(_a0 domain.Customer, _a1 error) *CustomerRepository_GetByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CustomerRepository_GetByID_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerRepository_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewCustomerRepository creates a new instance of CustomerRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewCustomerRepository(t interface {

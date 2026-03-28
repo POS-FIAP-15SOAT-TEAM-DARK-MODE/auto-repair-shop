@@ -23,11 +23,11 @@ var (
 var (
 	ErrEmptyUserName          = errors.New("user name cannot be empty")
 	ErrInvalidUserCredentials = errors.New("invalid user credentials")
-	ErrInvalidUserName        = errors.New("the username must be longer than 3 characters and can only contain letters and spaces.")
+	ErrInvalidUserName        = errors.New("the username must be longer than 3 characters and can only contain letters and spaces")
 	ErrEmptyUserEmail         = errors.New("user email cannot be empty")
 	ErrInvalidUserEmail       = errors.New("invalid user email format")
 	ErrEmptyUserPassword      = errors.New("user password cannot be empty")
-	ErrInvalidUserPassword    = errors.New("password must have at least 8 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
+	ErrInvalidUserPassword    = errors.New("password must have at least 8 characters and contain at least one uppercase letter, one lowercase letter, one digit, and one special character")
 	ErrUserPasswordDontMatch  = errors.New("user passwords do not match")
 	ErrUserPasswordTooLong    = errors.New("user password too long")
 	ErrUserPasswordTooShort   = errors.New("user password too short")
@@ -47,13 +47,15 @@ var (
 
 // Customer errors
 var (
-	ErrPhoneRequired       = errors.New("phone is required")
-	ErrCompanyNameRequired = errors.New("company_name is required for COMPANY type")
-	ErrInvalidCustomerType = errors.New("invalid customer type")
-	ErrInvalidCPF          = errors.New("invalid CPF")
-	ErrInvalidCNPJ         = errors.New("invalid CNPJ")
-	ErrCPFLength           = errors.New("CPF must have 11 digits")
-	ErrCNPJLength          = errors.New("CNPJ must have 14 characters")
+	ErrPhoneRequired         = errors.New("phone is required")
+	ErrCompanyNameRequired   = errors.New("company_name is required for COMPANY type")
+	ErrInvalidCustomerType   = errors.New("invalid customer type")
+	ErrInvalidCPF            = errors.New("invalid CPF")
+	ErrInvalidCNPJ           = errors.New("invalid CNPJ")
+	ErrCPFLength             = errors.New("CPF must have 11 digits")
+	ErrCNPJLength            = errors.New("CNPJ must have 14 characters")
+	ErrCustomerNotFound      = errors.New("customer not found")
+	ErrInvalidDocumentFormat = ValidationError{Message: "document must be a valid CPF (11 digits) or CNPJ (14 characters)"}
 )
 
 // Vehicle errors

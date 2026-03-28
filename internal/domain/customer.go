@@ -12,6 +12,9 @@ type CustomerType string
 const (
 	IndividualCustomerType CustomerType = "INDIVIDUAL"
 	CompanyCustomerType    CustomerType = "COMPANY"
+
+	cpfLength  = 11
+	cnpjLength = 14
 )
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerService --with-expecter
@@ -30,10 +33,14 @@ type (
 
 	CustomerService interface {
 		Create(ctx context.Context, customer Customer) error
+		GetByID(ctx context.Context, id string) (Customer, error)
+		GetByDocument(ctx context.Context, rawDocument string) (Customer, error)
 	}
 
 	CustomerRepository interface {
 		Create(ctx context.Context, customer *Customer) error
+		GetByID(ctx context.Context, id string) (Customer, error)
+		GetByDocument(ctx context.Context, document string) (Customer, error)
 	}
 )
 
@@ -221,4 +228,25 @@ func validateCNPJ(cnpj string) error {
 	}
 
 	return nil
+}
+
+// ParseDocument sanitizes a raw document string, determines whether it is a CPF or CNPJ,
+// validates it using the existing check-digit algorithms, and returns the type and sanitized value.
+func ParseDocument(raw string) (CustomerType, string, error) {
+	// CNPJ sanitizer strips all non-alphanumeric chars and uppercases — safe for CPF too.
+	sanitized := sanitizeCNPJ(raw)
+	switch len(sanitized) {
+	case cpfLength:
+		if err := validateCPF(sanitized); err != nil {
+			return "", "", err
+		}
+		return IndividualCustomerType, sanitized, nil
+	case cnpjLength:
+		if err := validateCNPJ(sanitized); err != nil {
+			return "", "", err
+		}
+		return CompanyCustomerType, sanitized, nil
+	default:
+		return "", "", ErrInvalidDocumentFormat
+	}
 }
