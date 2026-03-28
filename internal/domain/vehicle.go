@@ -36,7 +36,7 @@ type (
 
 	VehicleRepository interface {
 		Save(ctx context.Context, vehicle *Vehicle) error
-		Find(ctx context.Context, search string) (*Vehicle, error)
+		Find(ctx context.Context, licensePlate string) (*Vehicle, error)
 	}
 )
 

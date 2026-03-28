@@ -84,18 +84,6 @@ func TestPostgresRepository_Find(t *testing.T) {
 		expectPlate    string
 	}{
 		{
-			name:   "find by id success",
-			search: "veh-1",
-			mockSetup: func(mock sqlmock.Sqlmock, search string) {
-				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
-					WithArgs(search).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "license_plate", "brand", "model", "year", "customer_id"}).
-						AddRow(search, "ABC1D23", "chevrolet", "onix", 2020, "cust-1"))
-			},
-			expectError: false,
-			expectPlate: "ABC1D23",
-		},
-		{
 			name:   "find by plate success",
 			search: "ABC1D23",
 			mockSetup: func(mock sqlmock.Sqlmock, search string) {

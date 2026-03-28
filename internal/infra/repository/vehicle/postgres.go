@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -13,17 +12,13 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	plateLen     = 7
-	ID           = "id"
-	licensePlate = "license_plate"
-)
-
 type vehicleRepository struct{}
 
 func NewVehicleRepository() *vehicleRepository {
 	return &vehicleRepository{}
 }
+
+// TODO: Add query building in this repository
 
 func (r *vehicleRepository) Save(ctx context.Context, vehicle *domain.Vehicle) error {
 	tx, err := postgres.GetTransaction(ctx)
@@ -48,19 +43,14 @@ func (r *vehicleRepository) Save(ctx context.Context, vehicle *domain.Vehicle) e
 	return nil
 }
 
-func (r *vehicleRepository) Find(ctx context.Context, search string) (*domain.Vehicle, error) {
+func (r *vehicleRepository) Find(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	query := fmt.Sprintf(selectVehicle, ID)
-	if len(search) == plateLen {
-		query = fmt.Sprintf(selectVehicle, licensePlate)
-	}
-
 	v := &domain.Vehicle{}
-	if err = tx.QueryRowContext(ctx, query, search).Scan(&v.ID, &v.LicensePlate, &v.Brand, &v.Model, &v.Year, &v.CustomerId); err != nil {
+	if err = tx.QueryRowContext(ctx, selectVehicle, licensePlate).Scan(&v.ID, &v.LicensePlate, &v.Brand, &v.Model, &v.Year, &v.CustomerId); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrVehicleNotFound
 		}
