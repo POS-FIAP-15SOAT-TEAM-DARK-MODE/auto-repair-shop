@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"errors"
 
+	"go.uber.org/zap"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 )
 
 type repository struct{}
@@ -32,7 +35,15 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 		customer.Phone,
 	)
 	if err != nil {
-		return pgPkg.Error(ctx, err)
+		mapped := pgPkg.Error(ctx, err)
+		if mapped != domain.ErrDataConflict && mapped != domain.ErrDataViolation {
+			logger.Of(ctx).Warn("customer repository: failed to create customer",
+				zap.String("operation", "create_customer"),
+				zap.String("entity_id", customer.ID),
+				zap.Error(err),
+			)
+		}
+		return mapped
 	}
 
 	return nil
@@ -56,6 +67,11 @@ func (r *repository) GetByID(ctx context.Context, id string) (domain.Customer, e
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Customer{}, domain.ErrCustomerNotFound
 		}
+		logger.Of(ctx).Warn("customer repository: failed to get customer by id",
+			zap.String("operation", "get_customer_by_id"),
+			zap.String("entity_id", id),
+			zap.Error(err),
+		)
 		return domain.Customer{}, pgPkg.Error(ctx, err)
 	}
 
@@ -81,6 +97,10 @@ func (r *repository) GetByDocument(ctx context.Context, document string) (domain
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Customer{}, domain.ErrCustomerNotFound
 		}
+		logger.Of(ctx).Warn("customer repository: failed to get customer by document",
+			zap.String("operation", "get_customer_by_document"),
+			zap.Error(err),
+		)
 		return domain.Customer{}, pgPkg.Error(ctx, err)
 	}
 

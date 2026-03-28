@@ -57,8 +57,9 @@ func (c *createWorkReqDTO) Validate() error {
 	return nil
 }
 
-func (c *createWorkReqDTO) MapToDomain() (*domain.Work, error) {
-	return domain.NewWork(c.Name, c.Description, c.Price, domain.StringToWorkStatus(c.Status))
+func (c *createWorkReqDTO) MapToDomain() *domain.Work {
+	work, _ := domain.NewWork(c.Name, c.Description, c.Price, domain.StringToWorkStatus(c.Status))
+	return work
 }
 
 func mapListParamsToDomain(c *gin.Context) *domain.ListWorkParams {

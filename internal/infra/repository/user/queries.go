@@ -1,4 +1,4 @@
-package repository
+package user
 
 const (
 	getUserByEmail  = `SELECT id, name, email, password_hash FROM "user" WHERE email = $1`

@@ -163,12 +163,12 @@ func TestGetByID(t *testing.T) {
 			},
 		},
 		{
-			name: "not_found_returns_204",
+			name: "not_found_returns_404",
 			id:   "unknown",
 			mockSetup: func(svc *domainmocks.CustomerService) {
 				svc.EXPECT().GetByID(mock.Anything, "unknown").Return(domain.Customer{}, domain.ErrCustomerNotFound)
 			},
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusNotFound,
 			assertBody:     nil,
 		},
 		{
@@ -387,12 +387,12 @@ func TestGetByDocument(t *testing.T) {
 			},
 		},
 		{
-			name:       "not_found_returns_204",
+			name:       "not_found_returns_404",
 			queryParam: "document=111.444.777-35",
 			mockSetup: func(svc *domainmocks.CustomerService) {
 				svc.EXPECT().GetByDocument(mock.Anything, mock.Anything).Return(domain.Customer{}, domain.ErrCustomerNotFound)
 			},
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusNotFound,
 			assertBody:     nil,
 		},
 		{

@@ -1,4 +1,4 @@
-package repository
+package user
 
 import (
 	"context"
@@ -49,7 +49,7 @@ func (u *repo) GetRolesByUserId(ctx context.Context, id string) ([]string, error
 		return nil, pgPkg.Error(ctx, err)
 	}
 
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var role string

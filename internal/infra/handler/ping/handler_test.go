@@ -16,7 +16,7 @@ func TestPingHandler(t *testing.T) {
 	h := handler.HttpHandler()
 
 	router := gin.New()
-	router.GET("/ping", h.Ping())
+	router.GET("/ping", h.Ping)
 
 	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
 	rec := httptest.NewRecorder()
