@@ -48,17 +48,7 @@ func (h *handler) Create() gin.HandlerFunc {
 			return
 		}
 
-		body, err := dto.MapToDomain()
-		if err != nil {
-			status, response := web.Error(err)
-			logger.Of(ctx).Debug("Work parse to domain failed",
-				zap.String("operation", "create_work"),
-				zap.Error(err),
-				zap.String("entity", "work"),
-			)
-			c.JSON(status, response)
-			return
-		}
+		body := dto.MapToDomain()
 
 		logger.Of(ctx).Debug("create request", zap.Any("service", body))
 		if err := h.svc.Create(ctx, body); err != nil {
@@ -98,7 +88,7 @@ func (h *handler) List() gin.HandlerFunc {
 		}
 
 		logger.Of(ctx).Debug("list response", zap.Any("service", response))
-		c.JSON(http.StatusCreated, response)
+		c.JSON(http.StatusCreated, mapListResponseDTOFromDomain(response))
 	}
 }
 
@@ -129,17 +119,7 @@ func (h *handler) Update() gin.HandlerFunc {
 			return
 		}
 
-		body, err := dto.MapToDomain()
-		if err != nil {
-			status, response := web.Error(err)
-			logger.Of(ctx).Debug("Work parse to domain failed",
-				zap.String("operation", "update_work"),
-				zap.Error(err),
-				zap.String("entity", "work"),
-			)
-			c.JSON(status, response)
-			return
-		}
+		body := dto.MapToDomain()
 
 		id := c.Param(idPathParamKey)
 		if id == "" {

@@ -154,9 +154,6 @@ func (u *User) HashPassword(ctx context.Context) error {
 		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
 			return ErrUserPasswordTooLong
 		}
-		if errors.Is(err, bcrypt.ErrHashTooShort) {
-			return ErrUserPasswordTooShort
-		}
 
 		logger.Of(ctx).Warn("HashPassword failed: bcrypt error", zap.String("email", u.Email), zap.Error(err))
 		return err

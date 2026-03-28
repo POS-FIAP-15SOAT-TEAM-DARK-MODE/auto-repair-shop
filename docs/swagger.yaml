@@ -122,34 +122,34 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/services:
+  /v1/works:
     post:
-      summary: Register a new Service
-      description: Endpoint to create a new service object.
+      summary: Register a new Work
+      description: Endpoint to create a new work object.
       tags:
-        - Service
+        - Work
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateServiceRequest'
+              $ref: '#/components/schemas/CreateWorkRequest'
       responses:
         "201":
           description: Successful created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateServiceResponse'
+                $ref: '#/components/schemas/CreateWorkResponse'
         "500":
           description: Internal Server Error
         "400":
           description: Invalid Body Content
 
     get:
-      summary: List Services
-      description: List registered services with pagination and optional status filter.
+      summary: List Works
+      description: List registered works with pagination and optional status filter.
       tags:
-        - Service
+        - Work
       parameters:
         - in: query
           name: page
@@ -174,59 +174,59 @@ paths:
             enum:
               - ACTIVE
               - INACTIVE
-          description: Filter services by status.
+          description: Filter works by status.
       responses:
         "200":
           description: Successful list
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListServicesResponse'
+                $ref: '#/components/schemas/ListWorksResponse'
         "500":
           description: Internal Server Error
 
-  /v1/services/{id}:
+  /v1/works/{id}:
     put:
-      summary: Update an existing Service
-      description: Endpoint to edit an existing service object.
+      summary: Update an existing Work
+      description: Endpoint to edit an existing work object.
       tags:
-        - Service
+        - Work
       parameters:
         - in: path
           required: true
           name: id
           schema:
             type: string
-          description: Id of service to be updated.
+          description: Id of work to be updated.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateServiceRequest'
+              $ref: '#/components/schemas/CreateWorkRequest'
       responses:
         "200":
           description: Successful updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateServiceResponse'
+                $ref: '#/components/schemas/CreateWorkResponse'
         "500":
           description: Internal Server Error
         "400":
           description: Invalid Body Content
 
     delete:
-      summary: List Services
-      description: List registered services with pagination and optional status filter.
+      summary: List Works
+      description: List registered works with pagination and optional status filter.
       tags:
-        - Service
+        - Work
       parameters:
         - in: path
           required: true
           name: id
           schema:
             type: string
-          description: Id of service to be deleted.
+          description: Id of work to be deleted.
       responses:
         "204":
           description: Successful deleted
@@ -352,16 +352,16 @@ components:
           type: string
           example: "11999999999"
 
-    CreateServiceRequest:
+    CreateWorkRequest:
       type: object
       properties:
         name:
           type: string
-          description: Service name
+          description: Work name
           example: Alinhamento
         description:
           type: string
-          description: Description of the service being provided
+          description: Description of the work being provided
           example: Alinhamento completo das rodas do veículo
         price:
           type: string
@@ -369,7 +369,7 @@ components:
           example: "199.00"
         status:
           type: string
-          description: Status of the service. Must be a valid service status enum string.
+          description: Status of the work. Must be a valid work status enum string.
           example: ACTIVE
       required:
         - name
@@ -377,20 +377,20 @@ components:
         - price
         - status
 
-    CreateServiceResponse:
+    CreateWorkResponse:
       type: object
       properties:
         id:
           type: string
-          description: Service ID
+          description: Work ID
           example: 272e933f-273e-4ef7-a38d-2ab1dd8c234c
         name:
           type: string
-          description: Service name
+          description: Work name
           example: Alinhamento
         description:
           type: string
-          description: Description of the service being provided
+          description: Description of the work being provided
           example: Alinhamento completo das rodas do veículo
         price:
           type: string
@@ -398,7 +398,7 @@ components:
           example: "199.00"
         status:
           type: string
-          description: Status of the service. Must be a valid service status enum string.
+          description: Status of the work. Must be a valid work status enum string.
           example: ACTIVE
       required:
         - id
@@ -406,13 +406,13 @@ components:
         - description
         - price
         - status
-    ListServicesResponse:
+    ListWorksResponse:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/CreateServiceResponse'
+            $ref: '#/components/schemas/CreateWorkResponse'
         totalItems:
           type: integer
           format: int64

@@ -10,12 +10,17 @@ import (
 )
 
 type service struct {
-	uow  uow.Executor
-	repo domain.UserRepository
+	uow          uow.Executor
+	repo         domain.UserRepository
+	hashPassword func(*domain.User, context.Context) error
 }
 
 func Service(uow uow.Executor, repo domain.UserRepository) domain.UserService {
-	return &service{uow, repo}
+	return &service{
+		uow:          uow,
+		repo:         repo,
+		hashPassword: (*domain.User).HashPassword,
+	}
 }
 
 func (s *service) Create(ctx context.Context, user *domain.User) error {
@@ -24,7 +29,7 @@ func (s *service) Create(ctx context.Context, user *domain.User) error {
 		logger.Of(ctx).Error(err)
 		return err
 	}
-	if err := user.HashPassword(ctx); err != nil {
+	if err := s.hashPassword(user, ctx); err != nil {
 		err = fmt.Errorf("user password hashing failed: %w", err)
 		logger.Of(ctx).Error(err)
 		return err
