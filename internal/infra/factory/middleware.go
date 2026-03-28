@@ -10,5 +10,6 @@ func MiddlewaresContainer() *container.Middlewares {
 		"Logger":       middleware.Logger(),
 		"Recovery":     middleware.Recovery(),
 		"ErrorHandler": middleware.ErrorHandler(),
+		"Auth":         middleware.Auth(),
 	}
 }
