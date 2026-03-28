@@ -1,0 +1,573 @@
+openapi: 3.0.0
+info:
+  title: Auto-Repair-Shop API
+  version: "1.0.0"
+  description: OpenAPI specification for the project. Contains the currently available route(s).
+servers:
+  - url: http://localhost:{PORT}
+    description: Local development server
+    variables:
+      PORT:
+        default: "8080"
+        description: Port number for the server
+paths:
+  /v1/customers:
+    post:
+      summary: Create a customer
+      description: Creates a new customer along with a linked user account. Supports both individual (CPF) and company (CNPJ) types. Alphanumeric CNPJ format is supported (RFB 2243/2024).
+      tags:
+        - Customers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerRequest"
+      responses:
+        "201":
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCustomerResponse"
+        "400":
+          description: Invalid request body or document validation failed (CPF/CNPJ)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                errors:
+                  - invalid CPF
+        "409":
+          description: CPF, CNPJ or email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: resource already exists
+        "422":
+          description: Business rule violation (e.g. constraint failure)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 422
+                error: data violates business constraints
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 500
+                error: Internal Server Error
+
+  /ping:
+    get:
+      summary: Ping the API
+      description: Health check endpoint that returns a simple message.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Successful ping
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: pong
+
+  /v1/auth/login:
+    post:
+      summary: Login a user
+      description: Logs in a user and returns a JWT token. Requires email and password.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLoginRequest"
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  expires_in:
+                    type: integer
+        "400":
+          description: Invalid request body or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account. Requires name, email, password, and confirm_password.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegisterRequest"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Invalid request body or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/works:
+    post:
+      summary: Register a new Work
+      description: Endpoint to create a new work object.
+      tags:
+        - Work
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkRequest'
+      responses:
+        "201":
+          description: Successful created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
+    get:
+      summary: List Works
+      description: List registered works with pagination and optional status filter.
+      tags:
+        - Work
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based).
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - ACTIVE
+              - INACTIVE
+          description: Filter works by status.
+      responses:
+        "200":
+          description: Successful list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWorksResponse'
+        "500":
+          description: Internal Server Error
+
+  /v1/works/{id}:
+    put:
+      summary: Update an existing Work
+      description: Endpoint to edit an existing work object.
+      tags:
+        - Work
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of work to be updated.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkRequest'
+      responses:
+        "200":
+          description: Successful updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
+    delete:
+      summary: List Works
+      description: List registered works with pagination and optional status filter.
+      tags:
+        - Work
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of work to be deleted.
+      responses:
+        "204":
+          description: Successful deleted
+        "500":
+          description: Internal Server Error
+
+  /v1/vehicle:
+    post:
+      summary: create a new vehicle register
+      description: insert a new vehicle in our database
+      tags:
+        - Vehicle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRequest'
+      responses:
+        "201":
+          description: Successful created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
+components:
+  schemas:
+    UserRegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - confirm_password
+      properties:
+        name:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          format: password
+          description: User password
+        confirm_password:
+          type: string
+          format: password
+          description: Password confirmation (must match password)
+
+    UserLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          format: password
+          description: User password
+
+    UserLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+        expires_in:
+          type: integer
+          description: Token expiration duration
+        user:
+          $ref: "#/components/schemas/UserResponse"
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+        name:
+          type: string
+          description: Full name of the user
+        email:
+          type: string
+          format: email
+          description: User email address
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+        code:
+          type: integer
+          description: HTTP status code
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of validation/business error messages
+
+    CreateCustomerRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - type
+        - document
+        - phone
+      properties:
+        name:
+          type: string
+          example: João Silva
+        email:
+          type: string
+          format: email
+          example: joao@example.com
+        password:
+          type: string
+          minLength: 6
+          example: secret123
+        type:
+          type: string
+          enum: [INDIVIDUAL, COMPANY]
+          example: INDIVIDUAL
+        document:
+          type: string
+          description: CPF (e.g. 111.444.777-35) for INDIVIDUAL or CNPJ (e.g. 11.222.333/0001-81) for COMPANY. Alphanumeric CNPJ is also accepted (e.g. AB.CDE.FGH/0001-95).
+          example: "111.444.777-35"
+        company_name:
+          type: string
+          description: Required when type is COMPANY.
+          example: Empresa SA
+        phone:
+          type: string
+          example: "11999999999"
+
+    CreateCustomerResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        name:
+          type: string
+          example: João Silva
+        email:
+          type: string
+          example: joao@example.com
+        type:
+          type: string
+          example: INDIVIDUAL
+        document:
+          type: string
+          example: "11144477735"
+        company_name:
+          type: string
+          example: ""
+        phone:
+          type: string
+          example: "11999999999"
+
+    CreateWorkRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Work name
+          example: Alinhamento
+        description:
+          type: string
+          description: Description of the work being provided
+          example: Alinhamento completo das rodas do veículo
+        price:
+          type: string
+          description: Price as string, decimal allowed, no thousands separator
+          example: "199.00"
+        status:
+          type: string
+          description: Status of the work. Must be a valid work status enum string.
+          example: ACTIVE
+      required:
+        - name
+        - description
+        - price
+        - status
+
+    CreateWorkResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Work ID
+          example: 272e933f-273e-4ef7-a38d-2ab1dd8c234c
+        name:
+          type: string
+          description: Work name
+          example: Alinhamento
+        description:
+          type: string
+          description: Description of the work being provided
+          example: Alinhamento completo das rodas do veículo
+        price:
+          type: string
+          description: Price as string, decimal allowed, no thousands separator
+          example: "199.00"
+        status:
+          type: string
+          description: Status of the work. Must be a valid work status enum string.
+          example: ACTIVE
+      required:
+        - id
+        - name
+        - description
+        - price
+        - status
+    ListWorksResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateWorkResponse'
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+      required:
+        - items
+        - totalItems
+        - totalPages
+        - pageSize
+        - page
+
+    VehicleRequest:
+      type: object
+      required:
+        - brand
+        - license_plate
+        - customer_id
+        - model
+        - year
+      properties:
+        brand:
+          type: string
+          example: chevrolet
+        license_plate:
+          type: string
+          example: aaa-2a22
+        customer_id:
+          type: string
+          format: uuid
+          example: b8415e84-730a-4624-a1c3-74cf59b95d6d
+        model:
+          type: string
+          example: onix
+        year:
+          type: integer
+          example: 2019
+
+    VehicleResponse:
+      type: object
+      required:
+        - id
+        - license_plate
+        - brand_model
+        - year
+        - customer_id
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 55160da4-d243-4920-9426-5ce97aefb2fc
+        license_plate:
+          type: string
+          example: AAA2A22
+        brand_model:
+          type: string
+          example: chevrolet - onix
+        year:
+          type: integer
+          example: 2019
+        customer_id:
+          type: string
+          format: uuid
+          example: b8415e84-730a-4624-a1c3-74cf59b95d6d

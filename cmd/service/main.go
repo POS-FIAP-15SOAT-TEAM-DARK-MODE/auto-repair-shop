@@ -1,22 +1,22 @@
 package main
 
 import (
+	"context"
+	"time"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/factory"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/app"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
-	"go.uber.org/zap"
 )
 
 func main() {
-	defer logger.Sync()
+	defer logger.Global().Sync()
 
-	container := factory.HttpContainer()
-	middlewares := factory.MiddlewaresContainer()
-	router := routing.SetupRouter(container, middlewares)
+	httpServer := factory.HTTPServer()
+	manager := app.NewLifecycleManager(5 * time.Second)
+	manager.Add(httpServer)
 
-	port := env.GetString("PORT", "8080")
-	if err := router.Run(":" + port); err != nil {
-		logger.Error("Fail to start application", zap.String("port", port), zap.Error(err))
+	if err := manager.Run(context.Background()); err != nil {
+		logger.Global().Fatal("application failed")
 	}
 }

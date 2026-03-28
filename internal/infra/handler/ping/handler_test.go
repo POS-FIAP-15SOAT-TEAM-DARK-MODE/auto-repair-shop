@@ -8,14 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 
 	handler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
-	appPing "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/ping"
 )
 
 func TestPingHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	srvc := appPing.Service()
-	h := handler.NewHandler(srvc)
+	h := handler.HttpHandler()
 
 	router := gin.New()
 	router.GET("/ping", h.Ping)

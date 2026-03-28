@@ -1,14 +1,14 @@
-include .env
+-include .env
 export
 
 run:
 	go run cmd/service/main.go
 
 test:
-	go test ./... --race -v
+	LOG_LEVEL=PANIC go test ./... --race -v
 
 coverage:
-	go test ./... --coverprofile=coverage.out
+	LOG_LEVEL=PANIC go test ./... --coverprofile=coverage.out
 	go tool cover -html=coverage.out
 
 docker-up:
@@ -28,3 +28,6 @@ migrate-down:
 
 migrate-status:
 	migrate -path migrations -database "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/autorepairshop?sslmode=disable" version
+
+mockgen:
+	go generate ./...

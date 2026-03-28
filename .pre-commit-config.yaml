@@ -13,10 +13,18 @@ repos:
     hooks:
       - id: golangci-lint
 
+  - repo: local
+    hooks:
+      - id: go-fmt
+        name: go fmt
+        entry: go fmt ./...
+        language: system
+        pass_filenames: false
+        types: [go]
+
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:
-      - id: go-fmt
       - id: go-build
       - id: go-unit-tests
 
