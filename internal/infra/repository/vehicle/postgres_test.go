@@ -2,8 +2,8 @@ package vehicle_test
 
 import (
 	"context"
-	"errors"
 	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -73,78 +73,92 @@ func TestPostgresRepository_Save_MissingTx(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestPostgresRepository_Find_ByID_Success(t *testing.T) {
+func TestPostgresRepository_Find(t *testing.T) {
+	tests := []struct {
+		name           string
+		search         string
+		mockSetup      func(mock sqlmock.Sqlmock, search string)
+		expectError    bool
+		expectNotFound bool
+		expectBrand    string
+		expectPlate    string
+	}{
+		{
+			name:   "find by id success",
+			search: "veh-1",
+			mockSetup: func(mock sqlmock.Sqlmock, search string) {
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
+					WithArgs(search).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "license_plate", "brand", "model", "year", "customer_id"}).
+						AddRow(search, "ABC1D23", "chevrolet", "onix", 2020, "cust-1"))
+			},
+			expectError: false,
+			expectPlate: "ABC1D23",
+		},
+		{
+			name:   "find by plate success",
+			search: "ABC1D23",
+			mockSetup: func(mock sqlmock.Sqlmock, search string) {
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
+					WithArgs(search).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "license_plate", "brand", "model", "year", "customer_id"}).
+						AddRow("veh-2", search, "fiat", "uno", 2010, "cust-2"))
+			},
+			expectError: false,
+			expectBrand: "fiat",
+		},
+		{
+			name:   "not found",
+			search: "non-existent",
+			mockSetup: func(mock sqlmock.Sqlmock, search string) {
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
+					WithArgs(search).
+					WillReturnError(sql.ErrNoRows)
+			},
+			expectError:    true,
+			expectNotFound: true,
+		},
+		{
+			name:   "query error",
+			search: "some",
+			mockSetup: func(mock sqlmock.Sqlmock, search string) {
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
+					WithArgs(search).
+					WillReturnError(errors.New("query failed"))
+			},
+			expectError: true,
+		},
+	}
+
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	// make repository use this db for one-time transactions
-	postgresdb.ConnectWithDB(db)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			postgresdb.ConnectWithDB(db)
+			repo := vehicle.NewVehicleRepository()
 
-	repo := vehicle.NewVehicleRepository()
+			if tt.mockSetup != nil {
+				tt.mockSetup(mock, tt.search)
+			}
 
-	id := "veh-1"
-	mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
-		WithArgs(id).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "license_plate", "brand", "model", "year", "customer_id"}).
-			AddRow(id, "ABC1D23", "chevrolet", "onix", 2020, "cust-1"))
-
-	v, err := repo.Find(context.Background(), id)
-	assert.NoError(t, err)
-	assert.Equal(t, "ABC1D23", v.LicensePlate)
+			v, err := repo.Find(context.Background(), tt.search)
+			if tt.expectError {
+				if tt.expectNotFound {
+					assert.ErrorIs(t, err, domain.ErrVehicleNotFound)
+				} else {
+					assert.Error(t, err)
+				}
+				return
+			}
+			assert.NoError(t, err)
+			if tt.expectBrand != "" {
+				assert.Equal(t, tt.expectBrand, v.Brand)
+			}
+			if tt.expectPlate != "" {
+				assert.Equal(t, tt.expectPlate, v.LicensePlate)
+			}
+		})
+	}
 }
-
-func TestPostgresRepository_Find_ByPlate_Success(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	postgresdb.ConnectWithDB(db)
-
-	repo := vehicle.NewVehicleRepository()
-
-	plate := "ABC1D23"
-	mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
-		WithArgs(plate).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "license_plate", "brand", "model", "year", "customer_id"}).
-			AddRow("veh-2", plate, "fiat", "uno", 2010, "cust-2"))
-
-	v, err := repo.Find(context.Background(), plate)
-	assert.NoError(t, err)
-	assert.Equal(t, "fiat", v.Brand)
-}
-
-func TestPostgresRepository_Find_NotFound(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	postgresdb.ConnectWithDB(db)
-	repo := vehicle.NewVehicleRepository()
-
-	search := "non-existent"
-	mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
-		WithArgs(search).
-		WillReturnError(sql.ErrNoRows)
-
-	_, err = repo.Find(context.Background(), search)
-	assert.ErrorIs(t, err, domain.ErrVehicleNotFound)
-}
-
-func TestPostgresRepository_Find_QueryError(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	postgresdb.ConnectWithDB(db)
-	repo := vehicle.NewVehicleRepository()
-
-	search := "some"
-	mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
-		WithArgs(search).
-		WillReturnError(errors.New("query failed"))
-
-	_, err = repo.Find(context.Background(), search)
-	assert.Error(t, err)
-}
-
