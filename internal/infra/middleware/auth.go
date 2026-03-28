@@ -1,6 +1,11 @@
 package middleware
 
 import (
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,11 +23,27 @@ func Auth() gin.HandlerFunc {
 			c.Next()
 			return
 		}
+
+		token := c.GetHeader("Authorization")
+		if token == "" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			c.Abort()
+			return
+		}
+
+		claims, err := auth.ParseToken(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+
+		fmt.Println(claims)
 	}
 }
 
 func isPublicRoute(path string) bool {
-	if len(path) >= 8 && path[:8] == "/swagger" {
+	if strings.HasPrefix(path, "/swagger") {
 		return true
 	}
 
