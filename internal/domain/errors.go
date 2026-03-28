@@ -65,6 +65,7 @@ var (
 	ErrRequiredVehicleBrand        = errors.New("brand of the vehicle is required")
 	ErrRequiredVehicleModel        = errors.New("model of the vehicle is required")
 	ErrParamVehicleYear            = errors.New("year of the vehicle is not valid")
+	ErrVehicleNotFound             = errors.New("vehicle not found")
 )
 
 // Supply errors

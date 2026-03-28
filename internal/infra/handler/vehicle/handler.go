@@ -10,6 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	plateParam = "plate"
+)
+
 type handler struct {
 	service domain.VehicleService
 }
@@ -48,4 +52,23 @@ func (h *handler) Create(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, domainToResponseDto(vehicleDomain))
+}
+
+func (h *handler) FindByLicensePlate(c *gin.Context) {
+	ctx := c.Request.Context()
+	plate := domain.NormalizeLicensePlate(c.Query(plateParam))
+
+	vehicle, err := h.service.FindByLicensePlate(ctx, plate)
+	if err != nil {
+		status, resp := web.Error(err)
+		logger.Of(ctx).Debug("Search vehicle by license plate error",
+			zap.String("operation", "find_by_license_plate"),
+			zap.Error(err),
+			zap.String("entity", "vehicle"),
+		)
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, domainToResponseDto(vehicle))
 }

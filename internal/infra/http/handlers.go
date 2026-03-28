@@ -36,6 +36,7 @@ type (
 
 	VehicleHandler interface {
 		Create(*gin.Context)
+		FindByLicensePlate(*gin.Context)
 	}
 	SupplyHandler interface {
 		Create(*gin.Context)

@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"regexp"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -30,10 +31,12 @@ type (
 
 	VehicleService interface {
 		Create(ctx context.Context, vehicle *Vehicle) error
+		FindByLicensePlate(ctx context.Context, licensePlate string) (*Vehicle, error)
 	}
 
 	VehicleRepository interface {
 		Save(ctx context.Context, vehicle *Vehicle) error
+		Find(ctx context.Context, licensePlate string) (*Vehicle, error)
 	}
 )
 
@@ -51,7 +54,7 @@ func NewVehicle(plate, brand, model, customerId string, year int) *Vehicle {
 func (v *Vehicle) Validate() error {
 	var errs []error
 
-	v.LicensePlate = strings.TrimSpace(strings.ReplaceAll(v.LicensePlate, "-", ""))
+	v.LicensePlate = NormalizeLicensePlate(v.LicensePlate)
 	if err := ValidateLicensePlate(v.LicensePlate); err != nil {
 		errs = append(errs, err)
 	}
@@ -60,6 +63,11 @@ func (v *Vehicle) Validate() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+func NormalizeLicensePlate(licensePlate string) string {
+	licensePlate = strings.ReplaceAll(licensePlate, " ", "")
+	return strings.ToUpper(strings.ReplaceAll(licensePlate, "-", ""))
 }
 
 func ValidateLicensePlate(plate string) error {

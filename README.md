@@ -124,6 +124,18 @@ make migrate-down
 make migrate-status
 ```
 
+### Metodo de Criptografia
+Senhas de usuários são protegidas usando bcrypt (golang.org/x/crypto/bcrypt).
+
+Detalhes principais:
+- Tipo: hash one‑way (não é reversível). O resultado inclui salt interno e metadados.
+- Implementação: usamos `bcrypt.GenerateFromPassword` ao criar/atualizar senhas e `bcrypt.CompareHashAndPassword` para validação.
+- Fator de custo: controlado pela variável de ambiente `BCRYPT_COST` (ver seção Environment Variables). Recomenda‑se um custo mínimo de 12 em produção — aumente conforme a capacidade da infra.
+
+Notas:
+- Para clientes criados automaticamente, a senha padrão (CPF/CNPJ) também é imediatamente hasheada antes de persistir.
+- Bcrypt já aplica salt de forma segura; não é necessário gerir salt manualmente.
+
 ### Adding New Migrations
 
 When adding schema changes, create migration files following the naming convention:

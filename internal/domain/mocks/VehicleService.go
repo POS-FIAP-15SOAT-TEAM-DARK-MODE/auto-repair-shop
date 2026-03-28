@@ -69,6 +69,65 @@ func (_c *VehicleService_Create_Call) RunAndReturn(run func(context.Context, *do
 	return _c
 }
 
+// FindByLicensePlate provides a mock function with given fields: ctx, licensePlate
+func (_m *VehicleService) FindByLicensePlate(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
+	ret := _m.Called(ctx, licensePlate)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindByLicensePlate")
+	}
+
+	var r0 *domain.Vehicle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Vehicle, error)); ok {
+		return rf(ctx, licensePlate)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Vehicle); ok {
+		r0 = rf(ctx, licensePlate)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Vehicle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, licensePlate)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleService_FindByLicensePlate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindByLicensePlate'
+type VehicleService_FindByLicensePlate_Call struct {
+	*mock.Call
+}
+
+// FindByLicensePlate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - licensePlate string
+func (_e *VehicleService_Expecter) FindByLicensePlate(ctx interface{}, licensePlate interface{}) *VehicleService_FindByLicensePlate_Call {
+	return &VehicleService_FindByLicensePlate_Call{Call: _e.mock.On("FindByLicensePlate", ctx, licensePlate)}
+}
+
+func (_c *VehicleService_FindByLicensePlate_Call) Run(run func(ctx context.Context, licensePlate string)) *VehicleService_FindByLicensePlate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *VehicleService_FindByLicensePlate_Call) Return(_a0 *domain.Vehicle, _a1 error) *VehicleService_FindByLicensePlate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleService_FindByLicensePlate_Call) RunAndReturn(run func(context.Context, string) (*domain.Vehicle, error)) *VehicleService_FindByLicensePlate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewVehicleService creates a new instance of VehicleService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewVehicleService(t interface {
