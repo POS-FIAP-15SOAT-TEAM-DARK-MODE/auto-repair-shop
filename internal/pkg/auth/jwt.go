@@ -34,3 +34,11 @@ func GenerateToken(userId string, roles []string, expiresAt time.Time) (string, 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
 }
+
+func ParseToken(token string) (*UserClaims, error) {
+	claims := &UserClaims{}
+	_, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (any, error) {
+		return secretKey, nil
+	})
+	return claims, err
+}
