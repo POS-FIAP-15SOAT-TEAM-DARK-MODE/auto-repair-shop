@@ -91,8 +91,8 @@ CREATE TABLE "work" (
         TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create PART table
-CREATE TABLE part (
+-- Create SUPPLY table
+CREATE TABLE supply (
     id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -140,14 +140,14 @@ CREATE TABLE service_order_work (
     UNIQUE (service_order_id, work_id)
 );
 
--- Create SERVICE_ORDER_PART join table
-CREATE TABLE service_order_part (
+-- Create SERVICE_ORDER_SUPPLY join table
+CREATE TABLE service_order_supply (
     id VARCHAR(36) PRIMARY KEY,
     service_order_id VARCHAR(36) NOT NULL REFERENCES service_order (id) ON DELETE CASCADE,
-    part_id VARCHAR(36) NOT NULL REFERENCES part (id) ON DELETE CASCADE,
+    supply_id VARCHAR(36) NOT NULL REFERENCES supply (id) ON DELETE CASCADE,
     quantity INT NOT NULL,
     unit_price NUMERIC(10, 2) NOT NULL,
-    UNIQUE (service_order_id, part_id)
+    UNIQUE (service_order_id, supply_id)
 );
 
 -- Create SERVICE_ORDER_STATUS_HISTORY table
@@ -174,7 +174,7 @@ CREATE INDEX idx_service_order_vehicle_id ON service_order (vehicle_id);
 
 CREATE INDEX idx_service_order_work_service_order_id ON service_order_work (service_order_id);
 
-CREATE INDEX idx_service_order_part_service_order_id ON service_order_part (service_order_id);
+CREATE INDEX idx_service_order_supply_service_order_id ON service_order_supply (service_order_id);
 
 CREATE INDEX idx_status_history_service_order_id ON service_order_status_history (service_order_id);
 

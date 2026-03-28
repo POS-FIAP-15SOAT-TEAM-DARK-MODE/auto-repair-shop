@@ -9,10 +9,10 @@ type (
 		Ping() gin.HandlerFunc
 	}
 
- UserHttpHandler interface {
-	Create() gin.HandlerFunc
-	Login() gin.HandlerFunc
-}
+	UserHttpHandler interface {
+		Create() gin.HandlerFunc
+		Login() gin.HandlerFunc
+	}
 
 	CustomerHttpHandler interface {
 		Create() gin.HandlerFunc
@@ -28,6 +28,10 @@ type (
 	VehicleHttpHandler interface {
 		Create() gin.HandlerFunc
 	}
+
+	SupplyHttpHandler interface {
+		Create() gin.HandlerFunc
+	}
 )
 
 type HTTP struct {
@@ -36,4 +40,5 @@ type HTTP struct {
 	CustomerHandler CustomerHttpHandler
 	WorkHandler     WorkHttpHandler
 	VehicleHandler  VehicleHttpHandler
+	SupplyHandler   SupplyHttpHandler
 }
