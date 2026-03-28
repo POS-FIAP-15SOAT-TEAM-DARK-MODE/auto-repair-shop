@@ -73,8 +73,9 @@ func TestService_Create(t *testing.T) {
 			input: validIndividualCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
 				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-individual", domain.RoleCustomer).Return(nil)
 				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
-				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			},
 		},
 		{
@@ -82,8 +83,9 @@ func TestService_Create(t *testing.T) {
 			input: validCompanyCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
 				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-company", domain.RoleCustomer).Return(nil)
 				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
-				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			},
 		},
 		{
@@ -91,7 +93,7 @@ func TestService_Create(t *testing.T) {
 			input: validIndividualCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, _ *domainmocks.CustomerRepository) {
 				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(domain.ErrDataConflict)
-				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			},
 			wantErr: domain.ErrDataConflict,
 		},
@@ -100,8 +102,9 @@ func TestService_Create(t *testing.T) {
 			input: validIndividualCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
 				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-individual", domain.RoleCustomer).Return(nil)
 				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(domain.ErrDataConflict)
-				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			},
 			wantErr: domain.ErrDataConflict,
 		},
@@ -109,7 +112,7 @@ func TestService_Create(t *testing.T) {
 			name:  "transaction_failure_returns_error",
 			input: validIndividualCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, _ *domainmocks.UserRepository, _ *domainmocks.CustomerRepository) {
-				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).
+				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(assert.AnError)
 			},
 			wantErr: assert.AnError,

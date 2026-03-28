@@ -9,6 +9,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -82,6 +83,20 @@ func (u *repo) Update(ctx context.Context, id, name, email string) error {
 	}
 
 	if _, err = tx.ExecContext(ctx, updateUserQuery, name, email, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (u *repo) AssignRole(ctx context.Context, userID, roleName string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	id := uuid.New().String()
+	if _, err = tx.ExecContext(ctx, assignRoleQuery, id, userID, roleName); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
 
