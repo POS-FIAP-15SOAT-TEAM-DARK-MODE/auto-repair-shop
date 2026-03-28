@@ -24,7 +24,7 @@ func TestUserHandler_Create_Success(t *testing.T) {
 	mockService.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
 
 	router := gin.New()
-	router.POST("/auth/register", h.Create())
+	router.POST("/auth/register", h.Create)
 
 	body := map[string]string{
 		"name":             "Test User",
@@ -46,7 +46,7 @@ func TestUserHandler_Create_InvalidJSON(t *testing.T) {
 	h := handler.HttpHandler(nil)
 
 	router := gin.New()
-	router.POST("/auth/register", h.Create())
+	router.POST("/auth/register", h.Create)
 
 	req := httptest.NewRequest(http.MethodPost, "/auth/register", bytes.NewBufferString("invalid json"))
 	rec := httptest.NewRecorder()
@@ -60,7 +60,7 @@ func TestUserHandler_Create_PasswordMismatch(t *testing.T) {
 	h := handler.HttpHandler(nil)
 
 	router := gin.New()
-	router.POST("/auth/register", h.Create())
+	router.POST("/auth/register", h.Create)
 
 	body := map[string]string{
 		"name":             "Test User",
@@ -86,7 +86,7 @@ func TestUserHandler_Create_ServiceError(t *testing.T) {
 	mockService.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(errors.New("internal error"))
 
 	router := gin.New()
-	router.POST("/auth/register", h.Create())
+	router.POST("/auth/register", h.Create)
 
 	body := map[string]string{
 		"name":             "Test User",
@@ -159,7 +159,7 @@ func TestLoginUser(t *testing.T) {
 			h := handler.HttpHandler(mockSvc)
 
 			router := gin.New()
-			router.POST(loginRoute, h.Login())
+			router.POST(loginRoute, h.Login)
 
 			req := httptest.NewRequest(http.MethodPost, loginRoute, bytes.NewBufferString(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")

@@ -4,34 +4,36 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//go:generate go run github.com/vektra/mockery/v2@latest --name=PingHandler --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=UserHandler --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerHandler --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=WorkHandler --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=VehicleHandler --with-expecter
 type (
-	//go:generate go run github.com/vektra/mockery/v2@latest --name=PingHandler --with-expecter
 	PingHandler interface {
-		Ping() gin.HandlerFunc
+		Ping(*gin.Context)
 	}
 
-	//go:generate go run github.com/vektra/mockery/v2@latest --name=UserHandler --with-expecter
 	UserHandler interface {
-		Create() gin.HandlerFunc
-		Login() gin.HandlerFunc
+		Create(*gin.Context)
+		Login(*gin.Context)
 	}
 
-	//go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerHandler --with-expecter
 	CustomerHandler interface {
-		Create() gin.HandlerFunc
+		Create(*gin.Context)
+		GetByID(*gin.Context)
+		GetByDocument(*gin.Context)
 	}
 
-	//go:generate go run github.com/vektra/mockery/v2@latest --name=WorkHandler --with-expecter
 	WorkHandler interface {
-		Create() gin.HandlerFunc
-		List() gin.HandlerFunc
-		Update() gin.HandlerFunc
-		Delete() gin.HandlerFunc
+		Create(*gin.Context)
+		List(*gin.Context)
+		Update(*gin.Context)
+		Delete(*gin.Context)
 	}
 
-	//go:generate go run github.com/vektra/mockery/v2@latest --name=VehicleHandler --with-expecter
 	VehicleHandler interface {
-		Create() gin.HandlerFunc
+		Create(*gin.Context)
 	}
 )
 

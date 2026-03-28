@@ -21,24 +21,9 @@ func (_m *WorkHandler) EXPECT() *WorkHandler_Expecter {
 	return &WorkHandler_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with no fields
-func (_m *WorkHandler) Create() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Create provides a mock function with given fields: _a0
+func (_m *WorkHandler) Create(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // WorkHandler_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -47,45 +32,31 @@ type WorkHandler_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-func (_e *WorkHandler_Expecter) Create() *WorkHandler_Create_Call {
-	return &WorkHandler_Create_Call{Call: _e.mock.On("Create")}
+//   - _a0 *gin.Context
+func (_e *WorkHandler_Expecter) Create(_a0 interface{}) *WorkHandler_Create_Call {
+	return &WorkHandler_Create_Call{Call: _e.mock.On("Create", _a0)}
 }
 
-func (_c *WorkHandler_Create_Call) Run(run func()) *WorkHandler_Create_Call {
+func (_c *WorkHandler_Create_Call) Run(run func(_a0 *gin.Context)) *WorkHandler_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *WorkHandler_Create_Call) Return(_a0 gin.HandlerFunc) *WorkHandler_Create_Call {
-	_c.Call.Return(_a0)
+func (_c *WorkHandler_Create_Call) Return() *WorkHandler_Create_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *WorkHandler_Create_Call) RunAndReturn(run func() gin.HandlerFunc) *WorkHandler_Create_Call {
-	_c.Call.Return(run)
+func (_c *WorkHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *WorkHandler_Create_Call {
+	_c.Run(run)
 	return _c
 }
 
-// Delete provides a mock function with no fields
-func (_m *WorkHandler) Delete() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Delete")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Delete provides a mock function with given fields: _a0
+func (_m *WorkHandler) Delete(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // WorkHandler_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
@@ -94,45 +65,31 @@ type WorkHandler_Delete_Call struct {
 }
 
 // Delete is a helper method to define mock.On call
-func (_e *WorkHandler_Expecter) Delete() *WorkHandler_Delete_Call {
-	return &WorkHandler_Delete_Call{Call: _e.mock.On("Delete")}
+//   - _a0 *gin.Context
+func (_e *WorkHandler_Expecter) Delete(_a0 interface{}) *WorkHandler_Delete_Call {
+	return &WorkHandler_Delete_Call{Call: _e.mock.On("Delete", _a0)}
 }
 
-func (_c *WorkHandler_Delete_Call) Run(run func()) *WorkHandler_Delete_Call {
+func (_c *WorkHandler_Delete_Call) Run(run func(_a0 *gin.Context)) *WorkHandler_Delete_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *WorkHandler_Delete_Call) Return(_a0 gin.HandlerFunc) *WorkHandler_Delete_Call {
-	_c.Call.Return(_a0)
+func (_c *WorkHandler_Delete_Call) Return() *WorkHandler_Delete_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *WorkHandler_Delete_Call) RunAndReturn(run func() gin.HandlerFunc) *WorkHandler_Delete_Call {
-	_c.Call.Return(run)
+func (_c *WorkHandler_Delete_Call) RunAndReturn(run func(*gin.Context)) *WorkHandler_Delete_Call {
+	_c.Run(run)
 	return _c
 }
 
-// List provides a mock function with no fields
-func (_m *WorkHandler) List() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for List")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// List provides a mock function with given fields: _a0
+func (_m *WorkHandler) List(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // WorkHandler_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
@@ -141,45 +98,31 @@ type WorkHandler_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
-func (_e *WorkHandler_Expecter) List() *WorkHandler_List_Call {
-	return &WorkHandler_List_Call{Call: _e.mock.On("List")}
+//   - _a0 *gin.Context
+func (_e *WorkHandler_Expecter) List(_a0 interface{}) *WorkHandler_List_Call {
+	return &WorkHandler_List_Call{Call: _e.mock.On("List", _a0)}
 }
 
-func (_c *WorkHandler_List_Call) Run(run func()) *WorkHandler_List_Call {
+func (_c *WorkHandler_List_Call) Run(run func(_a0 *gin.Context)) *WorkHandler_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *WorkHandler_List_Call) Return(_a0 gin.HandlerFunc) *WorkHandler_List_Call {
-	_c.Call.Return(_a0)
+func (_c *WorkHandler_List_Call) Return() *WorkHandler_List_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *WorkHandler_List_Call) RunAndReturn(run func() gin.HandlerFunc) *WorkHandler_List_Call {
-	_c.Call.Return(run)
+func (_c *WorkHandler_List_Call) RunAndReturn(run func(*gin.Context)) *WorkHandler_List_Call {
+	_c.Run(run)
 	return _c
 }
 
-// Update provides a mock function with no fields
-func (_m *WorkHandler) Update() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Update provides a mock function with given fields: _a0
+func (_m *WorkHandler) Update(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // WorkHandler_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
@@ -188,24 +131,25 @@ type WorkHandler_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
-func (_e *WorkHandler_Expecter) Update() *WorkHandler_Update_Call {
-	return &WorkHandler_Update_Call{Call: _e.mock.On("Update")}
+//   - _a0 *gin.Context
+func (_e *WorkHandler_Expecter) Update(_a0 interface{}) *WorkHandler_Update_Call {
+	return &WorkHandler_Update_Call{Call: _e.mock.On("Update", _a0)}
 }
 
-func (_c *WorkHandler_Update_Call) Run(run func()) *WorkHandler_Update_Call {
+func (_c *WorkHandler_Update_Call) Run(run func(_a0 *gin.Context)) *WorkHandler_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *WorkHandler_Update_Call) Return(_a0 gin.HandlerFunc) *WorkHandler_Update_Call {
-	_c.Call.Return(_a0)
+func (_c *WorkHandler_Update_Call) Return() *WorkHandler_Update_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *WorkHandler_Update_Call) RunAndReturn(run func() gin.HandlerFunc) *WorkHandler_Update_Call {
-	_c.Call.Return(run)
+func (_c *WorkHandler_Update_Call) RunAndReturn(run func(*gin.Context)) *WorkHandler_Update_Call {
+	_c.Run(run)
 	return _c
 }
 

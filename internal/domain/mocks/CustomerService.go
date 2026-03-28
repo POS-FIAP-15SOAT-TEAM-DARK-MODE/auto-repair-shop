@@ -69,6 +69,120 @@ func (_c *CustomerService_Create_Call) RunAndReturn(run func(context.Context, do
 	return _c
 }
 
+// GetByDocument provides a mock function with given fields: ctx, rawDocument
+func (_m *CustomerService) GetByDocument(ctx context.Context, rawDocument string) (domain.Customer, error) {
+	ret := _m.Called(ctx, rawDocument)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByDocument")
+	}
+
+	var r0 domain.Customer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Customer, error)); ok {
+		return rf(ctx, rawDocument)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Customer); ok {
+		r0 = rf(ctx, rawDocument)
+	} else {
+		r0 = ret.Get(0).(domain.Customer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, rawDocument)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CustomerService_GetByDocument_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByDocument'
+type CustomerService_GetByDocument_Call struct {
+	*mock.Call
+}
+
+// GetByDocument is a helper method to define mock.On call
+//   - ctx context.Context
+//   - rawDocument string
+func (_e *CustomerService_Expecter) GetByDocument(ctx interface{}, rawDocument interface{}) *CustomerService_GetByDocument_Call {
+	return &CustomerService_GetByDocument_Call{Call: _e.mock.On("GetByDocument", ctx, rawDocument)}
+}
+
+func (_c *CustomerService_GetByDocument_Call) Run(run func(ctx context.Context, rawDocument string)) *CustomerService_GetByDocument_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerService_GetByDocument_Call) Return(_a0 domain.Customer, _a1 error) *CustomerService_GetByDocument_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CustomerService_GetByDocument_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerService_GetByDocument_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetByID provides a mock function with given fields: ctx, id
+func (_m *CustomerService) GetByID(ctx context.Context, id string) (domain.Customer, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
+	var r0 domain.Customer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Customer, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Customer); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(domain.Customer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CustomerService_GetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByID'
+type CustomerService_GetByID_Call struct {
+	*mock.Call
+}
+
+// GetByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *CustomerService_Expecter) GetByID(ctx interface{}, id interface{}) *CustomerService_GetByID_Call {
+	return &CustomerService_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
+}
+
+func (_c *CustomerService_GetByID_Call) Run(run func(ctx context.Context, id string)) *CustomerService_GetByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerService_GetByID_Call) Return(_a0 domain.Customer, _a1 error) *CustomerService_GetByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CustomerService_GetByID_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerService_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewCustomerService creates a new instance of CustomerService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewCustomerService(t interface {

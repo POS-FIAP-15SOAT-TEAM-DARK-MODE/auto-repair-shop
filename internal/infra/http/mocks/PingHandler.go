@@ -21,24 +21,9 @@ func (_m *PingHandler) EXPECT() *PingHandler_Expecter {
 	return &PingHandler_Expecter{mock: &_m.Mock}
 }
 
-// Ping provides a mock function with no fields
-func (_m *PingHandler) Ping() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Ping")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Ping provides a mock function with given fields: _a0
+func (_m *PingHandler) Ping(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // PingHandler_Ping_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Ping'
@@ -47,24 +32,25 @@ type PingHandler_Ping_Call struct {
 }
 
 // Ping is a helper method to define mock.On call
-func (_e *PingHandler_Expecter) Ping() *PingHandler_Ping_Call {
-	return &PingHandler_Ping_Call{Call: _e.mock.On("Ping")}
+//   - _a0 *gin.Context
+func (_e *PingHandler_Expecter) Ping(_a0 interface{}) *PingHandler_Ping_Call {
+	return &PingHandler_Ping_Call{Call: _e.mock.On("Ping", _a0)}
 }
 
-func (_c *PingHandler_Ping_Call) Run(run func()) *PingHandler_Ping_Call {
+func (_c *PingHandler_Ping_Call) Run(run func(_a0 *gin.Context)) *PingHandler_Ping_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *PingHandler_Ping_Call) Return(_a0 gin.HandlerFunc) *PingHandler_Ping_Call {
-	_c.Call.Return(_a0)
+func (_c *PingHandler_Ping_Call) Return() *PingHandler_Ping_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *PingHandler_Ping_Call) RunAndReturn(run func() gin.HandlerFunc) *PingHandler_Ping_Call {
-	_c.Call.Return(run)
+func (_c *PingHandler_Ping_Call) RunAndReturn(run func(*gin.Context)) *PingHandler_Ping_Call {
+	_c.Run(run)
 	return _c
 }
 

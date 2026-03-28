@@ -13,8 +13,6 @@ func HttpHandler() http.PingHandler {
 	return &httpHandler{}
 }
 
-func (h *httpHandler) Ping() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(goHttp.StatusOK, gin.H{"message": "pong"})
-	}
+func (h *httpHandler) Ping(c *gin.Context) {
+	c.JSON(goHttp.StatusOK, gin.H{"message": "pong"})
 }

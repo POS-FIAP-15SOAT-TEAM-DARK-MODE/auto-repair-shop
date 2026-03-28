@@ -21,24 +21,9 @@ func (_m *UserHandler) EXPECT() *UserHandler_Expecter {
 	return &UserHandler_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with no fields
-func (_m *UserHandler) Create() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Create provides a mock function with given fields: _a0
+func (_m *UserHandler) Create(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // UserHandler_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -47,45 +32,31 @@ type UserHandler_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-func (_e *UserHandler_Expecter) Create() *UserHandler_Create_Call {
-	return &UserHandler_Create_Call{Call: _e.mock.On("Create")}
+//   - _a0 *gin.Context
+func (_e *UserHandler_Expecter) Create(_a0 interface{}) *UserHandler_Create_Call {
+	return &UserHandler_Create_Call{Call: _e.mock.On("Create", _a0)}
 }
 
-func (_c *UserHandler_Create_Call) Run(run func()) *UserHandler_Create_Call {
+func (_c *UserHandler_Create_Call) Run(run func(_a0 *gin.Context)) *UserHandler_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *UserHandler_Create_Call) Return(_a0 gin.HandlerFunc) *UserHandler_Create_Call {
-	_c.Call.Return(_a0)
+func (_c *UserHandler_Create_Call) Return() *UserHandler_Create_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *UserHandler_Create_Call) RunAndReturn(run func() gin.HandlerFunc) *UserHandler_Create_Call {
-	_c.Call.Return(run)
+func (_c *UserHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *UserHandler_Create_Call {
+	_c.Run(run)
 	return _c
 }
 
-// Login provides a mock function with no fields
-func (_m *UserHandler) Login() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Login")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Login provides a mock function with given fields: _a0
+func (_m *UserHandler) Login(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // UserHandler_Login_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Login'
@@ -94,24 +65,25 @@ type UserHandler_Login_Call struct {
 }
 
 // Login is a helper method to define mock.On call
-func (_e *UserHandler_Expecter) Login() *UserHandler_Login_Call {
-	return &UserHandler_Login_Call{Call: _e.mock.On("Login")}
+//   - _a0 *gin.Context
+func (_e *UserHandler_Expecter) Login(_a0 interface{}) *UserHandler_Login_Call {
+	return &UserHandler_Login_Call{Call: _e.mock.On("Login", _a0)}
 }
 
-func (_c *UserHandler_Login_Call) Run(run func()) *UserHandler_Login_Call {
+func (_c *UserHandler_Login_Call) Run(run func(_a0 *gin.Context)) *UserHandler_Login_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *UserHandler_Login_Call) Return(_a0 gin.HandlerFunc) *UserHandler_Login_Call {
-	_c.Call.Return(_a0)
+func (_c *UserHandler_Login_Call) Return() *UserHandler_Login_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *UserHandler_Login_Call) RunAndReturn(run func() gin.HandlerFunc) *UserHandler_Login_Call {
-	_c.Call.Return(run)
+func (_c *UserHandler_Login_Call) RunAndReturn(run func(*gin.Context)) *UserHandler_Login_Call {
+	_c.Run(run)
 	return _c
 }
 

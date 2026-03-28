@@ -21,24 +21,9 @@ func (_m *CustomerHandler) EXPECT() *CustomerHandler_Expecter {
 	return &CustomerHandler_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with no fields
-func (_m *CustomerHandler) Create() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Create provides a mock function with given fields: _a0
+func (_m *CustomerHandler) Create(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // CustomerHandler_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -47,24 +32,91 @@ type CustomerHandler_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-func (_e *CustomerHandler_Expecter) Create() *CustomerHandler_Create_Call {
-	return &CustomerHandler_Create_Call{Call: _e.mock.On("Create")}
+//   - _a0 *gin.Context
+func (_e *CustomerHandler_Expecter) Create(_a0 interface{}) *CustomerHandler_Create_Call {
+	return &CustomerHandler_Create_Call{Call: _e.mock.On("Create", _a0)}
 }
 
-func (_c *CustomerHandler_Create_Call) Run(run func()) *CustomerHandler_Create_Call {
+func (_c *CustomerHandler_Create_Call) Run(run func(_a0 *gin.Context)) *CustomerHandler_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *CustomerHandler_Create_Call) Return(_a0 gin.HandlerFunc) *CustomerHandler_Create_Call {
-	_c.Call.Return(_a0)
+func (_c *CustomerHandler_Create_Call) Return() *CustomerHandler_Create_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *CustomerHandler_Create_Call) RunAndReturn(run func() gin.HandlerFunc) *CustomerHandler_Create_Call {
-	_c.Call.Return(run)
+func (_c *CustomerHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *CustomerHandler_Create_Call {
+	_c.Run(run)
+	return _c
+}
+
+// GetByDocument provides a mock function with given fields: _a0
+func (_m *CustomerHandler) GetByDocument(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// CustomerHandler_GetByDocument_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByDocument'
+type CustomerHandler_GetByDocument_Call struct {
+	*mock.Call
+}
+
+// GetByDocument is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *CustomerHandler_Expecter) GetByDocument(_a0 interface{}) *CustomerHandler_GetByDocument_Call {
+	return &CustomerHandler_GetByDocument_Call{Call: _e.mock.On("GetByDocument", _a0)}
+}
+
+func (_c *CustomerHandler_GetByDocument_Call) Run(run func(_a0 *gin.Context)) *CustomerHandler_GetByDocument_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *CustomerHandler_GetByDocument_Call) Return() *CustomerHandler_GetByDocument_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *CustomerHandler_GetByDocument_Call) RunAndReturn(run func(*gin.Context)) *CustomerHandler_GetByDocument_Call {
+	_c.Run(run)
+	return _c
+}
+
+// GetByID provides a mock function with given fields: _a0
+func (_m *CustomerHandler) GetByID(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// CustomerHandler_GetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByID'
+type CustomerHandler_GetByID_Call struct {
+	*mock.Call
+}
+
+// GetByID is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *CustomerHandler_Expecter) GetByID(_a0 interface{}) *CustomerHandler_GetByID_Call {
+	return &CustomerHandler_GetByID_Call{Call: _e.mock.On("GetByID", _a0)}
+}
+
+func (_c *CustomerHandler_GetByID_Call) Run(run func(_a0 *gin.Context)) *CustomerHandler_GetByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *CustomerHandler_GetByID_Call) Return() *CustomerHandler_GetByID_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *CustomerHandler_GetByID_Call) RunAndReturn(run func(*gin.Context)) *CustomerHandler_GetByID_Call {
+	_c.Run(run)
 	return _c
 }
 

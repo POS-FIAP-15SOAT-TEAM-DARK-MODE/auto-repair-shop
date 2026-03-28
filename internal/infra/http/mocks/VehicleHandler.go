@@ -21,24 +21,9 @@ func (_m *VehicleHandler) EXPECT() *VehicleHandler_Expecter {
 	return &VehicleHandler_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with no fields
-func (_m *VehicleHandler) Create() gin.HandlerFunc {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
-	var r0 gin.HandlerFunc
-	if rf, ok := ret.Get(0).(func() gin.HandlerFunc); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(gin.HandlerFunc)
-		}
-	}
-
-	return r0
+// Create provides a mock function with given fields: _a0
+func (_m *VehicleHandler) Create(_a0 *gin.Context) {
+	_m.Called(_a0)
 }
 
 // VehicleHandler_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -47,24 +32,25 @@ type VehicleHandler_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-func (_e *VehicleHandler_Expecter) Create() *VehicleHandler_Create_Call {
-	return &VehicleHandler_Create_Call{Call: _e.mock.On("Create")}
+//   - _a0 *gin.Context
+func (_e *VehicleHandler_Expecter) Create(_a0 interface{}) *VehicleHandler_Create_Call {
+	return &VehicleHandler_Create_Call{Call: _e.mock.On("Create", _a0)}
 }
 
-func (_c *VehicleHandler_Create_Call) Run(run func()) *VehicleHandler_Create_Call {
+func (_c *VehicleHandler_Create_Call) Run(run func(_a0 *gin.Context)) *VehicleHandler_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *VehicleHandler_Create_Call) Return(_a0 gin.HandlerFunc) *VehicleHandler_Create_Call {
-	_c.Call.Return(_a0)
+func (_c *VehicleHandler_Create_Call) Return() *VehicleHandler_Create_Call {
+	_c.Call.Return()
 	return _c
 }
 
-func (_c *VehicleHandler_Create_Call) RunAndReturn(run func() gin.HandlerFunc) *VehicleHandler_Create_Call {
-	_c.Call.Return(run)
+func (_c *VehicleHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *VehicleHandler_Create_Call {
+	_c.Run(run)
 	return _c
 }
 
