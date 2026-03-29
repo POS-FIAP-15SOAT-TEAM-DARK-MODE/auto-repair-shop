@@ -78,6 +78,7 @@ func TestPostgresRepository_Find(t *testing.T) {
 		name           string
 		search         string
 		mockSetup      func(mock sqlmock.Sqlmock, search string)
+		isID           bool
 		expectError    bool
 		expectNotFound bool
 		expectBrand    string
@@ -87,7 +88,20 @@ func TestPostgresRepository_Find(t *testing.T) {
 			name:   "find by plate success",
 			search: "ABC1D23",
 			mockSetup: func(mock sqlmock.Sqlmock, search string) {
-				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM vehicle WHERE license_plate =`).
+					WithArgs(search).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "license_plate", "brand", "model", "year", "customer_id"}).
+						AddRow("veh-2", search, "fiat", "uno", 2010, "cust-2"))
+			},
+			expectError: false,
+			expectBrand: "fiat",
+		},
+		{
+			name:   "find by id success",
+			search: "ABC1D23",
+			isID:   true,
+			mockSetup: func(mock sqlmock.Sqlmock, search string) {
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM vehicle WHERE id =`).
 					WithArgs(search).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "license_plate", "brand", "model", "year", "customer_id"}).
 						AddRow("veh-2", search, "fiat", "uno", 2010, "cust-2"))
@@ -99,7 +113,7 @@ func TestPostgresRepository_Find(t *testing.T) {
 			name:   "not found",
 			search: "non-existent",
 			mockSetup: func(mock sqlmock.Sqlmock, search string) {
-				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM  vehicle WHERE license_plate =`).
 					WithArgs(search).
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -110,7 +124,7 @@ func TestPostgresRepository_Find(t *testing.T) {
 			name:   "query error",
 			search: "some",
 			mockSetup: func(mock sqlmock.Sqlmock, search string) {
-				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM "vehicle"`).
+				mock.ExpectQuery(`SELECT id, license_plate, brand, model, year, customer_id FROM  vehicle WHERE license_plate =`).
 					WithArgs(search).
 					WillReturnError(errors.New("query failed"))
 			},
@@ -131,7 +145,15 @@ func TestPostgresRepository_Find(t *testing.T) {
 				tt.mockSetup(mock, tt.search)
 			}
 
-			v, err := repo.Find(context.Background(), domain.FindVehicleParams{LicensePlate: tt.search})
+			p := domain.FindVehicleParams{}
+
+			if tt.isID {
+				p.ID = tt.search
+			} else {
+				p.LicensePlate = tt.search
+			}
+
+			v, err := repo.Find(context.Background(), p)
 			if tt.expectError {
 				if tt.expectNotFound {
 					assert.ErrorIs(t, err, domain.ErrVehicleNotFound)

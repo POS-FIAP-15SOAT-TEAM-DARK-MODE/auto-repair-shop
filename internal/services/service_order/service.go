@@ -11,10 +11,15 @@ type svc struct {
 	uow             uow.Executor
 	repo            domain.ServiceOrderRepository
 	customerService domain.CustomerService
+	vehicleService  domain.VehicleService
 }
 
-func Service(uow uow.Executor, repo domain.ServiceOrderRepository, customerService domain.CustomerService) *svc {
-	return &svc{uow, repo, customerService}
+func Service(
+	uow uow.Executor,
+	repo domain.ServiceOrderRepository,
+	customerService domain.CustomerService,
+	vehicleService domain.VehicleService) *svc {
+	return &svc{uow, repo, customerService, vehicleService}
 }
 
 func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (domain.ServiceOrder, error) {
@@ -23,8 +28,12 @@ func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (
 		return domain.ServiceOrder{}, err
 	}
 
-	// TODO: Verify vehicleID
-	so := domain.NewServiceOrder(&customer, nil)
+	vehicle, err := s.vehicleService.FindByID(ctx, vehicleId)
+	if err != nil {
+		return domain.ServiceOrder{}, err
+	}
+
+	so := domain.NewServiceOrder(&customer, vehicle)
 	if err = s.uow.Execute(ctx, func(ctx context.Context) error {
 		return s.repo.Save(ctx, so)
 	}); err != nil {

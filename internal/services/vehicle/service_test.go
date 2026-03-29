@@ -362,3 +362,122 @@ func TestService_FindByLicensePlate_UowError(t *testing.T) {
 
 	repo.AssertNotCalled(t, "Find", mock.Anything, mock.Anything)
 }
+
+func TestService_FindByID_Success(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	id := "ABC1D23"
+
+	expectedVehicle := &domain.Vehicle{
+		ID:           "1",
+		LicensePlate: id,
+		Brand:        "chevrolet",
+		Model:        "onix",
+		Year:         2020,
+		CustomerId:   "123",
+	}
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			if err := steps[0](ctx); err != nil {
+				t.Fatalf("step returned error: %v", err)
+			}
+			return nil
+		})
+
+	repo.
+		EXPECT().
+		Find(ctx, domain.FindVehicleParams{ID: id}).
+		Return(expectedVehicle, nil)
+
+	service := NewService(exec, repo)
+
+	result, err := service.FindByID(ctx, id)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if result != expectedVehicle {
+		t.Fatalf("expected vehicle %v, got %v", expectedVehicle, result)
+	}
+}
+
+func TestService_FindByID_RepositoryError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	id := "ABC1D23"
+	expectedErr := errors.New("db error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			return steps[0](ctx)
+		})
+
+	repo.
+		EXPECT().
+		Find(ctx, domain.FindVehicleParams{ID: id}).
+		Return(nil, expectedErr)
+
+	service := NewService(exec, repo)
+
+	result, err := service.FindByID(ctx, id)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to be %v, got %v", expectedErr, err)
+	}
+
+	if result != nil {
+		t.Fatalf("expected nil result, got %v", result)
+	}
+}
+
+func TestService_FindByID_UowError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	id := "ABC1D23"
+	expectedErr := errors.New("uow error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	service := NewService(exec, repo)
+
+	result, err := service.FindByID(ctx, id)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to be %v, got %v", expectedErr, err)
+	}
+
+	if result != nil {
+		t.Fatalf("expected nil result, got %v", result)
+	}
+
+	repo.AssertNotCalled(t, "Find", mock.Anything, mock.Anything)
+}

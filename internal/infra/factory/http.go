@@ -102,9 +102,11 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	repo := soRepo.Repository()
 	userRepository := userRepo.Repository()
 	customerRepository := customerRepo.Repository()
+	vehicleRepository := vehicleRepo.NewVehicleRepository()
 
+	vehicle := vehicleSvc.NewService(uow, vehicleRepository)
 	customer := customerSvc.Service(uow, userRepository, customerRepository)
-	svc := soSvc.Service(uow, repo, customer)
+	svc := soSvc.Service(uow, repo, customer, vehicle)
 
 	return soHandler.HttpHandler(svc)
 }

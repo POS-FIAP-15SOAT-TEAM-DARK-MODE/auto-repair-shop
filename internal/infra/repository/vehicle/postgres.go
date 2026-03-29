@@ -53,6 +53,10 @@ func (r *vehicleRepository) Find(ctx context.Context, params domain.FindVehicleP
 		qb.Add("license_plate = ", params.LicensePlate)
 	}
 
+	if params.ID != "" {
+		qb.Add("id = ", params.ID)
+	}
+
 	query, args := qb.Build()
 	v := &domain.Vehicle{}
 	if err = tx.QueryRowContext(ctx, query, args...).Scan(&v.ID, &v.LicensePlate, &v.Brand, &v.Model, &v.Year, &v.CustomerId); err != nil {
