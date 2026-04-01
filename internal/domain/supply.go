@@ -13,7 +13,7 @@ type (
 		ID            string
 		Name          string
 		Description   string
-		UnitPrice     float64
+		UnitPrice     decimal.Decimal
 		StockQuantity int
 		Version       int
 	}
@@ -23,11 +23,13 @@ type SupplyService interface {
 	Create(ctx context.Context, req *Supply) error
 }
 
+//go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyService --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
 type SupplyRepository interface {
 	Create(ctx context.Context, c *Supply) error
 }
 
-func NewSupply(name, description string, unitPrice float64, stockQuantity, version int) *Supply {
+func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantity, version int) *Supply {
 	return &Supply{
 		ID:            uuid.New().String(),
 		Name:          name,
@@ -53,7 +55,7 @@ func (s *Supply) IsValidDescription() error {
 }
 
 func (s *Supply) IsValidUnitPrice() error {
-	if decimal.NewFromFloat(s.UnitPrice).LessThanOrEqual(decimal.Zero) {
+	if s.UnitPrice.LessThanOrEqual(decimal.Zero) {
 		return ErrInvalidSupplyUnitPrice
 	}
 	return nil
