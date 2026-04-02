@@ -23,7 +23,7 @@ type ServiceOrder struct {
 	Customer    *Customer
 	Vehicle     *Vehicle
 	Services    []Work
-	Supplies    []any
+	Supplies    []Supply
 	TotalAmount decimal.Decimal
 }
 
