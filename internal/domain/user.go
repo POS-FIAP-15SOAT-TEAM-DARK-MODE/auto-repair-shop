@@ -40,7 +40,7 @@ type UserRepository interface {
 	Create(ctx context.Context, c *User) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetRolesByUserId(ctx context.Context, id string) ([]Role, error)
-	AssignRole(ctx context.Context, userID, roleName string) error
+	AssignRole(ctx context.Context, userID string, role Role) error
 	Update(ctx context.Context, id, name, email string) error
 	Delete(ctx context.Context, id string) error
 }

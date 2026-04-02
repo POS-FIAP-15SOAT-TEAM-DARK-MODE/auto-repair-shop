@@ -89,14 +89,14 @@ func (u *repo) Update(ctx context.Context, id, name, email string) error {
 	return nil
 }
 
-func (u *repo) AssignRole(ctx context.Context, userID, roleName string) error {
+func (u *repo) AssignRole(ctx context.Context, userID string, role domain.Role) error {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
 		return err
 	}
 
 	id := uuid.New().String()
-	if _, err = tx.ExecContext(ctx, assignRoleQuery, id, userID, roleName); err != nil {
+	if _, err = tx.ExecContext(ctx, assignRoleQuery, id, userID, string(role)); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
 

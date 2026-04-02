@@ -27,7 +27,7 @@ func (s *service) Create(ctx context.Context, customer domain.Customer) error {
 			return s.userRepo.Create(txCtx, customer.User)
 		},
 		func(txCtx context.Context) error {
-			return s.userRepo.AssignRole(txCtx, customer.User.ID, string(domain.CUSTOMER))
+			return s.userRepo.AssignRole(txCtx, customer.User.ID, domain.CUSTOMER)
 		},
 		func(txCtx context.Context) error {
 			return s.customerRepo.Create(txCtx, &customer)

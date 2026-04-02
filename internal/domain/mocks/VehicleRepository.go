@@ -22,9 +22,9 @@ func (_m *VehicleRepository) EXPECT() *VehicleRepository_Expecter {
 	return &VehicleRepository_Expecter{mock: &_m.Mock}
 }
 
-// Find provides a mock function with given fields: ctx, search
-func (_m *VehicleRepository) Find(ctx context.Context, search string) (*domain.Vehicle, error) {
-	ret := _m.Called(ctx, search)
+// Find provides a mock function with given fields: ctx, licensePlate
+func (_m *VehicleRepository) Find(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
+	ret := _m.Called(ctx, licensePlate)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Find")
@@ -33,10 +33,10 @@ func (_m *VehicleRepository) Find(ctx context.Context, search string) (*domain.V
 	var r0 *domain.Vehicle
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Vehicle, error)); ok {
-		return rf(ctx, search)
+		return rf(ctx, licensePlate)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Vehicle); ok {
-		r0 = rf(ctx, search)
+		r0 = rf(ctx, licensePlate)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.Vehicle)
@@ -44,7 +44,7 @@ func (_m *VehicleRepository) Find(ctx context.Context, search string) (*domain.V
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, search)
+		r1 = rf(ctx, licensePlate)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -59,12 +59,12 @@ type VehicleRepository_Find_Call struct {
 
 // Find is a helper method to define mock.On call
 //   - ctx context.Context
-//   - search string
-func (_e *VehicleRepository_Expecter) Find(ctx interface{}, search interface{}) *VehicleRepository_Find_Call {
-	return &VehicleRepository_Find_Call{Call: _e.mock.On("Find", ctx, search)}
+//   - licensePlate string
+func (_e *VehicleRepository_Expecter) Find(ctx interface{}, licensePlate interface{}) *VehicleRepository_Find_Call {
+	return &VehicleRepository_Find_Call{Call: _e.mock.On("Find", ctx, licensePlate)}
 }
 
-func (_c *VehicleRepository_Find_Call) Run(run func(ctx context.Context, search string)) *VehicleRepository_Find_Call {
+func (_c *VehicleRepository_Find_Call) Run(run func(ctx context.Context, licensePlate string)) *VehicleRepository_Find_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})

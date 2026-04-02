@@ -22,17 +22,17 @@ func (_m *UserRepository) EXPECT() *UserRepository_Expecter {
 	return &UserRepository_Expecter{mock: &_m.Mock}
 }
 
-// AssignRole provides a mock function with given fields: ctx, userID, roleName
-func (_m *UserRepository) AssignRole(ctx context.Context, userID string, roleName string) error {
-	ret := _m.Called(ctx, userID, roleName)
+// AssignRole provides a mock function with given fields: ctx, userID, role
+func (_m *UserRepository) AssignRole(ctx context.Context, userID string, role domain.Role) error {
+	ret := _m.Called(ctx, userID, role)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AssignRole")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, userID, roleName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, domain.Role) error); ok {
+		r0 = rf(ctx, userID, role)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -48,14 +48,14 @@ type UserRepository_AssignRole_Call struct {
 // AssignRole is a helper method to define mock.On call
 //   - ctx context.Context
 //   - userID string
-//   - roleName string
-func (_e *UserRepository_Expecter) AssignRole(ctx interface{}, userID interface{}, roleName interface{}) *UserRepository_AssignRole_Call {
-	return &UserRepository_AssignRole_Call{Call: _e.mock.On("AssignRole", ctx, userID, roleName)}
+//   - role domain.Role
+func (_e *UserRepository_Expecter) AssignRole(ctx interface{}, userID interface{}, role interface{}) *UserRepository_AssignRole_Call {
+	return &UserRepository_AssignRole_Call{Call: _e.mock.On("AssignRole", ctx, userID, role)}
 }
 
-func (_c *UserRepository_AssignRole_Call) Run(run func(ctx context.Context, userID string, roleName string)) *UserRepository_AssignRole_Call {
+func (_c *UserRepository_AssignRole_Call) Run(run func(ctx context.Context, userID string, role domain.Role)) *UserRepository_AssignRole_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(domain.Role))
 	})
 	return _c
 }
@@ -65,7 +65,7 @@ func (_c *UserRepository_AssignRole_Call) Return(_a0 error) *UserRepository_Assi
 	return _c
 }
 
-func (_c *UserRepository_AssignRole_Call) RunAndReturn(run func(context.Context, string, string) error) *UserRepository_AssignRole_Call {
+func (_c *UserRepository_AssignRole_Call) RunAndReturn(run func(context.Context, string, domain.Role) error) *UserRepository_AssignRole_Call {
 	_c.Call.Return(run)
 	return _c
 }

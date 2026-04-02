@@ -34,7 +34,7 @@ func (r *memory_repo) GetRolesByUserId(_ context.Context, _ string) ([]domain.Ro
 	return []domain.Role{}, nil
 }
 
-func (r *memory_repo) AssignRole(_ context.Context, _, _ string) error {
+func (r *memory_repo) AssignRole(_ context.Context, _ string, _ domain.Role) error {
 	return nil
 }
 

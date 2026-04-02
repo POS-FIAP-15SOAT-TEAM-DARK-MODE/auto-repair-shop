@@ -73,7 +73,7 @@ func TestService_Create(t *testing.T) {
 			input: validIndividualCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
 				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
-				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-individual", string(domain.CUSTOMER)).Return(nil)
+				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-individual", domain.CUSTOMER).Return(nil)
 				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
 				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			},
@@ -83,7 +83,7 @@ func TestService_Create(t *testing.T) {
 			input: validCompanyCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
 				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
-				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-company", string(domain.CUSTOMER)).Return(nil)
+				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-company", domain.CUSTOMER).Return(nil)
 				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(nil)
 				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			},
@@ -102,7 +102,7 @@ func TestService_Create(t *testing.T) {
 			input: validIndividualCustomer(),
 			mockSetup: func(executor *uowmocks.Executor, userRepo *domainmocks.UserRepository, customerRepo *domainmocks.CustomerRepository) {
 				userRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
-				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-individual", string(domain.CUSTOMER)).Return(nil)
+				userRepo.EXPECT().AssignRole(mock.Anything, "uuid-individual", domain.CUSTOMER).Return(nil)
 				customerRepo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Customer")).Return(domain.ErrDataConflict)
 				executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			},
