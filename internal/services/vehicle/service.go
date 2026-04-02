@@ -88,3 +88,11 @@ func (s *vehicleService) createExecStep(v *domain.Vehicle, action string) func(c
 		return err
 	}
 }
+
+func (s *vehicleService) Delete(c context.Context, id string) error {
+	if err := s.uow.Execute(c, func(ctx context.Context) error { return s.vehicleRepository.Delete(ctx, id) }); err != nil {
+		logger.Of(c).Error(err)
+		return err
+	}
+	return nil
+}

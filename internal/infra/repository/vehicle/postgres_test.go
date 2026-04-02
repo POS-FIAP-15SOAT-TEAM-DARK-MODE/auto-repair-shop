@@ -218,3 +218,54 @@ func TestPostgresRepository_Update_Error(t *testing.T) {
 
 	assert.Error(t, err)
 }
+
+func TestPostgresRepository_Delete_MissingTx(t *testing.T) {
+	repo := vehicle.NewVehicleRepository()
+
+	err := repo.Delete(context.Background(), "id-1")
+	assert.Error(t, err)
+}
+
+func TestPostgresRepository_Delete_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
+	repo := vehicle.NewVehicleRepository()
+	id := "id-1"
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM vehicle WHERE id = \$1`).
+		WithArgs(id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+		return repo.Delete(ctx, id)
+	})
+
+	assert.NoError(t, err)
+}
+
+func TestPostgresRepository_Delete_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
+	repo := vehicle.NewVehicleRepository()
+	id := "id-1"
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`DELETE FROM vehicle WHERE id = \$1`).
+		WithArgs(id).
+		WillReturnError(errors.New("exec error"))
+	mock.ExpectCommit()
+
+	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+		return repo.Delete(ctx, id)
+	})
+
+	assert.Error(t, err)
+}

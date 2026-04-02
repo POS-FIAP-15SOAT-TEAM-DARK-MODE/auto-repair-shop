@@ -22,6 +22,53 @@ func (_m *VehicleRepository) EXPECT() *VehicleRepository_Expecter {
 	return &VehicleRepository_Expecter{mock: &_m.Mock}
 }
 
+// Delete provides a mock function with given fields: ctx, id
+func (_m *VehicleRepository) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// VehicleRepository_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type VehicleRepository_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *VehicleRepository_Expecter) Delete(ctx interface{}, id interface{}) *VehicleRepository_Delete_Call {
+	return &VehicleRepository_Delete_Call{Call: _e.mock.On("Delete", ctx, id)}
+}
+
+func (_c *VehicleRepository_Delete_Call) Run(run func(ctx context.Context, id string)) *VehicleRepository_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *VehicleRepository_Delete_Call) Return(_a0 error) *VehicleRepository_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *VehicleRepository_Delete_Call) RunAndReturn(run func(context.Context, string) error) *VehicleRepository_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Find provides a mock function with given fields: ctx, licensePlate
 func (_m *VehicleRepository) Find(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
 	ret := _m.Called(ctx, licensePlate)

@@ -18,8 +18,6 @@ func NewVehicleRepository() *vehicleRepository {
 	return &vehicleRepository{}
 }
 
-// TODO: Add query building in this repository
-
 func (r *vehicleRepository) Save(ctx context.Context, vehicle *domain.Vehicle) error {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
@@ -78,6 +76,20 @@ func (r *vehicleRepository) Update(ctx context.Context, vehicle *domain.Vehicle)
 		vehicle.CustomerId,
 	)
 	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteVehicle, id); err != nil {
+		logger.Of(ctx).Warn("vehicle repository", zap.String("operation", "delete"), zap.Error(err))
 		return pgPkg.Error(ctx, err)
 	}
 

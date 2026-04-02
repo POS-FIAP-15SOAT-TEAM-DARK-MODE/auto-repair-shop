@@ -549,3 +549,101 @@ func TestService_Update_RepositoryError(t *testing.T) {
 		t.Fatalf("expected error to wrap %v, got %v", expectedErr, err)
 	}
 }
+
+func TestService_Delete_Success(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	id := "veh-1"
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			if err := steps[0](ctx); err != nil {
+				t.Fatalf("step returned error: %v", err)
+			}
+			return nil
+		})
+
+	repo.
+		EXPECT().
+		Delete(ctx, id).
+		Return(nil)
+
+	service := NewService(exec, repo)
+
+	err := service.Delete(ctx, id)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestService_Delete_RepositoryError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	id := "veh-1"
+	expectedErr := errors.New("db error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			return steps[0](ctx)
+		})
+
+	repo.
+		EXPECT().
+		Delete(ctx, id).
+		Return(expectedErr)
+
+	service := NewService(exec, repo)
+
+	err := service.Delete(ctx, id)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to be %v, got %v", expectedErr, err)
+	}
+}
+
+func TestService_Delete_UowError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	id := "veh-1"
+	expectedErr := errors.New("uow error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	service := NewService(exec, repo)
+
+	err := service.Delete(ctx, id)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to be %v, got %v", expectedErr, err)
+	}
+
+	repo.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything)
+}

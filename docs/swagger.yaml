@@ -354,6 +354,25 @@ paths:
           description: Internal Server Error
         "400":
           description: Invalid Body Content
+    delete:
+      summary: delete a vehicle register
+      description: delete a vehicle in our database
+      tags:
+        - Vehicle
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of vehicle to be deleted.
+      responses:
+        "204":
+          description: Successful deleted
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
 
 components:
   securitySchemes:

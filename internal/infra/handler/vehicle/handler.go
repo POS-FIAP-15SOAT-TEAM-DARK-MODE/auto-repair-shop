@@ -111,3 +111,32 @@ func (h *handler) Update(c *gin.Context) {
 
 	c.JSON(http.StatusOK, domainToResponseDto(vehicleDomain))
 }
+
+func (h *handler) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id := c.Param(idParam)
+	if id == "" {
+		status, resp := web.Error(domain.ErrInvalidVehicleId)
+		logger.Of(ctx).Debug("Vehicle validation error",
+			zap.String("operation", "delete_vehicle"),
+			zap.Error(domain.ErrInvalidVehicleId),
+			zap.String("entity", "vehicle"),
+		)
+		c.JSON(status, resp)
+		return
+	}
+
+	if err := h.service.Delete(ctx, id); err != nil {
+		status, resp := web.Error(err)
+		logger.Of(ctx).Debug("Vehicle delete error",
+			zap.String("operation", "delete_vehicle"),
+			zap.Error(err),
+			zap.String("entity", "vehicle"),
+		)
+		c.JSON(status, resp)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

@@ -300,3 +300,58 @@ func TestHandler_Update(t *testing.T) {
 		})
 	}
 }
+
+func TestHandler_Delete(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	const idParam = "id"
+
+	tests := []struct {
+		name           string
+		id             string
+		mockSetup      func(m *mocks.VehicleService)
+		expectedStatus int
+	}{
+		{
+			name:           "missing id",
+			id:             "",
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "service error",
+			id:   "veh-1",
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					Delete(mock.Anything, "veh-1").
+					Return(errors.New("service error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := mocks.NewVehicleService(t)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			h := HttpHandler(mockService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Params = gin.Params{
+				{Key: idParam, Value: tt.id},
+			}
+
+			req, _ := http.NewRequest(http.MethodDelete, "/", nil)
+			c.Request = req
+
+			h.Delete(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
