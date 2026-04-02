@@ -116,6 +116,65 @@ func (_c *VehicleService_Delete_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
+// FindByID provides a mock function with given fields: ctx, id
+func (_m *VehicleService) FindByID(ctx context.Context, id string) (*domain.Vehicle, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindByID")
+	}
+
+	var r0 *domain.Vehicle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Vehicle, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Vehicle); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Vehicle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleService_FindByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindByID'
+type VehicleService_FindByID_Call struct {
+	*mock.Call
+}
+
+// FindByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *VehicleService_Expecter) FindByID(ctx interface{}, id interface{}) *VehicleService_FindByID_Call {
+	return &VehicleService_FindByID_Call{Call: _e.mock.On("FindByID", ctx, id)}
+}
+
+func (_c *VehicleService_FindByID_Call) Run(run func(ctx context.Context, id string)) *VehicleService_FindByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *VehicleService_FindByID_Call) Return(_a0 *domain.Vehicle, _a1 error) *VehicleService_FindByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleService_FindByID_Call) RunAndReturn(run func(context.Context, string) (*domain.Vehicle, error)) *VehicleService_FindByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindByLicensePlate provides a mock function with given fields: ctx, licensePlate
 func (_m *VehicleService) FindByLicensePlate(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
 	ret := _m.Called(ctx, licensePlate)
