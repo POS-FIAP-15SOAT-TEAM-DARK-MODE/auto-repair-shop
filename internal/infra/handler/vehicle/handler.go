@@ -93,7 +93,7 @@ func (h *handler) Update(c *gin.Context) {
 		status, resp := web.Error(domain.ErrInvalidVehicleId)
 		logger.Of(ctx).Debug("Vehicle validation error",
 			zap.String("operation", "update_vehicle"),
-			zap.Error(err),
+			zap.Error(domain.ErrInvalidVehicleId),
 			zap.String("entity", "vehicle"),
 		)
 		c.JSON(status, resp)
