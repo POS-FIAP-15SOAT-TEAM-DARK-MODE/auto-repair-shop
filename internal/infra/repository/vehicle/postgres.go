@@ -18,6 +18,8 @@ func NewVehicleRepository() *vehicleRepository {
 	return &vehicleRepository{}
 }
 
+// TODO: Add query building in this repository
+
 func (r *vehicleRepository) Save(ctx context.Context, vehicle *domain.Vehicle) error {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {

@@ -6,115 +6,12 @@ import (
 	"testing"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/mock"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	domainMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	uowMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow/mocks"
 )
-
-func TestVehicleService_CreateExecStep(t *testing.T) {
-	tests := []struct {
-		name        string
-		vehicle     *domain.Vehicle
-		action      string
-		mockSetup   func(r *domainMocks.VehicleRepository)
-		expectedErr error
-	}{
-		{
-			name: "create success",
-			vehicle: &domain.Vehicle{
-				ID: "1",
-			},
-			action: "create",
-			mockSetup: func(r *domainMocks.VehicleRepository) {
-				r.EXPECT().
-					Save(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
-					Return(nil)
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "create error",
-			vehicle: &domain.Vehicle{
-				ID: "1",
-			},
-			action: "create",
-			mockSetup: func(r *domainMocks.VehicleRepository) {
-				r.EXPECT().
-					Save(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
-					Return(errors.New("db error"))
-			},
-			expectedErr: errors.New("db error"),
-		},
-		{
-			name: "update success",
-			vehicle: &domain.Vehicle{
-				ID: "1",
-			},
-			action: "update",
-			mockSetup: func(r *domainMocks.VehicleRepository) {
-				r.EXPECT().
-					Update(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
-					Return(nil)
-			},
-			expectedErr: nil,
-		},
-		{
-			name: "update error",
-			vehicle: &domain.Vehicle{
-				ID: "1",
-			},
-			action: "update",
-			mockSetup: func(r *domainMocks.VehicleRepository) {
-				r.EXPECT().
-					Update(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
-					Return(errors.New("db error"))
-			},
-			expectedErr: errors.New("db error"),
-		},
-		{
-			name: "invalid action does nothing",
-			vehicle: &domain.Vehicle{
-				ID: "1",
-			},
-			action:      "invalid",
-			mockSetup:   func(r *domainMocks.VehicleRepository) {},
-			expectedErr: nil,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			repoMock := domainMocks.NewVehicleRepository(t)
-			uowMock := uowMocks.NewExecutor(t)
-
-			if tt.mockSetup != nil {
-				tt.mockSetup(repoMock)
-			}
-
-			service := NewService(uowMock, repoMock)
-
-			step := service.createExecStep(tt.vehicle, tt.action)
-
-			err := step(context.Background())
-
-			if tt.expectedErr == nil {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-				assert.EqualError(t, err, tt.expectedErr.Error())
-			}
-
-			if tt.action == "invalid" {
-				repoMock.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
-				repoMock.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
-			}
-		})
-	}
-}
 
 func TestService_Create_Success(t *testing.T) {
 	ctx := context.Background()

@@ -28,14 +28,11 @@ func (s *vehicleService) Create(ctx context.Context, vehicle *domain.Vehicle) er
 		return errMessage
 	}
 
-	if err := s.uow.Execute(
-		ctx,
-		s.createExecStep(vehicle, "create"),
-	); err != nil {
-		logger.Of(ctx).Error(fmt.Errorf("vehicle create error %w", err))
-		return err
-	}
-	return nil
+	return s.uow.Execute(ctx,
+		func(txCtx context.Context) error {
+			return s.vehicleRepository.Save(ctx, vehicle)
+		},
+	)
 }
 
 func (s *vehicleService) FindByLicensePlate(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
@@ -68,25 +65,11 @@ func (s *vehicleService) Update(ctx context.Context, v *domain.Vehicle) error {
 		return errMessage
 	}
 
-	if err := s.uow.Execute(ctx, s.createExecStep(v, "update")); err != nil {
-		logger.Of(ctx).Error(fmt.Errorf("vehicle update error %w", err))
-		return err
-	}
-
-	return nil
-}
-
-func (s *vehicleService) createExecStep(v *domain.Vehicle, action string) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		var err error
-		switch action {
-		case "create":
-			err = s.vehicleRepository.Save(ctx, v)
-		case "update":
-			err = s.vehicleRepository.Update(ctx, v)
-		}
-		return err
-	}
+	return s.uow.Execute(ctx,
+		func(txCtx context.Context) error {
+			return s.vehicleRepository.Update(ctx, v)
+		},
+	)
 }
 
 func (s *vehicleService) Delete(c context.Context, id string) error {
