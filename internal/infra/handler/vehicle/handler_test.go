@@ -190,3 +190,113 @@ func TestHandler_FindByLicensePlate(t *testing.T) {
 		})
 	}
 }
+
+func TestHandler_Update(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	const idParam = "id"
+
+	tests := []struct {
+		name           string
+		id             string
+		body           string
+		mockSetup      func(m *mocks.VehicleService)
+		expectedStatus int
+	}{
+		{
+			name: "success",
+			id:   "veh-1",
+			body: `{
+				"license_plate": "ABC1D23",
+				"brand": "chevrolet",
+				"model": "onix",
+				"year": 2020,
+				"customer_id": "123"
+			}`,
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					Update(mock.Anything, mock.MatchedBy(func(v *domain.Vehicle) bool {
+						return v.ID == "veh-1" && v.LicensePlate == "ABC1D23"
+					})).
+					Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "missing id",
+			id:   "",
+			body: `{
+				"license_plate": "ABC1D23",
+				"brand": "chevrolet",
+				"model": "onix",
+				"year": 2020,
+				"customer_id": "123"
+			}`,
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "validation error (missing fields)",
+			id:   "veh-1",
+			body: `{
+				"license_plate": "ABC1D23",
+				"brand": "",
+				"model": "",
+				"year": 2020,
+				"customer_id": ""
+			}`,
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid json",
+			id:             "veh-1",
+			body:           `{"license_plate":`,
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "service error",
+			id:   "veh-1",
+			body: `{
+				"license_plate": "ABC1D23",
+				"brand": "chevrolet",
+				"model": "onix",
+				"year": 2020,
+				"customer_id": "123"
+			}`,
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					Update(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
+					Return(errors.New("service error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := mocks.NewVehicleService(t)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			h := HttpHandler(mockService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Params = gin.Params{
+				{Key: idParam, Value: tt.id},
+			}
+
+			req, _ := http.NewRequest(http.MethodPut, "/", bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			c.Request = req
+
+			h.Update(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}

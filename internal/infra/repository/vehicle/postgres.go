@@ -60,3 +60,26 @@ func (r *vehicleRepository) Find(ctx context.Context, licensePlate string) (*dom
 
 	return v, nil
 }
+
+func (r *vehicleRepository) Update(ctx context.Context, vehicle *domain.Vehicle) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(
+		ctx,
+		updateVehicle,
+		vehicle.ID,
+		vehicle.LicensePlate,
+		vehicle.Brand,
+		vehicle.Model,
+		vehicle.Year,
+		vehicle.CustomerId,
+	)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}

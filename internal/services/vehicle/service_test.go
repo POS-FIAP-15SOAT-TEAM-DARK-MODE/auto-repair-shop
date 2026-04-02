@@ -15,18 +15,20 @@ import (
 	uowMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow/mocks"
 )
 
-func TestVehicleService_CreateInsertStep(t *testing.T) {
+func TestVehicleService_CreateExecStep(t *testing.T) {
 	tests := []struct {
 		name        string
 		vehicle     *domain.Vehicle
+		action      string
 		mockSetup   func(r *domainMocks.VehicleRepository)
 		expectedErr error
 	}{
 		{
-			name: "success",
+			name: "create success",
 			vehicle: &domain.Vehicle{
 				ID: "1",
 			},
+			action: "create",
 			mockSetup: func(r *domainMocks.VehicleRepository) {
 				r.EXPECT().
 					Save(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
@@ -35,16 +37,52 @@ func TestVehicleService_CreateInsertStep(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name: "repository error wrapped",
+			name: "create error",
 			vehicle: &domain.Vehicle{
 				ID: "1",
 			},
+			action: "create",
 			mockSetup: func(r *domainMocks.VehicleRepository) {
 				r.EXPECT().
 					Save(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
 					Return(errors.New("db error"))
 			},
 			expectedErr: errors.New("db error"),
+		},
+		{
+			name: "update success",
+			vehicle: &domain.Vehicle{
+				ID: "1",
+			},
+			action: "update",
+			mockSetup: func(r *domainMocks.VehicleRepository) {
+				r.EXPECT().
+					Update(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
+					Return(nil)
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "update error",
+			vehicle: &domain.Vehicle{
+				ID: "1",
+			},
+			action: "update",
+			mockSetup: func(r *domainMocks.VehicleRepository) {
+				r.EXPECT().
+					Update(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
+					Return(errors.New("db error"))
+			},
+			expectedErr: errors.New("db error"),
+		},
+		{
+			name: "invalid action does nothing",
+			vehicle: &domain.Vehicle{
+				ID: "1",
+			},
+			action:      "invalid",
+			mockSetup:   func(r *domainMocks.VehicleRepository) {},
+			expectedErr: nil,
 		},
 	}
 
@@ -59,16 +97,21 @@ func TestVehicleService_CreateInsertStep(t *testing.T) {
 
 			service := NewService(uowMock, repoMock)
 
-			step := service.createInsertStep(tt.vehicle)
+			step := service.createExecStep(tt.vehicle, tt.action)
 
 			err := step(context.Background())
 
 			if tt.expectedErr == nil {
 				assert.NoError(t, err)
-				return
+			} else {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tt.expectedErr.Error())
 			}
 
-			assert.Error(t, err)
+			if tt.action == "invalid" {
+				repoMock.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
+				repoMock.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+			}
 		})
 	}
 }
@@ -361,4 +404,148 @@ func TestService_FindByLicensePlate_UowError(t *testing.T) {
 	}
 
 	repo.AssertNotCalled(t, "Find", mock.Anything, mock.Anything)
+}
+
+func TestService_Update_Success(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	vehicle := &domain.Vehicle{
+		LicensePlate: "ABC1D23",
+		Brand:        "chevrolet",
+		Model:        "onix",
+		Year:         2020,
+		CustomerId:   "123",
+	}
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			if err := steps[0](ctx); err != nil {
+				t.Fatalf("step returned error: %v", err)
+			}
+			return nil
+		})
+
+	repo.
+		EXPECT().
+		Update(ctx, vehicle).
+		Return(nil)
+
+	service := NewService(exec, repo)
+
+	err := service.Update(ctx, vehicle)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestService_Update_ValidationError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	vehicle := &domain.Vehicle{
+		LicensePlate: "INVALID", // inválida
+		Year:         2020,
+	}
+
+	service := NewService(exec, repo)
+
+	err := service.Update(ctx, vehicle)
+	if err == nil {
+		t.Fatalf("expected validation error, got nil")
+	}
+
+	if !errors.Is(err, domain.ErrVehicleInvalidPlate) {
+		t.Fatalf("expected error to wrap ErrVehicleInvalidPlate, got %v", err)
+	}
+
+	exec.AssertNotCalled(t, "Execute", mock.Anything, mock.Anything)
+	repo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+}
+
+func TestService_Update_UowError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	vehicle := &domain.Vehicle{
+		LicensePlate: "ABC1D23",
+		Brand:        "chevrolet",
+		Model:        "onix",
+		Year:         2020,
+		CustomerId:   "123",
+	}
+
+	expectedErr := errors.New("uow error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	service := NewService(exec, repo)
+
+	err := service.Update(ctx, vehicle)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to be %v, got %v", expectedErr, err)
+	}
+
+	repo.AssertNotCalled(t, "Update", mock.Anything, mock.Anything)
+}
+
+func TestService_Update_RepositoryError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowMocks.NewExecutor(t)
+	repo := domainMocks.NewVehicleRepository(t)
+
+	vehicle := &domain.Vehicle{
+		LicensePlate: "ABC1D23",
+		Brand:        "chevrolet",
+		Model:        "onix",
+		Year:         2020,
+		CustomerId:   "123",
+	}
+
+	expectedErr := errors.New("db error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			return steps[0](ctx)
+		})
+
+	repo.
+		EXPECT().
+		Update(ctx, vehicle).
+		Return(expectedErr)
+
+	service := NewService(exec, repo)
+
+	err := service.Update(ctx, vehicle)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to wrap %v, got %v", expectedErr, err)
+	}
 }

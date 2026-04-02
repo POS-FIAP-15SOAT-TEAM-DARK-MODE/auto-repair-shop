@@ -150,3 +150,71 @@ func TestPostgresRepository_Find(t *testing.T) {
 		})
 	}
 }
+
+func TestPostgresRepository_Update_MissingTx(t *testing.T) {
+	repo := vehicle.NewVehicleRepository()
+	v := &domain.Vehicle{}
+
+	err := repo.Update(context.Background(), v)
+	assert.Error(t, err)
+}
+
+func TestPostgresRepository_Update_Success(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
+	repo := vehicle.NewVehicleRepository()
+
+	v := &domain.Vehicle{
+		ID:           "id-1",
+		LicensePlate: "ABC1D23",
+		Brand:        "chevrolet",
+		Model:        "onix",
+		Year:         2020,
+		CustomerId:   "cust-1",
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`UPDATE vehicle SET license_plate = \$2, brand = \$3, model = \$4, year = \$5, customer_id = \$6 WHERE id = \$1`).
+		WithArgs(v.ID, v.LicensePlate, v.Brand, v.Model, v.Year, v.CustomerId).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+		return repo.Update(ctx, v)
+	})
+
+	assert.NoError(t, err)
+}
+
+func TestPostgresRepository_Update_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
+	repo := vehicle.NewVehicleRepository()
+
+	v := &domain.Vehicle{
+		ID:           "id-1",
+		LicensePlate: "ABC1D23",
+		Brand:        "chevrolet",
+		Model:        "onix",
+		Year:         2020,
+		CustomerId:   "cust-1",
+	}
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`UPDATE vehicle SET license_plate = \$2, brand = \$3, model = \$4, year = \$5, customer_id = \$6 WHERE id = \$1`).
+		WithArgs(v.ID, v.LicensePlate, v.Brand, v.Model, v.Year, v.CustomerId).
+		WillReturnError(errors.New("exec error"))
+	mock.ExpectCommit()
+
+	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+		return repo.Update(ctx, v)
+	})
+
+	assert.Error(t, err)
+}

@@ -332,6 +332,29 @@ paths:
         "400":
           description: Invalid Body Content
 
+  /v1/vehicle/{id}:
+    put:
+      summary: update a vehicle register
+      description: update a vehicle in our database
+      tags:
+        - Vehicle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRequest'
+      responses:
+        "200":
+          description: Successful created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
 components:
   securitySchemes:
       SessionToken:

@@ -128,6 +128,53 @@ func (_c *VehicleService_FindByLicensePlate_Call) RunAndReturn(run func(context.
 	return _c
 }
 
+// Update provides a mock function with given fields: ctx, vehicle
+func (_m *VehicleService) Update(ctx context.Context, vehicle *domain.Vehicle) error {
+	ret := _m.Called(ctx, vehicle)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Vehicle) error); ok {
+		r0 = rf(ctx, vehicle)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// VehicleService_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type VehicleService_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - vehicle *domain.Vehicle
+func (_e *VehicleService_Expecter) Update(ctx interface{}, vehicle interface{}) *VehicleService_Update_Call {
+	return &VehicleService_Update_Call{Call: _e.mock.On("Update", ctx, vehicle)}
+}
+
+func (_c *VehicleService_Update_Call) Run(run func(ctx context.Context, vehicle *domain.Vehicle)) *VehicleService_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Vehicle))
+	})
+	return _c
+}
+
+func (_c *VehicleService_Update_Call) Return(_a0 error) *VehicleService_Update_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *VehicleService_Update_Call) RunAndReturn(run func(context.Context, *domain.Vehicle) error) *VehicleService_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewVehicleService creates a new instance of VehicleService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewVehicleService(t interface {
