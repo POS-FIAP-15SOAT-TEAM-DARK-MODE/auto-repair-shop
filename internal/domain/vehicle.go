@@ -32,11 +32,17 @@ type (
 	VehicleService interface {
 		Create(ctx context.Context, vehicle *Vehicle) error
 		FindByLicensePlate(ctx context.Context, licensePlate string) (*Vehicle, error)
+		FindByID(ctx context.Context, id string) (*Vehicle, error)
 	}
 
 	VehicleRepository interface {
 		Save(ctx context.Context, vehicle *Vehicle) error
-		Find(ctx context.Context, licensePlate string) (*Vehicle, error)
+		Find(ctx context.Context, params FindVehicleParams) (*Vehicle, error)
+	}
+
+	FindVehicleParams struct {
+		ID           string
+		LicensePlate string
 	}
 )
 

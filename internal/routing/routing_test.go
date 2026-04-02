@@ -25,6 +25,7 @@ func TestSetupRouter(t *testing.T) {
 	mockWork := mocks.NewWorkHandler(t)
 	mockVehicle := mocks.NewVehicleHandler(t)
 	mockSupply := mocks.NewSupplyHandler(t)
+	mockSO := mocks.NewServiceOrderHandler(t)
 
 	// Set up only the handlers/routes that exist in internal/routing/routing.go
 
@@ -52,13 +53,17 @@ func TestSetupRouter(t *testing.T) {
 	// Supply
 	mockSupply.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 
+	// Service Order
+	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
+
 	c := &http.HandlersWrapper{
-		PingHandler:     mockPing,
-		UserHandler:     mockUser,
-		CustomerHandler: mockCustomer,
-		WorkHandler:     mockWork,
-		VehicleHandler:  mockVehicle,
-		SupplyHandler:   mockSupply,
+		PingHandler:         mockPing,
+		UserHandler:         mockUser,
+		CustomerHandler:     mockCustomer,
+		WorkHandler:         mockWork,
+		VehicleHandler:      mockVehicle,
+		SupplyHandler:       mockSupply,
+		ServiceOrderHandler: mockSO,
 	}
 
 	m := &http.Middlewares{
@@ -102,6 +107,9 @@ func TestSetupRouter(t *testing.T) {
 
 		// Supply
 		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated},
+
+		// Service Order
+		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated},
 
 		// Swagger UI (based on mountSwaggerUI in routing.go)
 		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK},
