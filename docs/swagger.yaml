@@ -9,10 +9,30 @@ servers:
     variables:
       PORT:
         default: "8080"
-        description: Port number for the server  
+        description: Port number for the server
 security:
   - SessionToken: []
 paths:
+  /ping:
+    get:
+      summary: Ping the API
+      description: Health check endpoint that returns a simple message.
+      tags:
+        - Health
+      security: []
+      responses:
+        "200":
+          description: Successful ping
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: pong
+
   /v1/customers:
     post:
       summary: Create a customer
@@ -503,6 +523,78 @@ paths:
           description: Internal Server Error
         "400":
           description: Invalid Body Content
+  /v1/supplies:
+    post:
+      summary: Create a supply
+      description: Creates a new supply with name, description, unit price, stock quantity and version.
+      tags:
+        - Supply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyRequest'
+      responses:
+        "201":
+          description: Supply created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyResponse'
+        "400":
+          description: Invalid request body or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/service-order:
+      post:
+        summary: Create a new service order
+        description: Create a new service order for a given customer and vehicle
+        tags:
+          - ServiceOrder
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateServiceOrderRequest'
+        responses:
+          "201":
+            description: Service order successfully created
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateServiceOrderResponse'
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
 
 components:
   securitySchemes:
@@ -805,3 +897,89 @@ components:
           type: string
           format: uuid
           example: b8415e84-730a-4624-a1c3-74cf59b95d6d
+    SupplyRequest:
+      type: object
+      required:
+        - name
+        - description
+        - unit_price
+        - stock_quantity
+        - version
+      properties:
+        name:
+          type: string
+          example: string
+        description:
+          type: string
+          example: string
+        unit_price:
+          type: number
+          format: float
+          example: 00.0
+        stock_quantity:
+          type: integer
+          example: 0
+        version:
+          type: integer
+          example: 0
+
+    SupplyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: string
+        name:
+          type: string
+          example: string
+        description:
+          type: string
+          example: string
+        unit_price:
+          type: number
+          format: float
+          example: 00.0
+        stock_quantity:
+          type: integer
+          example: 0
+        version:
+          type: integer
+          example: 0
+
+    CreateServiceOrderRequest:
+      type: object
+      required:
+        - client
+        - vehicle
+      properties:
+        client:
+          type: string
+          description: ID of the customer/client requesting the service
+        vehicle:
+          type: string
+          description: ID of the vehicle for the service order
+
+    CreateServiceOrderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the service order
+        customer_id:
+          type: string
+          description: Customer ID
+        vehicle_id:
+          type: string
+          description: Vehicle ID
+        status:
+          type: string
+          description: Service order status (e.g. RECEIVED, IN_DIAGNOSIS, etc)
+        total_amount:
+          type: number
+          format: float
+          description: Total budget amount for this service order
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp

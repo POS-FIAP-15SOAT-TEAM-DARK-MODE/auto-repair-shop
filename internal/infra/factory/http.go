@@ -25,13 +25,21 @@ import (
 	vehicleHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/vehicle"
 	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/vehicle"
 	vehicleSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/vehicle"
+
+	supplyHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/supply"
+	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/supply"
+	supplySvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/supply"
+
+	soHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order"
+	soRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order"
+	soSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order"
 )
 
 func HTTPServer() server.Server {
 	middlewares := middlewaresContainer()
 	db := postgres.Connect()
-	httpContainer := httpContainer(db)
-	router := routing.SetupRouter(httpContainer, middlewares)
+	routes := httpContainer(db)
+	router := routing.SetupRouter(routes, middlewares)
 
 	port := env.GetString("PORT", "8080")
 	return server.NewHTTPServer("http-api", ":"+port, router)
@@ -47,11 +55,13 @@ func middlewaresContainer() *container.Middlewares {
 
 func httpContainer(db *sql.DB) *container.HandlersWrapper {
 	return &container.HandlersWrapper{
-		PingHandler:     newPingHandler(),
-		UserHandler:     newUserHandler(db),
-		CustomerHandler: newCustomerHandler(db),
-		WorkHandler:     newWorkHandler(db),
-		VehicleHandler:  newVehicleHandler(db),
+		PingHandler:         newPingHandler(),
+		UserHandler:         newUserHandler(db),
+		CustomerHandler:     newCustomerHandler(db),
+		WorkHandler:         newWorkHandler(db),
+		VehicleHandler:      newVehicleHandler(db),
+		SupplyHandler:       newSupplyHandler(db),
+		ServiceOrderHandler: newServiceOrderHandler(db),
 	}
 }
 
@@ -89,4 +99,26 @@ func newVehicleHandler(db *sql.DB) container.VehicleHandler {
 	vehicleRepository := vehicleRepo.NewVehicleRepository()
 	service := vehicleSvc.NewService(uow, vehicleRepository)
 	return vehicleHandler.HttpHandler(service)
+}
+
+func newSupplyHandler(db *sql.DB) container.SupplyHandler {
+	uow := postgres.NewTransactionalUoW(db)
+	supplyRepository := supplyRepo.Repository()
+	service := supplySvc.Service(uow, supplyRepository)
+	return supplyHandler.HttpHandler(service)
+}
+
+func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
+	uow := postgres.NewTransactionalUoW(db)
+
+	repo := soRepo.Repository()
+	userRepository := userRepo.Repository()
+	customerRepository := customerRepo.Repository()
+	vehicleRepository := vehicleRepo.NewVehicleRepository()
+
+	vehicle := vehicleSvc.NewService(uow, vehicleRepository)
+	customer := customerSvc.Service(uow, userRepository, customerRepository)
+	svc := soSvc.Service(uow, repo, customer, vehicle)
+
+	return soHandler.HttpHandler(svc)
 }
