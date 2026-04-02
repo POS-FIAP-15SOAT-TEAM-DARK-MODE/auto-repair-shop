@@ -264,26 +264,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /ping:
-    get:
-      summary: Ping the API
-      description: Health check endpoint that returns a simple message.
-      tags:
-        - Health
-      security: []
-      responses:
-        "200":
-          description: Successful ping
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-              example:
-                message: pong
-
   /v1/auth/login:
     post:
       summary: Login a user
@@ -468,7 +448,7 @@ paths:
         "500":
           description: Internal Server Error
 
-  /v1/vehicle:
+  /v1/vehicles:
     get:
       summary: Get vehicle by license plate
       description: Retrieve a vehicle by its normalized license plate. The license plate must follow supported formats (old or Mercosul).
@@ -523,6 +503,49 @@ paths:
           description: Internal Server Error
         "400":
           description: Invalid Body Content
+
+  /v1/vehicles/{id}:
+    put:
+      summary: update a vehicle register
+      description: update a vehicle in our database
+      tags:
+        - Vehicle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRequest'
+      responses:
+        "200":
+          description: Successful created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+    delete:
+      summary: delete a vehicle register
+      description: delete a vehicle in our database
+      tags:
+        - Vehicle
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of vehicle to be deleted.
+      responses:
+        "204":
+          description: Successful deleted
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
   /v1/supplies:
     post:
       summary: Create a supply

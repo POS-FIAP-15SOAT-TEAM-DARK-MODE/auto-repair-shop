@@ -33,11 +33,15 @@ type (
 		Create(ctx context.Context, vehicle *Vehicle) error
 		FindByLicensePlate(ctx context.Context, licensePlate string) (*Vehicle, error)
 		FindByID(ctx context.Context, id string) (*Vehicle, error)
+		Update(ctx context.Context, vehicle *Vehicle) error
+		Delete(ctx context.Context, id string) error
 	}
 
 	VehicleRepository interface {
 		Save(ctx context.Context, vehicle *Vehicle) error
 		Find(ctx context.Context, params FindVehicleParams) (*Vehicle, error)
+		Update(ctx context.Context, vehicle *Vehicle) error
+		Delete(ctx context.Context, id string) error
 	}
 
 	FindVehicleParams struct {

@@ -69,3 +69,40 @@ func (r *vehicleRepository) Find(ctx context.Context, params domain.FindVehicleP
 
 	return v, nil
 }
+
+func (r *vehicleRepository) Update(ctx context.Context, vehicle *domain.Vehicle) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(
+		ctx,
+		updateVehicle,
+		vehicle.ID,
+		vehicle.LicensePlate,
+		vehicle.Brand,
+		vehicle.Model,
+		vehicle.Year,
+		vehicle.CustomerId,
+	)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteVehicle, id); err != nil {
+		logger.Of(ctx).Warn("vehicle repository", zap.String("operation", "delete"), zap.Error(err))
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
