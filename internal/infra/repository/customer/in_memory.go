@@ -39,3 +39,21 @@ func (r *memory_repo) GetByID(ctx context.Context, id string) (domain.Customer, 
 
 	return domain.Customer{}, domain.ErrCustomerNotFound
 }
+
+func (r *memory_repo) Update(_ context.Context, id, phone string) error {
+	c, ok := r.data[id]
+	if !ok {
+		return domain.ErrCustomerNotFound
+	}
+	c.Phone = phone
+	r.data[id] = c
+	return nil
+}
+
+func (r *memory_repo) Delete(_ context.Context, id string) error {
+	if _, ok := r.data[id]; !ok {
+		return domain.ErrCustomerNotFound
+	}
+	delete(r.data, id)
+	return nil
+}

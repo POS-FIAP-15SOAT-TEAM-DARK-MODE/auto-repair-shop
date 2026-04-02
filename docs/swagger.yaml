@@ -36,7 +36,7 @@ paths:
   /v1/customers:
     post:
       summary: Create a customer
-      description: Creates a new customer along with a linked user account. Supports both individual (CPF) and company (CNPJ) types. Alphanumeric CNPJ format is supported (RFB 2243/2024).
+      description: Creates a new customer along with a linked user account and assigns the CUSTOMER role. Supports both individual (CPF) and company (CNPJ) types. Alphanumeric CNPJ format is supported (RFB 2243/2024).
       tags:
         - Customers
       security:
@@ -53,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreateCustomerResponse"
+                $ref: "#/components/schemas/CustomerResponse"
         "400":
           description: Invalid request body or document validation failed (CPF/CNPJ)
           content:
@@ -91,6 +91,198 @@ paths:
               example:
                 code: 500
                 error: Internal Server Error
+
+    get:
+      summary: Get customer by document
+      description: Returns the customer matching the provided CPF or CNPJ document. Accepts formatted (e.g. `111.444.777-35`) or plain (`11144477735`) values.
+      tags:
+        - Customers
+      parameters:
+        - in: query
+          name: document
+          required: true
+          schema:
+            type: string
+          description: CPF or CNPJ of the customer (formatted or plain digits)
+          example: "111.444.777-35"
+      responses:
+        "200":
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Missing or invalid document format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                errors:
+                  - document must be a valid CPF (11 digits) or CNPJ (14 characters)
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: customer not found
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/customers/{id}:
+    get:
+      summary: Get customer by ID
+      description: Returns the customer with the specified UUID.
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      responses:
+        "200":
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: customer not found
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Update a customer
+      description: Partially updates name, email and/or phone. All fields are optional — only provided fields are changed. CPF and CNPJ are immutable. Returns 204 when the customer does not exist (idempotent).
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomerRequest"
+      responses:
+        "200":
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "204":
+          description: Customer not found (no-op)
+        "400":
+          description: Validation error (e.g. invalid name format, empty phone)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                errors:
+                  - the username must be longer than 3 characters and can only contain letters and spaces
+        "409":
+          description: Email already in use by another account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: resource already exists
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete a customer
+      description: Removes the customer and its associated user account in a single transaction. Returns 204 on success or when the customer does not exist (idempotent). Returns an error for business rule violations (e.g. linked service orders).
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      responses:
+        "204":
+          description: Customer deleted or not found
+        "409":
+          description: Customer has linked service orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: customer has associated service orders
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ping:
+    get:
+      summary: Ping the API
+      description: Health check endpoint that returns a simple message.
+      tags:
+        - Health
+      security: []
+      responses:
+        "200":
+          description: Successful ping
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: pong
 
   /v1/auth/login:
     post:
@@ -554,8 +746,8 @@ components:
           example: joao@example.com
         password:
           type: string
-          minLength: 6
-          example: secret123
+          minLength: 8
+          example: Secret@123
         type:
           type: string
           enum: [INDIVIDUAL, COMPANY]
@@ -572,7 +764,7 @@ components:
           type: string
           example: "11999999999"
 
-    CreateCustomerResponse:
+    CustomerResponse:
       type: object
       properties:
         id:
@@ -587,9 +779,11 @@ components:
           example: joao@example.com
         type:
           type: string
+          enum: [INDIVIDUAL, COMPANY]
           example: INDIVIDUAL
         document:
           type: string
+          description: Sanitized CPF (11 digits) for INDIVIDUAL or CNPJ (14 chars) for COMPANY
           example: "11144477735"
         company_name:
           type: string
@@ -597,6 +791,22 @@ components:
         phone:
           type: string
           example: "11999999999"
+
+    UpdateCustomerRequest:
+      type: object
+      description: All fields are optional. Only provided fields are updated.
+      properties:
+        name:
+          type: string
+          description: Full name (min 3 chars, letters and spaces only)
+          example: Novo Nome
+        email:
+          type: string
+          format: email
+          example: novo@example.com
+        phone:
+          type: string
+          example: "11888888888"
 
     CreateWorkRequest:
       type: object

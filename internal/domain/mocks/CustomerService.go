@@ -69,6 +69,53 @@ func (_c *CustomerService_Create_Call) RunAndReturn(run func(context.Context, do
 	return _c
 }
 
+// Delete provides a mock function with given fields: ctx, id
+func (_m *CustomerService) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// CustomerService_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type CustomerService_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *CustomerService_Expecter) Delete(ctx interface{}, id interface{}) *CustomerService_Delete_Call {
+	return &CustomerService_Delete_Call{Call: _e.mock.On("Delete", ctx, id)}
+}
+
+func (_c *CustomerService_Delete_Call) Run(run func(ctx context.Context, id string)) *CustomerService_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerService_Delete_Call) Return(_a0 error) *CustomerService_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *CustomerService_Delete_Call) RunAndReturn(run func(context.Context, string) error) *CustomerService_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetByDocument provides a mock function with given fields: ctx, rawDocument
 func (_m *CustomerService) GetByDocument(ctx context.Context, rawDocument string) (domain.Customer, error) {
 	ret := _m.Called(ctx, rawDocument)
@@ -179,6 +226,66 @@ func (_c *CustomerService_GetByID_Call) Return(_a0 domain.Customer, _a1 error) *
 }
 
 func (_c *CustomerService_GetByID_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerService_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: ctx, id, name, email, phone
+func (_m *CustomerService) Update(ctx context.Context, id string, name *string, email *string, phone *string) (domain.Customer, error) {
+	ret := _m.Called(ctx, id, name, email, phone)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 domain.Customer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *string, *string, *string) (domain.Customer, error)); ok {
+		return rf(ctx, id, name, email, phone)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *string, *string, *string) domain.Customer); ok {
+		r0 = rf(ctx, id, name, email, phone)
+	} else {
+		r0 = ret.Get(0).(domain.Customer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, *string, *string, *string) error); ok {
+		r1 = rf(ctx, id, name, email, phone)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CustomerService_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type CustomerService_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - name *string
+//   - email *string
+//   - phone *string
+func (_e *CustomerService_Expecter) Update(ctx interface{}, id interface{}, name interface{}, email interface{}, phone interface{}) *CustomerService_Update_Call {
+	return &CustomerService_Update_Call{Call: _e.mock.On("Update", ctx, id, name, email, phone)}
+}
+
+func (_c *CustomerService_Update_Call) Run(run func(ctx context.Context, id string, name *string, email *string, phone *string)) *CustomerService_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(*string), args[3].(*string), args[4].(*string))
+	})
+	return _c
+}
+
+func (_c *CustomerService_Update_Call) Return(_a0 domain.Customer, _a1 error) *CustomerService_Update_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CustomerService_Update_Call) RunAndReturn(run func(context.Context, string, *string, *string, *string) (domain.Customer, error)) *CustomerService_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

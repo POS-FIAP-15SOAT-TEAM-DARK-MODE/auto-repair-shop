@@ -25,13 +25,13 @@ func TestHasRequiredRoles(t *testing.T) {
 		},
 		{
 			name:       "user has no required role",
-			userRoles:  []domain.Role{domain.CLIENT},
+			userRoles:  []domain.Role{domain.CUSTOMER},
 			routeRoles: []domain.Role{domain.MECHANIC, domain.ADMIN},
 			want:       false,
 		},
 		{
 			name:       "user has multiple roles, one matches",
-			userRoles:  []domain.Role{domain.CLIENT, domain.ATTENDANT},
+			userRoles:  []domain.Role{domain.CUSTOMER, domain.ATTENDANT},
 			routeRoles: []domain.Role{domain.ATTENDANT, domain.ADMIN},
 			want:       true,
 		},
@@ -44,7 +44,7 @@ func TestHasRequiredRoles(t *testing.T) {
 		{
 			name:       "empty user roles",
 			userRoles:  []domain.Role{},
-			routeRoles: []domain.Role{domain.CLIENT},
+			routeRoles: []domain.Role{domain.CUSTOMER},
 			want:       false,
 		},
 		{
@@ -67,8 +67,8 @@ func TestHasRequiredRoles(t *testing.T) {
 		},
 		{
 			name:       "user has duplicate roles, matches",
-			userRoles:  []domain.Role{domain.CLIENT, domain.CLIENT},
-			routeRoles: []domain.Role{domain.CLIENT},
+			userRoles:  []domain.Role{domain.CUSTOMER, domain.CUSTOMER},
+			routeRoles: []domain.Role{domain.CUSTOMER},
 			want:       true,
 		},
 	}
@@ -88,7 +88,7 @@ func TestGenerateToken(t *testing.T) {
 		expiresAt time.Time
 	}{
 		{"valid", []domain.Role{domain.ADMIN}, time.Now().Add(time.Hour)},
-		{"expired", []domain.Role{domain.CLIENT}, time.Now().Add(-time.Hour)},
+		{"expired", []domain.Role{domain.CUSTOMER}, time.Now().Add(-time.Hour)},
 	}
 
 	for _, tc := range cases {
@@ -121,7 +121,7 @@ func TestParseToken(t *testing.T) {
 		{
 			name: "expired token",
 			tokenMaker: func() (string, error) {
-				return GenerateToken("user-2", []domain.Role{domain.CLIENT}, time.Now().Add(-time.Hour))
+				return GenerateToken("user-2", []domain.Role{domain.CUSTOMER}, time.Now().Add(-time.Hour))
 			},
 			expectError: true,
 			expired:     true,

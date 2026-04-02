@@ -69,6 +69,53 @@ func (_c *CustomerRepository_Create_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// Delete provides a mock function with given fields: ctx, id
+func (_m *CustomerRepository) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// CustomerRepository_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type CustomerRepository_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *CustomerRepository_Expecter) Delete(ctx interface{}, id interface{}) *CustomerRepository_Delete_Call {
+	return &CustomerRepository_Delete_Call{Call: _e.mock.On("Delete", ctx, id)}
+}
+
+func (_c *CustomerRepository_Delete_Call) Run(run func(ctx context.Context, id string)) *CustomerRepository_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerRepository_Delete_Call) Return(_a0 error) *CustomerRepository_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *CustomerRepository_Delete_Call) RunAndReturn(run func(context.Context, string) error) *CustomerRepository_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetByDocument provides a mock function with given fields: ctx, document
 func (_m *CustomerRepository) GetByDocument(ctx context.Context, document string) (domain.Customer, error) {
 	ret := _m.Called(ctx, document)
@@ -179,6 +226,54 @@ func (_c *CustomerRepository_GetByID_Call) Return(_a0 domain.Customer, _a1 error
 }
 
 func (_c *CustomerRepository_GetByID_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerRepository_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: ctx, id, phone
+func (_m *CustomerRepository) Update(ctx context.Context, id string, phone string) error {
+	ret := _m.Called(ctx, id, phone)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, id, phone)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// CustomerRepository_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type CustomerRepository_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - phone string
+func (_e *CustomerRepository_Expecter) Update(ctx interface{}, id interface{}, phone interface{}) *CustomerRepository_Update_Call {
+	return &CustomerRepository_Update_Call{Call: _e.mock.On("Update", ctx, id, phone)}
+}
+
+func (_c *CustomerRepository_Update_Call) Run(run func(ctx context.Context, id string, phone string)) *CustomerRepository_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerRepository_Update_Call) Return(_a0 error) *CustomerRepository_Update_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *CustomerRepository_Update_Call) RunAndReturn(run func(context.Context, string, string) error) *CustomerRepository_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

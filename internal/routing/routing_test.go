@@ -40,6 +40,8 @@ func TestSetupRouter(t *testing.T) {
 	mockCustomer.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockCustomer.EXPECT().GetByID(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockCustomer.EXPECT().GetByDocument(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockCustomer.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockCustomer.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Work (Service Order)
 	mockWork.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -73,7 +75,7 @@ func TestSetupRouter(t *testing.T) {
 	router := routing.SetupRouter(c, m)
 
 	// create a long-lived token that includes all roles so tests can call protected routes
-	allRoles := []domain.Role{domain.ADMIN, domain.ATTENDANT, domain.MECHANIC, domain.CLIENT}
+	allRoles := []domain.Role{domain.ADMIN, domain.ATTENDANT, domain.MECHANIC, domain.CUSTOMER}
 	testToken, err := auth.GenerateToken("test-user", allRoles, time.Now().Add(100*365*24*time.Hour))
 	if err != nil {
 		t.Fatalf("failed to generate test token: %v", err)
@@ -95,6 +97,8 @@ func TestSetupRouter(t *testing.T) {
 		{goHttp.MethodPost, "/v1/customers", goHttp.StatusCreated},
 		{goHttp.MethodGet, "/v1/customers/:id", goHttp.StatusOK},
 		{goHttp.MethodGet, "/v1/customers", goHttp.StatusOK},
+		{goHttp.MethodPut, "/v1/customers/:id", goHttp.StatusOK},
+		{goHttp.MethodDelete, "/v1/customers/:id", goHttp.StatusNoContent},
 
 		// Work (Service Order)
 		{goHttp.MethodPost, "/v1/works", goHttp.StatusCreated},
