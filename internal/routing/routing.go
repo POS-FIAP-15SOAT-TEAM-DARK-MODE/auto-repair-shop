@@ -30,6 +30,8 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.POST("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Create)
 	v1.GET("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByID)
 	v1.GET("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByDocument)
+	v1.PUT("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Update)
+	v1.DELETE("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Delete)
 
 	v1.POST("/works", middleware.Auth(role.AttendantRoles...), c.WorkHandler.Create)
 	v1.GET("/works", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.List)

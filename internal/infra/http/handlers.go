@@ -25,6 +25,8 @@ type (
 		Create(*gin.Context)
 		GetByID(*gin.Context)
 		GetByDocument(*gin.Context)
+		Update(*gin.Context)
+		Delete(*gin.Context)
 	}
 
 	WorkHandler interface {

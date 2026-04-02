@@ -33,3 +33,23 @@ func (r *memory_repo) GetByEmail(_ context.Context, email string) (*domain.User,
 func (r *memory_repo) GetRolesByUserId(_ context.Context, _ string) ([]domain.Role, error) {
 	return []domain.Role{}, nil
 }
+
+func (r *memory_repo) AssignRole(_ context.Context, _ string, _ domain.Role) error {
+	return nil
+}
+
+func (r *memory_repo) Update(_ context.Context, id, name, email string) error {
+	u, ok := r.data[id]
+	if !ok {
+		return nil
+	}
+	u.Name = name
+	u.Email = email
+	r.data[id] = u
+	return nil
+}
+
+func (r *memory_repo) Delete(_ context.Context, id string) error {
+	delete(r.data, id)
+	return nil
+}
