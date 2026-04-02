@@ -51,6 +51,9 @@ func TestSetupRouter(t *testing.T) {
 
 	// Vehicle
 	mockVehicle.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
+	mockVehicle.EXPECT().FindByLicensePlate(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockVehicle.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockVehicle.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Supply
 	mockSupply.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -107,7 +110,10 @@ func TestSetupRouter(t *testing.T) {
 		{goHttp.MethodDelete, "/v1/works/:id", goHttp.StatusNoContent},
 
 		// Vehicle
-		{goHttp.MethodPost, "/v1/vehicle", goHttp.StatusCreated},
+		{goHttp.MethodGet, "/v1/vehicles", goHttp.StatusOK},
+		{goHttp.MethodPost, "/v1/vehicles", goHttp.StatusCreated},
+		{goHttp.MethodPut, "/v1/vehicles/:id", goHttp.StatusOK},
+		{goHttp.MethodDelete, "/v1/vehicles/:id", goHttp.StatusNoContent},
 
 		// Supply
 		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated},
