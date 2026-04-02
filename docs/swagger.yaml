@@ -374,6 +374,44 @@ paths:
         "400":
           description: Invalid Body Content
 
+  /v1/supply:
+    post:
+      summary: Create a supply
+      description: Creates a new supply with name, description, unit price, stock quantity and version.
+      tags:
+        - Supply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplyRequest"
+      responses:
+        "201":
+          description: Supply created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplyResponse"
+        "400":
+          description: Invalid request body or validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
       SessionToken:
@@ -657,3 +695,52 @@ components:
           type: string
           format: uuid
           example: b8415e84-730a-4624-a1c3-74cf59b95d6d
+    SupplyRequest:
+      type: object
+      required:
+        - name
+        - description
+        - unit_price
+        - stock_quantity
+        - version
+      properties:
+        name:
+          type: string
+          example: string
+        description:
+          type: string
+          example: string
+        unit_price:
+          type: number
+          format: float
+          example: 00.0
+        stock_quantity:
+          type: integer
+          example: 0
+        version:
+          type: integer
+          example: 0
+
+    SupplyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: string
+        name:
+          type: string
+          example: string
+        description:
+          type: string
+          example: string
+        unit_price:
+          type: number
+          format: float
+          example: 00.0
+        stock_quantity:
+          type: integer
+          example: 0
+        version:
+          type: integer
+          example: 0
