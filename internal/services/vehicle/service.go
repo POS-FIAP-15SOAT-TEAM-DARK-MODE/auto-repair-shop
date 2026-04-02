@@ -30,7 +30,7 @@ func (s *vehicleService) Create(ctx context.Context, vehicle *domain.Vehicle) er
 
 	return s.uow.Execute(ctx,
 		func(txCtx context.Context) error {
-			return s.vehicleRepository.Save(ctx, vehicle)
+			return s.vehicleRepository.Save(txCtx, vehicle)
 		},
 	)
 }
@@ -67,7 +67,7 @@ func (s *vehicleService) Update(ctx context.Context, v *domain.Vehicle) error {
 
 	return s.uow.Execute(ctx,
 		func(txCtx context.Context) error {
-			return s.vehicleRepository.Update(ctx, v)
+			return s.vehicleRepository.Update(txCtx, v)
 		},
 	)
 }
