@@ -25,6 +25,10 @@ import (
 	vehicleHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/vehicle"
 	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/vehicle"
 	vehicleSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/vehicle"
+
+	supplyHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/supply"
+	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/supply"
+	supplySvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/supply"
 )
 
 func HTTPServer() server.Server {
@@ -52,6 +56,7 @@ func httpContainer(db *sql.DB) *container.HandlersWrapper {
 		CustomerHandler: newCustomerHandler(db),
 		WorkHandler:     newWorkHandler(db),
 		VehicleHandler:  newVehicleHandler(db),
+		SupplyHandler:   newSupplyHandler(db),
 	}
 }
 
@@ -89,4 +94,11 @@ func newVehicleHandler(db *sql.DB) container.VehicleHandler {
 	vehicleRepository := vehicleRepo.NewVehicleRepository()
 	service := vehicleSvc.NewService(uow, vehicleRepository)
 	return vehicleHandler.HttpHandler(service)
+}
+
+func newSupplyHandler(db *sql.DB) container.SupplyHandler {
+	uow := postgres.NewTransactionalUoW(db)
+	supplyRepository := supplyRepo.Repository()
+	service := supplySvc.Service(uow, supplyRepository)
+	return supplyHandler.HttpHandler(service)
 }
