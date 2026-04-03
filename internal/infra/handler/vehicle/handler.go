@@ -140,3 +140,7 @@ func (h *handler) Delete(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (h *handler) FindByCustomer(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}

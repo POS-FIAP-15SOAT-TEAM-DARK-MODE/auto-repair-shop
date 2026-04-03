@@ -106,3 +106,7 @@ func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
+
+func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
+	return nil, nil
+}

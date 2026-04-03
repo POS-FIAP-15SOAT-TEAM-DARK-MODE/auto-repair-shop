@@ -97,3 +97,7 @@ func (s *vehicleService) Delete(c context.Context, id string) error {
 	}
 	return nil
 }
+
+func (s *vehicleService) List(ctx context.Context, params *domain.ListVehicleParams) (*domain.PaginatorResponse[domain.Vehicle], error) {
+	return nil, nil
+}

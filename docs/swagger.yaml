@@ -448,6 +448,49 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/vehicles/{customer-id}:
+    get:
+      summary: Get vehicles by customer id
+      description: Retrieve vehicles that belongs to a customer looking by its id
+      tags:
+        - Vehicle
+      parameters:
+        - in: path
+          name: customer-id
+          required: true
+          schema:
+            type: string
+          description: customer-id to search vehicles
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based).
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page.
+      responses:
+        "200":
+          description: Vehicles found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListVehiclesResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /v1/vehicles:
     get:
       summary: Get vehicle by license plate
@@ -517,7 +560,7 @@ paths:
               $ref: '#/components/schemas/VehicleRequest'
       responses:
         "200":
-          description: Successful created
+          description: Successful updated
           content:
             application/json:
               schema:
@@ -920,6 +963,31 @@ components:
           type: string
           format: uuid
           example: b8415e84-730a-4624-a1c3-74cf59b95d6d
+    ListVehiclesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VehicleResponse'
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+      required:
+        - items
+        - totalItems
+        - totalPages
+        - pageSize
+        - page
     SupplyRequest:
       type: object
       required:

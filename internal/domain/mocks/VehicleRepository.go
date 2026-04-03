@@ -175,6 +175,65 @@ func (_c *VehicleRepository_Save_Call) RunAndReturn(run func(context.Context, *d
 	return _c
 }
 
+// Search provides a mock function with given fields: ctx, params
+func (_m *VehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Search")
+	}
+
+	var r0 []domain.Vehicle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchVehicleParams) ([]domain.Vehicle, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchVehicleParams) []domain.Vehicle); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Vehicle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.SearchVehicleParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleRepository_Search_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Search'
+type VehicleRepository_Search_Call struct {
+	*mock.Call
+}
+
+// Search is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.SearchVehicleParams
+func (_e *VehicleRepository_Expecter) Search(ctx interface{}, params interface{}) *VehicleRepository_Search_Call {
+	return &VehicleRepository_Search_Call{Call: _e.mock.On("Search", ctx, params)}
+}
+
+func (_c *VehicleRepository_Search_Call) Run(run func(ctx context.Context, params *domain.SearchVehicleParams)) *VehicleRepository_Search_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SearchVehicleParams))
+	})
+	return _c
+}
+
+func (_c *VehicleRepository_Search_Call) Return(_a0 []domain.Vehicle, _a1 error) *VehicleRepository_Search_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.SearchVehicleParams) ([]domain.Vehicle, error)) *VehicleRepository_Search_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function with given fields: ctx, vehicle
 func (_m *VehicleRepository) Update(ctx context.Context, vehicle *domain.Vehicle) error {
 	ret := _m.Called(ctx, vehicle)
