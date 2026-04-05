@@ -1,11 +1,22 @@
 package service_order
 
-import "github.com/gin-gonic/gin"
+import (
+	"strings"
 
-type initServiceOrderDTO struct {
-	ClientID  string `json:"client"`
-	VehicleID string `json:"vehicle"`
-}
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/gin-gonic/gin"
+)
+
+type (
+	initServiceOrderDTO struct {
+		ClientID  string `json:"client"`
+		VehicleID string `json:"vehicle"`
+	}
+
+	getServiceOrderHistoryDTO struct {
+		ID string `json:"id"`
+	}
+)
 
 func mapBodyToRequestDTO(body *gin.Context) (*initServiceOrderDTO, error) {
 	req := new(initServiceOrderDTO)
@@ -14,4 +25,11 @@ func mapBodyToRequestDTO(body *gin.Context) (*initServiceOrderDTO, error) {
 	}
 
 	return req, nil
+}
+
+func (r *getServiceOrderHistoryDTO) validate() error {
+	if strings.TrimSpace(r.ID) == "" {
+		return domain.ErrServiceOrderIDRequired
+	}
+	return nil
 }

@@ -26,15 +26,14 @@ func (s SERVICE_ORDER_STATUS) String() string {
 
 type (
 	ServiceOrder struct {
-type ServiceOrder struct {
-	ID          string
-	Status      SERVICE_ORDER_STATUS
-	Customer    *Customer
-	Vehicle     *Vehicle
-	Services    []Work
-	Supplies    []Supply
-	TotalAmount decimal.Decimal
-}
+		ID          string
+		Status      SERVICE_ORDER_STATUS
+		Customer    *Customer
+		Vehicle     *Vehicle
+		Services    []Work
+		Supplies    []Supply
+		TotalAmount decimal.Decimal
+	}
 
 	ServiceOrderHistory struct {
 		ID             string
