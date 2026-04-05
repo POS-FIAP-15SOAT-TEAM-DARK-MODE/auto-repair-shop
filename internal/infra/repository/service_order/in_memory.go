@@ -20,3 +20,7 @@ func (r *memory_repo) Save(_ context.Context, so *domain.ServiceOrder) error {
 	r.data[so.ID] = *so
 	return nil
 }
+
+func (r *memory_repo) GetHistoryByID(_ context.Context, id string) ([]domain.ServiceOrderHistory, error) {
+	return nil, nil
+}

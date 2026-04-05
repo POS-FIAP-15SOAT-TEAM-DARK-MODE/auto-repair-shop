@@ -33,3 +33,7 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 
 	return nil
 }
+
+func (r *repository) GetHistoryByID(_ context.Context, id string) ([]domain.ServiceOrderHistory, error) {
+	return nil, nil
+}

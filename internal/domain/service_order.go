@@ -32,9 +32,11 @@ type ServiceOrder struct {
 type (
 	ServiceOrderService interface {
 		Create(ctx context.Context, customerId, vehicleId string) (ServiceOrder, error)
+		GetHistoryByID(ctx context.Context, id string) ([]ServiceOrderHistory, error)
 	}
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
+		GetHistoryByID(ctx context.Context, id string) ([]ServiceOrderHistory, error)
 	}
 )
 

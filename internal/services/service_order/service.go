@@ -42,3 +42,7 @@ func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (
 
 	return *so, nil
 }
+
+func (s *svc) GetHistoryByID(ctx context.Context, id string) ([]domain.ServiceOrderHistory, error) {
+	return nil, nil
+}
