@@ -51,3 +51,7 @@ func (h *handler) Create(c *gin.Context) {
 	logger.Of(ctx).Debug("create response", zap.Any("service_order", res))
 	c.JSON(http.StatusCreated, mapResponseDTOFromDomain(res))
 }
+
+func (h *handler) GetHistoryByID(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"ping": "pong"})
+}

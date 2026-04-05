@@ -48,6 +48,7 @@ type (
 
 	ServiceOrderHandler interface {
 		Create(*gin.Context)
+		GetHistoryByID(*gin.Context)
 	}
 )
 
