@@ -36,10 +36,10 @@ type (
 	}
 
 	ServiceOrderHistory struct {
-		ID             string
-		PreviousStatus SERVICE_ORDER_STATUS
-		NewStatus      SERVICE_ORDER_STATUS
-		CreatedAt      time.Time
+		ID             string               `json:"id"`
+		PreviousStatus SERVICE_ORDER_STATUS `json:"previous_status"`
+		NewStatus      SERVICE_ORDER_STATUS `json:"new_status"`
+		CreatedAt      time.Time            `json:"created_at"`
 	}
 )
 
