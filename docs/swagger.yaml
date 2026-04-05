@@ -447,7 +447,7 @@ paths:
           description: Successful deleted
         "500":
           description: Internal Server Error
-
+ 
   /v1/vehicles:
     get:
       summary: Get vehicle by license plate
@@ -618,6 +618,46 @@ paths:
           "500":
             description: Internal Server Error
 
+  /v1/service-order/{id}/history:
+    get:
+      summary: Get service order history
+      description: Returns the history of status changes for the specified service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order UUID
+      responses:
+        "200":
+          description: History retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkOrderHistoryResponse'
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal Server Error
 
 components:
   securitySchemes:
@@ -867,6 +907,43 @@ components:
         - totalPages
         - pageSize
         - page
+    WorkOrderHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 8b6f1c2e-3c4a-4f8c-9a2b-1d2e3f4a5b6c
+        service_order_id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        previous_status:
+          type: string
+          example: RECEIVED
+        new_status:
+          type: string
+          example: IN_DIAGNOSIS
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-05T12:34:56Z"
+      required:
+        - id
+        - service_order_id
+        - previous_status
+        - new_status
+        - created_at
+
+    WorkOrderHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkOrderHistoryEntry'
+      required:
+        - items
 
     VehicleRequest:
       type: object
