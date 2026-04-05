@@ -22,6 +22,65 @@ func (_m *ServiceOrderRepository) EXPECT() *ServiceOrderRepository_Expecter {
 	return &ServiceOrderRepository_Expecter{mock: &_m.Mock}
 }
 
+// GetHistoryByID provides a mock function with given fields: ctx, id
+func (_m *ServiceOrderRepository) GetHistoryByID(ctx context.Context, id string) ([]domain.ServiceOrderHistory, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetHistoryByID")
+	}
+
+	var r0 []domain.ServiceOrderHistory
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.ServiceOrderHistory, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.ServiceOrderHistory); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.ServiceOrderHistory)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderRepository_GetHistoryByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetHistoryByID'
+type ServiceOrderRepository_GetHistoryByID_Call struct {
+	*mock.Call
+}
+
+// GetHistoryByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *ServiceOrderRepository_Expecter) GetHistoryByID(ctx interface{}, id interface{}) *ServiceOrderRepository_GetHistoryByID_Call {
+	return &ServiceOrderRepository_GetHistoryByID_Call{Call: _e.mock.On("GetHistoryByID", ctx, id)}
+}
+
+func (_c *ServiceOrderRepository_GetHistoryByID_Call) Run(run func(ctx context.Context, id string)) *ServiceOrderRepository_GetHistoryByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_GetHistoryByID_Call) Return(_a0 []domain.ServiceOrderHistory, _a1 error) *ServiceOrderRepository_GetHistoryByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_GetHistoryByID_Call) RunAndReturn(run func(context.Context, string) ([]domain.ServiceOrderHistory, error)) *ServiceOrderRepository_GetHistoryByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Save provides a mock function with given fields: _a0, _a1
 func (_m *ServiceOrderRepository) Save(_a0 context.Context, _a1 *domain.ServiceOrder) error {
 	ret := _m.Called(_a0, _a1)
