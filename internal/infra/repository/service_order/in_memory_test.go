@@ -24,3 +24,29 @@ func TestMemoryRepository_Save(t *testing.T) {
 
 	assert.NoError(t, err)
 }
+
+func TestMemoryRepository_SaveAndGetHistory(t *testing.T) {
+	repo := service_order.MemoryRepository()
+
+	// create a simple service order
+	c, _ := domain.NewCustomer("", "", "", domain.IndividualCustomerType, "", "", "")
+	v := domain.NewVehicle("", "", "", "", 2026)
+	so := domain.NewServiceOrder(&c, v)
+
+	// Save should not error
+	err := repo.Save(context.Background(), so)
+	assert.NoError(t, err)
+
+	// Current in-memory implementation returns empty history slice
+	hist, err := repo.GetHistoryByID(context.Background(), so.ID)
+	assert.NoError(t, err)
+	assert.Empty(t, hist)
+}
+
+func TestMemoryRepository_GetHistoryByID_Unknown(t *testing.T) {
+	repo := service_order.MemoryRepository()
+
+	hist, err := repo.GetHistoryByID(context.Background(), "non-existent")
+	assert.NoError(t, err)
+	assert.Empty(t, hist)
+}

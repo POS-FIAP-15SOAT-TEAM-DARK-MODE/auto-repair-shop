@@ -34,6 +34,27 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 	return nil
 }
 
-func (r *repository) GetHistoryByID(_ context.Context, id string) ([]domain.ServiceOrderHistory, error) {
-	return nil, nil
+func (r *repository) GetHistoryByID(ctx context.Context, id string) ([]domain.ServiceOrderHistory, error) {
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.QueryContext(ctx, getServiceOrderHistoryByIDQuery, id)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	defer func() { _ = rows.Close() }()
+
+	histories := []domain.ServiceOrderHistory{}
+	for rows.Next() {
+		var history domain.ServiceOrderHistory
+		if err := rows.Scan(&history.ID, &history.PreviousStatus, &history.NewStatus, &history.CreatedAt); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		histories = append(histories, history)
+	}
+
+	return histories, nil
 }
