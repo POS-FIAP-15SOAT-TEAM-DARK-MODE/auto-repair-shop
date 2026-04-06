@@ -1,15 +1,11 @@
 package service_order
 
-import (
-	"github.com/gin-gonic/gin"
-)
+import "github.com/gin-gonic/gin"
 
-type (
-	initServiceOrderDTO struct {
-		ClientID  string `json:"client"`
-		VehicleID string `json:"vehicle"`
-	}
-)
+type initServiceOrderDTO struct {
+	ClientID  string `json:"client"`
+	VehicleID string `json:"vehicle"`
+}
 
 func mapBodyToRequestDTO(body *gin.Context) (*initServiceOrderDTO, error) {
 	req := new(initServiceOrderDTO)
