@@ -2,57 +2,30 @@ package domain
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
-type SERVICE_ORDER_STATUS string
-
-const (
-	SERVICE_ORDER_STATUS_NEW               SERVICE_ORDER_STATUS = "NEW"
-	SERVICE_ORDER_STATUS_RECEIVED          SERVICE_ORDER_STATUS = "RECEIVED"
-	SERVICE_ORDER_STATUS_IN_DIAGNOSIS      SERVICE_ORDER_STATUS = "IN_DIAGNOSIS"
-	SERVICE_ORDER_STATUS_AWAITING_APPROVAL SERVICE_ORDER_STATUS = "AWAITING_APPROVAL"
-	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
-	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
-	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
-)
-
-func (s SERVICE_ORDER_STATUS) String() string {
-	return string(s)
+type ServiceOrder struct {
+	ID          string
+	Status      SERVICE_ORDER_STATUS
+	Customer    *Customer
+	Vehicle     *Vehicle
+	Services    []Work
+	Supplies    []Supply
+	TotalAmount decimal.Decimal
 }
-
-type (
-	ServiceOrder struct {
-		ID          string
-		Status      SERVICE_ORDER_STATUS
-		Customer    *Customer
-		Vehicle     *Vehicle
-		Services    []Work
-		Supplies    []Supply
-		TotalAmount decimal.Decimal
-	}
-
-	ServiceOrderHistory struct {
-		ID             string               `json:"id"`
-		PreviousStatus SERVICE_ORDER_STATUS `json:"previous_status"`
-		NewStatus      SERVICE_ORDER_STATUS `json:"new_status"`
-		CreatedAt      time.Time            `json:"created_at"`
-	}
-)
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderRepository --with-expecter
 type (
 	ServiceOrderService interface {
 		Create(ctx context.Context, customerId, vehicleId string) (ServiceOrder, error)
-		GetHistoryByID(ctx context.Context, id string) ([]ServiceOrderHistory, error)
 	}
+
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
-		GetHistoryByID(ctx context.Context, id string) ([]ServiceOrderHistory, error)
 	}
 )
 

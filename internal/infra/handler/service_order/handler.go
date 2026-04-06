@@ -51,35 +51,3 @@ func (h *handler) Create(c *gin.Context) {
 	logger.Of(ctx).Debug("create response", zap.Any("service_order", res))
 	c.JSON(http.StatusCreated, mapResponseDTOFromDomain(res))
 }
-
-func (h *handler) GetHistoryByID(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	req := getServiceOrderHistoryDTO{ID: c.Param("id")}
-	if err := req.validate(); err != nil {
-		status, response := web.Error(err)
-		logger.Of(ctx).Error(err)
-		logger.Of(ctx).Debug("Failed to bind service order history request",
-			zap.String("operation", "get_service_order_history"),
-			zap.Error(err),
-			zap.String("entity", "work"),
-		)
-		c.JSON(status, response)
-		return
-	}
-
-	history, err := h.svc.GetHistoryByID(ctx, req.ID)
-	if err != nil {
-		status, response := web.Error(err)
-		logger.Of(ctx).Error(err)
-		logger.Of(ctx).Debug("Service order history retrieval failed in service layer",
-			zap.String("operation", "get_service_order_history"),
-			zap.Error(err),
-			zap.String("entity", "service_order"),
-		)
-		c.JSON(status, response)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"items": history})
-}

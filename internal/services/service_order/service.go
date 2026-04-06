@@ -42,12 +42,3 @@ func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (
 
 	return *so, nil
 }
-
-func (s *svc) GetHistoryByID(ctx context.Context, id string) ([]domain.ServiceOrderHistory, error) {
-	so, err := s.repo.GetHistoryByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return so, nil
-}
