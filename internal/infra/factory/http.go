@@ -11,6 +11,7 @@ import (
 	container "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/middleware"
 	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
+	soHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order_history"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/server"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
@@ -33,6 +34,9 @@ import (
 	soHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order"
 	soRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order"
 	soSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order"
+
+	soHistoryHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order_history"
+	soHistorySvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order_history"
 )
 
 func HTTPServer() server.Server {
@@ -55,13 +59,14 @@ func middlewaresContainer() *container.Middlewares {
 
 func httpContainer(db *sql.DB) *container.HandlersWrapper {
 	return &container.HandlersWrapper{
-		PingHandler:         newPingHandler(),
-		UserHandler:         newUserHandler(db),
-		CustomerHandler:     newCustomerHandler(db),
-		WorkHandler:         newWorkHandler(db),
-		VehicleHandler:      newVehicleHandler(db),
-		SupplyHandler:       newSupplyHandler(db),
-		ServiceOrderHandler: newServiceOrderHandler(db),
+		PingHandler:                 newPingHandler(),
+		UserHandler:                 newUserHandler(db),
+		CustomerHandler:             newCustomerHandler(db),
+		WorkHandler:                 newWorkHandler(db),
+		VehicleHandler:              newVehicleHandler(db),
+		SupplyHandler:               newSupplyHandler(db),
+		ServiceOrderHandler:         newServiceOrderHandler(db),
+		ServiceOrderHistoryHandler:  newServiceOrderHistoryHandler(db),
 	}
 }
 
@@ -121,4 +126,11 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	svc := soSvc.Service(uow, repo, customer, vehicle)
 
 	return soHandler.HttpHandler(svc)
+}
+
+func newServiceOrderHistoryHandler(db *sql.DB) container.ServiceOrderHistoryHandler {
+	uow := postgres.NewTransactionalUoW(db)
+	repo := soHistoryRepo.Repository()
+	svc := soHistorySvc.Service(uow, repo)
+	return soHistoryHandler.HttpHandler(svc)
 }

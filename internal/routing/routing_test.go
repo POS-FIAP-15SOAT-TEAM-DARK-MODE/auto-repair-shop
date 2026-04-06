@@ -26,6 +26,7 @@ func TestSetupRouter(t *testing.T) {
 	mockVehicle := mocks.NewVehicleHandler(t)
 	mockSupply := mocks.NewSupplyHandler(t)
 	mockSO := mocks.NewServiceOrderHandler(t)
+	mockSOHistory := mocks.NewServiceOrderHistoryHandler(t)
 
 	// Set up only the handlers/routes that exist in internal/routing/routing.go
 
@@ -61,14 +62,18 @@ func TestSetupRouter(t *testing.T) {
 	// Service Order
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 
+	// Service Order History
+	mockSOHistory.EXPECT().GetHistoryByID(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+
 	c := &http.HandlersWrapper{
-		PingHandler:         mockPing,
-		UserHandler:         mockUser,
-		CustomerHandler:     mockCustomer,
-		WorkHandler:         mockWork,
-		VehicleHandler:      mockVehicle,
-		SupplyHandler:       mockSupply,
-		ServiceOrderHandler: mockSO,
+		PingHandler:                mockPing,
+		UserHandler:                mockUser,
+		CustomerHandler:            mockCustomer,
+		WorkHandler:                mockWork,
+		VehicleHandler:             mockVehicle,
+		SupplyHandler:              mockSupply,
+		ServiceOrderHandler:        mockSO,
+		ServiceOrderHistoryHandler: mockSOHistory,
 	}
 
 	m := &http.Middlewares{
@@ -120,6 +125,9 @@ func TestSetupRouter(t *testing.T) {
 
 		// Service Order
 		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated},
+
+		// Service Order History
+		{goHttp.MethodGet, "/v1/service-order/:id/history", goHttp.StatusOK},
 
 		// Swagger UI (based on mountSwaggerUI in routing.go)
 		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK},
