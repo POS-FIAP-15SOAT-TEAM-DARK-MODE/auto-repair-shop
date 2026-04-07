@@ -82,7 +82,7 @@ func createListParams(ctx *gin.Context) (*domain.ListVehicleParams, error) {
 		}
 	}
 	if pageSize := ctx.Query(pageSizeParam); pageSize != "" {
-		if ps, err := strconv.Atoi(pageSize); err == nil && ps > defaultPageSize {
+		if ps, err := strconv.Atoi(pageSize); err == nil && ps > 0 {
 			pgSize = int64(ps)
 		}
 	}

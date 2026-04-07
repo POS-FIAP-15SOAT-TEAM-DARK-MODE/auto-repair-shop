@@ -7,6 +7,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	"golang.org/x/sync/errgroup"
 )
 
 type vehicleService struct {
@@ -99,5 +100,40 @@ func (s *vehicleService) Delete(c context.Context, id string) error {
 }
 
 func (s *vehicleService) List(ctx context.Context, params *domain.ListVehicleParams) (*domain.PaginatorResponse[domain.Vehicle], error) {
-	return nil, nil
+	searchParams := params.SearchVehicleParams()
+
+	var totalItems int64
+	var items []domain.Vehicle
+	eg, groupCtx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		count, err := s.vehicleRepository.Count(groupCtx, searchParams)
+		if err != nil {
+			return err
+		}
+		totalItems = count
+		return nil
+	})
+
+	eg.Go(func() error {
+		vehicles, err := s.vehicleRepository.Search(groupCtx, searchParams)
+		if err != nil {
+			return err
+		}
+		items = vehicles
+		return nil
+	})
+
+	if err := eg.Wait(); err != nil {
+		logger.Of(ctx).Error(fmt.Errorf("error listing vehicles: %w", err))
+		return nil, err
+	}
+
+	return &domain.PaginatorResponse[domain.Vehicle]{
+		Items:      items,
+		TotalItems: totalItems,
+		Page:       params.Page,
+		PageSize:   params.PageSize,
+		TotalPages: totalItems / params.PageSize,
+	}, nil
 }

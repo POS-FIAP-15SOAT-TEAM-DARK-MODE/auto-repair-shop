@@ -44,6 +44,7 @@ type (
 		Update(ctx context.Context, vehicle *Vehicle) error
 		Delete(ctx context.Context, id string) error
 		Search(ctx context.Context, params *SearchVehicleParams) ([]Vehicle, error)
+		Count(ctx context.Context, params *SearchVehicleParams) (int64, error)
 	}
 
 	FindVehicleParams struct {
@@ -63,6 +64,14 @@ type (
 		Offset     int64
 	}
 )
+
+func (l ListVehicleParams) SearchVehicleParams() *SearchVehicleParams {
+	return &SearchVehicleParams{
+		CustomerId: l.CustomerID,
+		Limit:      l.PageSize,
+		Offset:     (l.Page - 1) * l.PageSize,
+	}
+}
 
 func NewVehicle(plate, brand, model, customerId string, year int) *Vehicle {
 	return &Vehicle{

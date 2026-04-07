@@ -9,4 +9,6 @@ const (
 	updateVehicle = `UPDATE vehicle SET license_plate = $2, brand = $3, model = $4, year = $5, customer_id = $6 WHERE id = $1`
 
 	deleteVehicle = `DELETE FROM vehicle WHERE id = $1`
+
+	countVehicles = `SELECT COUNT(*) FROM vehicles`
 )
