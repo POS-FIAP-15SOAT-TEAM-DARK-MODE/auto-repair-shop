@@ -8,7 +8,6 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	uow "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
-	uowmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow/mocks"
 	service "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order_history"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -55,14 +54,10 @@ func TestService_GetHistoryByID_Success(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			executor := uowmocks.NewExecutor(t)
 			repo := mocks.NewServiceOrderHistoryRepository(t)
 			tt.mockSetup(repo)
 
-			// Executor should run the provided UoW steps and return their result.
-			executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
-
-			s := service.Service(executor, repo)
+			s := service.Service(repo)
 			history, err := s.GetHistoryByID(context.Background(), tt.serviceID)
 
 			if tt.expectedErr != nil {

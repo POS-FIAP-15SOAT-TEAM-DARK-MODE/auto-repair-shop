@@ -59,14 +59,14 @@ func middlewaresContainer() *container.Middlewares {
 
 func httpContainer(db *sql.DB) *container.HandlersWrapper {
 	return &container.HandlersWrapper{
-		PingHandler:                 newPingHandler(),
-		UserHandler:                 newUserHandler(db),
-		CustomerHandler:             newCustomerHandler(db),
-		WorkHandler:                 newWorkHandler(db),
-		VehicleHandler:              newVehicleHandler(db),
-		SupplyHandler:               newSupplyHandler(db),
-		ServiceOrderHandler:         newServiceOrderHandler(db),
-		ServiceOrderHistoryHandler:  newServiceOrderHistoryHandler(db),
+		PingHandler:                newPingHandler(),
+		UserHandler:                newUserHandler(db),
+		CustomerHandler:            newCustomerHandler(db),
+		WorkHandler:                newWorkHandler(db),
+		VehicleHandler:             newVehicleHandler(db),
+		SupplyHandler:              newSupplyHandler(db),
+		ServiceOrderHandler:        newServiceOrderHandler(db),
+		ServiceOrderHistoryHandler: newServiceOrderHistoryHandler(),
 	}
 }
 
@@ -128,9 +128,8 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	return soHandler.HttpHandler(svc)
 }
 
-func newServiceOrderHistoryHandler(db *sql.DB) container.ServiceOrderHistoryHandler {
-	uow := postgres.NewTransactionalUoW(db)
+func newServiceOrderHistoryHandler() container.ServiceOrderHistoryHandler {
 	repo := soHistoryRepo.Repository()
-	svc := soHistorySvc.Service(uow, repo)
+	svc := soHistorySvc.Service(repo)
 	return soHistoryHandler.HttpHandler(svc)
 }
