@@ -7,27 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type SERVICE_ORDER_STATUS string
-
-const (
-	SERVICE_ORDER_STATUS_NEW               SERVICE_ORDER_STATUS = "NEW"
-	SERVICE_ORDER_STATUS_RECEIVED          SERVICE_ORDER_STATUS = "RECEIVED"
-	SERVICE_ORDER_STATUS_IN_DIAGNOSIS      SERVICE_ORDER_STATUS = "IN_DIAGNOSIS"
-	SERVICE_ORDER_STATUS_AWAITING_APPROVAL SERVICE_ORDER_STATUS = "AWAITING_APPROVAL"
-	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
-	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
-	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
-)
-
-func (s SERVICE_ORDER_STATUS) String() string {
-	return string(s)
-}
-
 type ServiceOrderHistory struct {
-	ID             string               `json:"id"`
-	PreviousStatus SERVICE_ORDER_STATUS `json:"previous_status"`
-	NewStatus      SERVICE_ORDER_STATUS `json:"new_status"`
-	CreatedAt      time.Time            `json:"created_at"`
+	ID             string
+	ServiceOrderID string
+	PreviousStatus SERVICE_ORDER_STATUS
+	NewStatus      SERVICE_ORDER_STATUS
+	CreatedAt      time.Time
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryService --with-expecter
