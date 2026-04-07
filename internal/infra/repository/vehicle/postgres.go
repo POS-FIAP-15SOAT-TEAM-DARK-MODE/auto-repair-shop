@@ -108,9 +108,61 @@ func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
-	return nil, nil
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	qb := db.QueryBuilder(selectVehicle).AddPagination(params.Limit, params.Offset)
+	if params.CustomerId != "" {
+		qb.Add("customer_id = ", params.CustomerId)
+	}
+	query, args := qb.Build()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	vehicles := make([]domain.Vehicle, 0, params.Limit)
+	for rows.Next() {
+		if err = rows.Err(); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+
+		var v domain.Vehicle
+		if err = rows.Scan(
+			&v.ID,
+			&v.LicensePlate,
+			&v.Model,
+			&v.Brand,
+			&v.Year,
+			&v.CustomerId,
+		); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		vehicles = append(vehicles, v)
+	}
+
+	return vehicles, nil
 }
 
 func (r *vehicleRepository) Count(ctx context.Context, params *domain.SearchVehicleParams) (int64, error) {
-	return 0, nil
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	qb := db.QueryBuilder(countVehicles)
+	if params.CustomerId != "" {
+		qb.Add("customer_id = ", params.CustomerId)
+	}
+	query, args := qb.Build()
+
+	var total int64
+	if err = tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+		return 0, pgPkg.Error(ctx, err)
+	}
+
+	return total, nil
 }
