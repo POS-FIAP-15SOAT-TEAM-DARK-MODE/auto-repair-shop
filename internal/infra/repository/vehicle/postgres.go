@@ -108,7 +108,7 @@ func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
-	tx, err := postgres.GetOneTimeTransaction(ctx)
+	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVeh
 }
 
 func (r *vehicleRepository) Count(ctx context.Context, params *domain.SearchVehicleParams) (int64, error) {
-	tx, err := postgres.GetOneTimeTransaction(ctx)
+	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
 		return 0, err
 	}
