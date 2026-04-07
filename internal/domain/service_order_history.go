@@ -8,11 +8,11 @@ import (
 )
 
 type ServiceOrderHistory struct {
-	ID             string               `json:"id"`
-	ServiceOrderID string               `json:"service_order_id"`
-	PreviousStatus SERVICE_ORDER_STATUS `json:"previous_status"`
-	NewStatus      SERVICE_ORDER_STATUS `json:"new_status"`
-	CreatedAt      time.Time            `json:"created_at"`
+	ID             string
+	ServiceOrderID string
+	PreviousStatus SERVICE_ORDER_STATUS
+	NewStatus      SERVICE_ORDER_STATUS
+	CreatedAt      time.Time
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryService --with-expecter
