@@ -1,4 +1,4 @@
-package service_order_test
+package service_order_history_test
 
 import (
 	"encoding/json"

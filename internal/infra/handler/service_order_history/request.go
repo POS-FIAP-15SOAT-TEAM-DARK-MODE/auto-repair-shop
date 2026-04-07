@@ -1,4 +1,4 @@
-package service_order
+package service_order_history
 
 import (
 	"strings"
