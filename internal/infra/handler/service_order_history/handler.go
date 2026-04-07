@@ -47,5 +47,7 @@ func (h *handler) GetHistoryByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"items": history})
+	response := mapResponseDTOFromDomainList(history)
+
+	c.JSON(http.StatusOK, gin.H{"items": response})
 }
