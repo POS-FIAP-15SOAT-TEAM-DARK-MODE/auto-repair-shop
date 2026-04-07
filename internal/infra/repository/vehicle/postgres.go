@@ -110,3 +110,7 @@ func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
 func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
 	return nil, nil
 }
+
+func (r *vehicleRepository) Count(ctx context.Context, params *domain.SearchVehicleParams) (int64, error) {
+	return 0, nil
+}
