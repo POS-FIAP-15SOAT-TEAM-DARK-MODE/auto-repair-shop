@@ -914,10 +914,6 @@ components:
           type: string
           format: uuid
           example: 8b6f1c2e-3c4a-4f8c-9a2b-1d2e3f4a5b6c
-        service_order_id:
-          type: string
-          format: uuid
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
         previous_status:
           type: string
           example: RECEIVED
