@@ -38,7 +38,7 @@ func (r *repository) Find(ctx context.Context, params domain.FindServiceOrderHis
 	histories := []domain.ServiceOrderHistory{}
 	for rows.Next() {
 		var history domain.ServiceOrderHistory
-		if err := rows.Scan(&history.ID, &history.PreviousStatus, &history.NewStatus, &history.CreatedAt); err != nil {
+		if err := rows.Scan(&history.ID, &history.ServiceOrderID, &history.PreviousStatus, &history.NewStatus, &history.CreatedAt); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
 		histories = append(histories, history)
