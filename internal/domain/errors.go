@@ -57,6 +57,7 @@ var (
 	ErrCustomerNotFound         = errors.New("customer not found")
 	ErrCustomerHasServiceOrders = errors.New("customer has associated service orders")
 	ErrInvalidDocumentFormat    = ValidationError{Message: "document must be a valid CPF (11 digits) or CNPJ (14 characters)"}
+	ErrInvalidCustomerId        = errors.New("invalid customer id")
 )
 
 // Vehicle errors

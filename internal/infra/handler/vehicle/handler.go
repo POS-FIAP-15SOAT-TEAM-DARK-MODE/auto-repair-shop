@@ -142,5 +142,20 @@ func (h *handler) Delete(c *gin.Context) {
 }
 
 func (h *handler) FindByCustomer(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	params, err := createListParams(c)
+	ctx := c.Request.Context()
+
+	listVehicles, err := h.service.List(ctx, params)
+	if err != nil {
+		status, resp := web.Error(err)
+		logger.Of(ctx).Debug("get vehicles error",
+			zap.String("operation", "get_by_customer_id"),
+			zap.Error(err),
+			zap.String("entity", "vehicle"),
+		)
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, domainListToResponseDto(listVehicles))
 }
