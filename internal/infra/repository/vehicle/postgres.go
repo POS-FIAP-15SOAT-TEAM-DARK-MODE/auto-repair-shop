@@ -13,6 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
+type dbRunner interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
 type vehicleRepository struct{}
 
 func NewVehicleRepository() *vehicleRepository {
@@ -108,10 +113,7 @@ func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
-	tx, err := postgres.GetTransaction(ctx)
-	if err != nil {
-		return nil, err
-	}
+	runner := instanceDbRunner(ctx)
 
 	qb := db.QueryBuilder(selectVehicle).AddPagination(params.Limit, params.Offset)
 	if params.CustomerId != "" {
@@ -119,7 +121,7 @@ func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVeh
 	}
 	query, args := qb.Build()
 
-	rows, err := tx.QueryContext(ctx, query, args...)
+	rows, err := runner.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, pgPkg.Error(ctx, err)
 	}
@@ -148,10 +150,7 @@ func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVeh
 }
 
 func (r *vehicleRepository) Count(ctx context.Context, params *domain.SearchVehicleParams) (int64, error) {
-	tx, err := postgres.GetTransaction(ctx)
-	if err != nil {
-		return 0, err
-	}
+	runner := instanceDbRunner(ctx)
 
 	qb := db.QueryBuilder(countVehicles)
 	if params.CustomerId != "" {
@@ -160,9 +159,19 @@ func (r *vehicleRepository) Count(ctx context.Context, params *domain.SearchVehi
 	query, args := qb.Build()
 
 	var total int64
-	if err = tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+	if err := runner.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
 		return 0, pgPkg.Error(ctx, err)
 	}
 
 	return total, nil
+}
+
+func instanceDbRunner(ctx context.Context) dbRunner {
+	var runner dbRunner
+	if tx, err := postgres.GetTransaction(ctx); err == nil {
+		runner = tx
+	} else {
+		runner = postgres.Connect()
+	}
+	return runner
 }
