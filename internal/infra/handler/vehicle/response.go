@@ -9,10 +9,10 @@ import (
 type (
 	vehicleResponseDTO struct {
 		ID           string `json:"id"`
-		LicensePlate string `json:"license_plate"`
-		BrandModel   string `json:"brand_model"`
+		LicensePlate string `json:"licensePlate"`
+		BrandModel   string `json:"brandModel"`
 		Year         int    `json:"year"`
-		CustomerId   string `json:"customer_id"`
+		CustomerId   string `json:"customerId"`
 	}
 
 	paginatorResponseDTO struct {

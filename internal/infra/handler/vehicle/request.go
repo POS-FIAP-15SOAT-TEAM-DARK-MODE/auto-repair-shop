@@ -19,11 +19,11 @@ const (
 )
 
 type vehicleRequestDto struct {
-	LicensePlate string `json:"license_plate"`
+	LicensePlate string `json:"licensePlate"`
 	Brand        string `json:"brand"`
 	Model        string `json:"model"`
 	Year         int    `json:"year"`
-	CustomerId   string `json:"customer_id"`
+	CustomerId   string `json:"customerId"`
 }
 
 func (v *vehicleRequestDto) Domain() *domain.Vehicle {
