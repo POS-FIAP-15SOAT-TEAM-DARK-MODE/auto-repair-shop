@@ -26,9 +26,9 @@ func (r *memory_repo) Save(_ context.Context, so *domain.ServiceOrder) error {
 	return nil
 }
 
-func (r *memory_repo) ExistsByID(_ context.Context, id string) (bool, error) {
-	_, ok := r.data[id]
-	return ok, nil
+func (r *memory_repo) ExistsByID(_ context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
+	v, ok := r.data[id]
+	return ok, v.Status, nil
 }
 
 func (r *memory_repo) ListWorksByServiceOrderID(_ context.Context, serviceOrderID string) ([]domain.Work, error) {

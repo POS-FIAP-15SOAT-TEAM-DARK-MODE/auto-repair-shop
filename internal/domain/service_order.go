@@ -38,7 +38,7 @@ type (
 	}
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
-		ExistsByID(ctx context.Context, id string) (bool, error)
+		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error

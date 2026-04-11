@@ -73,7 +73,7 @@ func (_c *ServiceOrderRepository_AddWorkLink_Call) RunAndReturn(run func(context
 }
 
 // ExistsByID provides a mock function with given fields: ctx, id
-func (_m *ServiceOrderRepository) ExistsByID(ctx context.Context, id string) (bool, error) {
+func (_m *ServiceOrderRepository) ExistsByID(ctx context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
@@ -81,8 +81,9 @@ func (_m *ServiceOrderRepository) ExistsByID(ctx context.Context, id string) (bo
 	}
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+	var r1 domain.SERVICE_ORDER_STATUS
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, domain.SERVICE_ORDER_STATUS, error)); ok {
 		return rf(ctx, id)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
@@ -91,13 +92,19 @@ func (_m *ServiceOrderRepository) ExistsByID(ctx context.Context, id string) (bo
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string) domain.SERVICE_ORDER_STATUS); ok {
 		r1 = rf(ctx, id)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(domain.SERVICE_ORDER_STATUS)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, id)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // ServiceOrderRepository_ExistsByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExistsByID'
@@ -119,12 +126,12 @@ func (_c *ServiceOrderRepository_ExistsByID_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *ServiceOrderRepository_ExistsByID_Call) Return(_a0 bool, _a1 error) *ServiceOrderRepository_ExistsByID_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *ServiceOrderRepository_ExistsByID_Call) Return(_a0 bool, _a1 domain.SERVICE_ORDER_STATUS, _a2 error) *ServiceOrderRepository_ExistsByID_Call {
+	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *ServiceOrderRepository_ExistsByID_Call) RunAndReturn(run func(context.Context, string) (bool, error)) *ServiceOrderRepository_ExistsByID_Call {
+func (_c *ServiceOrderRepository_ExistsByID_Call) RunAndReturn(run func(context.Context, string) (bool, domain.SERVICE_ORDER_STATUS, error)) *ServiceOrderRepository_ExistsByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

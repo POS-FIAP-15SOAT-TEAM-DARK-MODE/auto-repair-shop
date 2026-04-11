@@ -54,7 +54,7 @@ func (s *svc) ListWorks(ctx context.Context, serviceOrderID string) ([]domain.Wo
 
 	var works []domain.Work
 	err := s.uow.Execute(ctx, func(ctx context.Context) error {
-		ok, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		ok, _, err := s.repo.ExistsByID(ctx, serviceOrderID)
 		if err != nil {
 			return err
 		}
@@ -80,12 +80,16 @@ func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []str
 	}
 
 	return s.uow.Execute(ctx, func(ctx context.Context) error {
-		ok, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		ok, status, err := s.repo.ExistsByID(ctx, serviceOrderID)
 		if err != nil {
 			return err
 		}
 		if !ok {
 			return domain.ErrServiceOrderNotFound
+		}
+
+		if status != domain.SERVICE_ORDER_STATUS_NEW {
+			return domain.ErrServiceOrderNotNew
 		}
 
 		for _, rawID := range workIDs {
@@ -116,12 +120,15 @@ func (s *svc) RemoveWork(ctx context.Context, serviceOrderID, workID string) err
 	}
 
 	return s.uow.Execute(ctx, func(ctx context.Context) error {
-		ok, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		ok, status, err := s.repo.ExistsByID(ctx, serviceOrderID)
 		if err != nil {
 			return err
 		}
 		if !ok {
 			return domain.ErrServiceOrderNotFound
+		}
+		if status != domain.SERVICE_ORDER_STATUS_NEW {
+			return domain.ErrServiceOrderNotNew
 		}
 		return s.repo.RemoveWorkLink(ctx, serviceOrderID, workID)
 	})

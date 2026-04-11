@@ -4,7 +4,7 @@ const (
 	insertServiceOrderQuery = `INSERT INTO service_order (id, customer_id, vehicle_id, status, total_amount)
 VALUES ($1, $2, $3, $4, $5)`
 
-	serviceOrderExistsQuery = `SELECT EXISTS(SELECT 1 FROM service_order WHERE id = $1)`
+	serviceOrderExistsQuery = `SELECT so.status FROM service_order so WHERE id = $1`
 
 	listWorksByServiceOrderQuery = `
 SELECT w.id, w.name, w.description, sow.unit_price, w.status

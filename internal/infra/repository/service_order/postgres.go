@@ -36,17 +36,17 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 	return nil
 }
 
-func (r *repository) ExistsByID(ctx context.Context, id string) (bool, error) {
+func (r *repository) ExistsByID(ctx context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
-	var exists bool
-	if err = tx.QueryRowContext(ctx, serviceOrderExistsQuery, id).Scan(&exists); err != nil {
-		return false, pgPkg.Error(ctx, err)
+	var status domain.SERVICE_ORDER_STATUS
+	if err = tx.QueryRowContext(ctx, serviceOrderExistsQuery, id).Scan(&status); err != nil {
+		return false, "", pgPkg.Error(ctx, err)
 	}
-	return exists, nil
+	return status != "", status, nil
 }
 
 func (r *repository) ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
