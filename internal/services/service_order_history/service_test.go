@@ -62,7 +62,7 @@ func TestService_GetHistoryByID(t *testing.T) {
 			repo.EXPECT().Search(mock.Anything, searchParams).Return(tt.searchResult, tt.searchErr)
 
 			s := Service(executor, repo)
-			resp, err := s.GetHistoryByID(context.Background(), &domain.ListServiceOrderHistoryParams{ID: tt.serviceID, Page: 1, PageSize: 10})
+			resp, err := s.GetHistoryByID(context.Background(), &domain.SearchServiceOrderHistoryParams{ID: tt.serviceID, Page: 1, PageSize: 10})
 
 			if tt.expectErr != nil {
 				assert.Error(t, err)

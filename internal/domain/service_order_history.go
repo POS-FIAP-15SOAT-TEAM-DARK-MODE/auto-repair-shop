@@ -16,12 +16,6 @@ type (
 		CreatedAt      time.Time
 	}
 
-	ListServiceOrderHistoryParams struct {
-		ID       string
-		Page     int64
-		PageSize int64
-	}
-
 	SearchServiceOrderHistoryParams struct {
 		ID       string
 		Page     int64
@@ -33,7 +27,7 @@ type (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryRepository --with-expecter
 type (
 	ServiceOrderHistoryService interface {
-		GetHistoryByID(ctx context.Context, params *ListServiceOrderHistoryParams) (*PaginatorResponse[ServiceOrderHistory], error)
+		GetHistoryByID(ctx context.Context, params *SearchServiceOrderHistoryParams) (*PaginatorResponse[ServiceOrderHistory], error)
 	}
 
 	ServiceOrderHistoryRepository interface {
@@ -42,15 +36,7 @@ type (
 	}
 )
 
-func (p ListServiceOrderHistoryParams) SearchServiceOrderHistoryParams() *SearchServiceOrderHistoryParams {
-	return &SearchServiceOrderHistoryParams{
-		ID:       p.ID,
-		Page:     p.Page,
-		PageSize: p.PageSize,
-	}
-}
-
-func (p *ListServiceOrderHistoryParams) Validate() error {
+func (p *SearchServiceOrderHistoryParams) Validate() error {
 	if p.ID == "" {
 		return ErrServiceOrderIDRequired
 	}

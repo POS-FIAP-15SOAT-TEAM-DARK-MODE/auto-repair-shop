@@ -21,7 +21,7 @@ func Service(uow uow.Executor, repo domain.ServiceOrderHistoryRepository) *svc {
 	return &svc{uow, repo}
 }
 
-func (s *svc) GetHistoryByID(ctx context.Context, params *domain.ListServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
+func (s *svc) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
 	response, err := s.getPaginatedList(ctx, params)
 	if err != nil {
 		logger.Of(ctx).Error(err)
@@ -36,15 +36,14 @@ func (s *svc) GetHistoryByID(ctx context.Context, params *domain.ListServiceOrde
 	return response, nil
 }
 
-func (s *svc) getPaginatedList(ctx context.Context, params *domain.ListServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
-	p := params.SearchServiceOrderHistoryParams()
+func (s *svc) getPaginatedList(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
 
 	var eg errgroup.Group
 	var total int64
 	var items []domain.ServiceOrderHistory
 
 	eg.Go(func() error {
-		t, err := s.repo.Count(ctx, p)
+		t, err := s.repo.Count(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -53,7 +52,7 @@ func (s *svc) getPaginatedList(ctx context.Context, params *domain.ListServiceOr
 	})
 
 	eg.Go(func() error {
-		list, err := s.repo.Search(ctx, p)
+		list, err := s.repo.Search(ctx, params)
 		if err != nil {
 			return err
 		}

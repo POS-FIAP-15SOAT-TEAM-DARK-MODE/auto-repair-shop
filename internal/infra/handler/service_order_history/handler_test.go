@@ -1,7 +1,6 @@
 package service_order_history_test
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -16,16 +15,6 @@ import (
 	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	handler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order_history"
 )
-
-// fakeService implements the current ServiceOrderHistoryService interface for testing.
-type fakeService struct {
-	resp *domain.PaginatorResponse[domain.ServiceOrderHistory]
-	err  error
-}
-
-func (f *fakeService) GetHistoryByID(_ context.Context, _ *domain.ListServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
-	return f.resp, f.err
-}
 
 func TestGetHistoryByID_Handler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -56,7 +45,7 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 		{
 			name: "service error -> conflict",
 			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
-				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.ListServiceOrderHistoryParams) bool {
+				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.SearchServiceOrderHistoryParams) bool {
 					return p != nil && p.ID == "so-2"
 				})).Return(nil, domain.ErrDataConflict)
 			},
@@ -68,7 +57,7 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 		{
 			name: "success",
 			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
-				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.ListServiceOrderHistoryParams) bool {
+				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.SearchServiceOrderHistoryParams) bool {
 					return p != nil && p.ID == "so-1"
 				})).Return(&domain.PaginatorResponse[domain.ServiceOrderHistory]{
 					Items:      []domain.ServiceOrderHistory{expHistory},
