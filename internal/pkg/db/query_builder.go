@@ -51,7 +51,7 @@ func (q *queryBuilder) Add(condition string, value any) *queryBuilder {
 
 func (q *queryBuilder) AddPagination(limit, offset int64) *queryBuilder {
 	q.limit = limit
-	q.offset = offset - 1
+	q.offset = offset
 	return q
 }
 
