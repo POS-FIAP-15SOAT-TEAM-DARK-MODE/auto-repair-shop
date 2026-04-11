@@ -22,6 +22,63 @@ func (_m *VehicleRepository) EXPECT() *VehicleRepository_Expecter {
 	return &VehicleRepository_Expecter{mock: &_m.Mock}
 }
 
+// Count provides a mock function with given fields: ctx, params
+func (_m *VehicleRepository) Count(ctx context.Context, params *domain.SearchVehicleParams) (int64, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Count")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchVehicleParams) (int64, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchVehicleParams) int64); ok {
+		r0 = rf(ctx, params)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.SearchVehicleParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleRepository_Count_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Count'
+type VehicleRepository_Count_Call struct {
+	*mock.Call
+}
+
+// Count is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.SearchVehicleParams
+func (_e *VehicleRepository_Expecter) Count(ctx interface{}, params interface{}) *VehicleRepository_Count_Call {
+	return &VehicleRepository_Count_Call{Call: _e.mock.On("Count", ctx, params)}
+}
+
+func (_c *VehicleRepository_Count_Call) Run(run func(ctx context.Context, params *domain.SearchVehicleParams)) *VehicleRepository_Count_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SearchVehicleParams))
+	})
+	return _c
+}
+
+func (_c *VehicleRepository_Count_Call) Return(_a0 int64, _a1 error) *VehicleRepository_Count_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.SearchVehicleParams) (int64, error)) *VehicleRepository_Count_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Delete provides a mock function with given fields: ctx, id
 func (_m *VehicleRepository) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
@@ -171,6 +228,65 @@ func (_c *VehicleRepository_Save_Call) Return(_a0 error) *VehicleRepository_Save
 }
 
 func (_c *VehicleRepository_Save_Call) RunAndReturn(run func(context.Context, *domain.Vehicle) error) *VehicleRepository_Save_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Search provides a mock function with given fields: ctx, params
+func (_m *VehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Search")
+	}
+
+	var r0 []domain.Vehicle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchVehicleParams) ([]domain.Vehicle, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchVehicleParams) []domain.Vehicle); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Vehicle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.SearchVehicleParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleRepository_Search_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Search'
+type VehicleRepository_Search_Call struct {
+	*mock.Call
+}
+
+// Search is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.SearchVehicleParams
+func (_e *VehicleRepository_Expecter) Search(ctx interface{}, params interface{}) *VehicleRepository_Search_Call {
+	return &VehicleRepository_Search_Call{Call: _e.mock.On("Search", ctx, params)}
+}
+
+func (_c *VehicleRepository_Search_Call) Run(run func(ctx context.Context, params *domain.SearchVehicleParams)) *VehicleRepository_Search_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SearchVehicleParams))
+	})
+	return _c
+}
+
+func (_c *VehicleRepository_Search_Call) Return(_a0 []domain.Vehicle, _a1 error) *VehicleRepository_Search_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.SearchVehicleParams) ([]domain.Vehicle, error)) *VehicleRepository_Search_Call {
 	_c.Call.Return(run)
 	return _c
 }
