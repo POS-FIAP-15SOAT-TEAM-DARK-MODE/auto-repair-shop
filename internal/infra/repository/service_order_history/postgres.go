@@ -15,15 +15,18 @@ func Repository() domain.ServiceOrderHistoryRepository {
 	return &repository{}
 }
 
-func (r *repository) Find(ctx context.Context, params domain.FindServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
+func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	qb := db.QueryBuilder(selectServiceOrderHistory)
+	qb := db.QueryBuilder(selectServiceOrderHistory).
+		OrderBy("soh.created_at", db.ASC).
+		AddPagination(params.PageSize, params.Page)
+
 	if params.ID != "" {
-		qb.Add("service_order_id = ", params.ID)
+		qb.Add("soh.service_order_id = ", params.ID)
 	}
 
 	query, args := qb.Build()
@@ -37,12 +40,45 @@ func (r *repository) Find(ctx context.Context, params domain.FindServiceOrderHis
 
 	histories := []domain.ServiceOrderHistory{}
 	for rows.Next() {
-		var history domain.ServiceOrderHistory
-		if err := rows.Scan(&history.ID, &history.ServiceOrderID, &history.PreviousStatus, &history.NewStatus, &history.CreatedAt); err != nil {
+		if err = rows.Err(); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
+
+		var history domain.ServiceOrderHistory
+		if err = rows.Scan(
+			&history.ID,
+			&history.ServiceOrderID,
+			&history.PreviousStatus,
+			&history.NewStatus,
+			&history.CreatedAt,
+		); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+
 		histories = append(histories, history)
 	}
 
 	return histories, nil
+}
+
+func (r *repository) Count(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) (int64, error) {
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	qb := db.QueryBuilder(countServiceOrderHistory)
+
+	if params.ID != "" {
+		qb.Add("soh.service_order_id = ", params.ID)
+	}
+
+	query, args := qb.Build()
+
+	var total int64
+	if err := tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+		return 0, pgPkg.Error(ctx, err)
+	}
+
+	return total, nil
 }

@@ -12,10 +12,14 @@ type memory_repo struct {
 
 func MemoryRepository() domain.ServiceOrderHistoryRepository {
 	return &memory_repo{
-		data: make(map[string]domain.ServiceOrder),
+		data: nil,
 	}
 }
 
-func (r *memory_repo) Find(_ context.Context, params domain.FindServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
+func (r *memory_repo) Search(_ context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
 	return []domain.ServiceOrderHistory{}, nil
+}
+
+func (r *memory_repo) Count(_ context.Context, params *domain.SearchServiceOrderHistoryParams) (int64, error) {
+	return 0, nil
 }
