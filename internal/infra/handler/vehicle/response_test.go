@@ -1,9 +1,10 @@
 package vehicle
 
 import (
+	"testing"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestDomainToResponseDto(t *testing.T) {
@@ -113,6 +114,157 @@ func TestDomainToResponseDto(t *testing.T) {
 			assert.Equal(t, tt.expected.BrandModel, result.BrandModel)
 			assert.Equal(t, tt.expected.Year, result.Year)
 			assert.Equal(t, tt.expected.CustomerId, result.CustomerId)
+		})
+	}
+}
+
+func TestDomainListToResponseDto(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *domain.PaginatorResponse[domain.Vehicle]
+		expected paginatorResponseDTO
+	}{
+		{
+			name: "empty list",
+			input: &domain.PaginatorResponse[domain.Vehicle]{
+				Items:      []domain.Vehicle{},
+				TotalItems: 0,
+				TotalPages: 0,
+				PageSize:   10,
+				Page:       1,
+			},
+			expected: paginatorResponseDTO{
+				Items:      []vehicleResponseDTO{},
+				TotalItems: 0,
+				TotalPages: 0,
+				PageSize:   10,
+				Page:       1,
+			},
+		},
+		{
+			name: "single item",
+			input: &domain.PaginatorResponse[domain.Vehicle]{
+				Items: []domain.Vehicle{
+					{
+						ID:           "veh-1",
+						LicensePlate: "ABC1D23",
+						Brand:        "chevrolet",
+						Model:        "onix",
+						Year:         2020,
+						CustomerId:   "cust-1",
+					},
+				},
+				TotalItems: 1,
+				TotalPages: 1,
+				PageSize:   10,
+				Page:       1,
+			},
+			expected: paginatorResponseDTO{
+				Items: []vehicleResponseDTO{
+					{
+						ID:           "veh-1",
+						LicensePlate: "ABC1D23",
+						BrandModel:   "chevrolet - onix",
+						Year:         2020,
+						CustomerId:   "cust-1",
+					},
+				},
+				TotalItems: 1,
+				TotalPages: 1,
+				PageSize:   10,
+				Page:       1,
+			},
+		},
+		{
+			name: "multiple items",
+			input: &domain.PaginatorResponse[domain.Vehicle]{
+				Items: []domain.Vehicle{
+					{
+						ID:           "veh-1",
+						LicensePlate: "ABC1D23",
+						Brand:        "chevrolet",
+						Model:        "onix",
+						Year:         2020,
+						CustomerId:   "cust-1",
+					},
+					{
+						ID:           "veh-2",
+						LicensePlate: "XYZ9Z99",
+						Brand:        "fiat",
+						Model:        "uno",
+						Year:         2010,
+						CustomerId:   "cust-2",
+					},
+				},
+				TotalItems: 2,
+				TotalPages: 1,
+				PageSize:   10,
+				Page:       1,
+			},
+			expected: paginatorResponseDTO{
+				Items: []vehicleResponseDTO{
+					{
+						ID:           "veh-1",
+						LicensePlate: "ABC1D23",
+						BrandModel:   "chevrolet - onix",
+						Year:         2020,
+						CustomerId:   "cust-1",
+					},
+					{
+						ID:           "veh-2",
+						LicensePlate: "XYZ9Z99",
+						BrandModel:   "fiat - uno",
+						Year:         2010,
+						CustomerId:   "cust-2",
+					},
+				},
+				TotalItems: 2,
+				TotalPages: 1,
+				PageSize:   10,
+				Page:       1,
+			},
+		},
+		{
+			name: "preserves pagination metadata",
+			input: &domain.PaginatorResponse[domain.Vehicle]{
+				Items: []domain.Vehicle{
+					{
+						ID:           "veh-1",
+						LicensePlate: "ABC1D23",
+						Brand:        "chevrolet",
+						Model:        "onix",
+						Year:         2020,
+						CustomerId:   "cust-1",
+					},
+				},
+				TotalItems: 50,
+				TotalPages: 5,
+				PageSize:   10,
+				Page:       3,
+			},
+			expected: paginatorResponseDTO{
+				Items: []vehicleResponseDTO{
+					{
+						ID:           "veh-1",
+						LicensePlate: "ABC1D23",
+						BrandModel:   "chevrolet - onix",
+						Year:         2020,
+						CustomerId:   "cust-1",
+					},
+				},
+				TotalItems: 50,
+				TotalPages: 5,
+				PageSize:   10,
+				Page:       3,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := domainListToResponseDto(tt.input)
+
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

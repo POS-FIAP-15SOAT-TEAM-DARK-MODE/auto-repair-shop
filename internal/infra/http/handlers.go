@@ -39,6 +39,7 @@ type (
 	VehicleHandler interface {
 		Create(*gin.Context)
 		FindByLicensePlate(*gin.Context)
+		FindByCustomer(*gin.Context)
 		Update(*gin.Context)
 		Delete(*gin.Context)
 	}

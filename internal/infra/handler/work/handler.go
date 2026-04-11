@@ -85,7 +85,7 @@ func (h *handler) List(c *gin.Context) {
 	}
 
 	logger.Of(ctx).Debug("list response", zap.Any("service", response))
-	c.JSON(http.StatusCreated, mapListResponseDTOFromDomain(response))
+	c.JSON(http.StatusOK, mapListResponseDTOFromDomain(response))
 }
 
 func (h *handler) Update(c *gin.Context) {

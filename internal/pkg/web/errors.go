@@ -106,7 +106,8 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, json.ErrWrongPayloadFormat) ||
 		errors.Is(err, domain.ErrVehicleInvalidPlate) ||
 		errors.Is(err, domain.ErrInvalidVehicleId) ||
-		errors.Is(err, domain.ErrPhoneRequired)
+		errors.Is(err, domain.ErrPhoneRequired) ||
+		errors.Is(err, domain.ErrInvalidCustomerId)
 }
 
 func isNotFoundError(err error) bool {

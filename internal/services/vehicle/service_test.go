@@ -663,3 +663,228 @@ func TestService_Delete_UowError(t *testing.T) {
 
 	repo.AssertNotCalled(t, "Delete", mock.Anything, mock.Anything)
 }
+
+func TestService_List_Success(t *testing.T) {
+	ctx := context.Background()
+
+	repo := domainMocks.NewVehicleRepository(t)
+
+	params := &domain.ListVehicleParams{
+		CustomerID: "123",
+		Page:       1,
+		PageSize:   10,
+	}
+
+	searchParams := params.SearchVehicleParams()
+
+	expectedItems := []domain.Vehicle{
+		{ID: "1", LicensePlate: "AAA1234"},
+	}
+
+	var expectedTotal int64 = 1
+
+	repo.
+		EXPECT().
+		Count(mock.Anything, searchParams).
+		Return(expectedTotal, nil)
+
+	repo.
+		EXPECT().
+		Search(mock.Anything, searchParams).
+		Return(expectedItems, nil)
+
+	service := NewService(nil, repo)
+
+	result, err := service.List(ctx, params)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if result == nil {
+		t.Fatalf("expected result, got nil")
+	}
+
+	if result.TotalItems != expectedTotal {
+		t.Fatalf("expected totalItems %d, got %d", expectedTotal, result.TotalItems)
+	}
+
+	if len(result.Items) != len(expectedItems) {
+		t.Fatalf("expected %d items, got %d", len(expectedItems), len(result.Items))
+	}
+
+	if result.Page != params.Page {
+		t.Fatalf("expected page %d, got %d", params.Page, result.Page)
+	}
+
+	if result.PageSize != params.PageSize {
+		t.Fatalf("expected pageSize %d, got %d", params.PageSize, result.PageSize)
+	}
+}
+
+func TestService_List_CountError(t *testing.T) {
+	ctx := context.Background()
+
+	repo := domainMocks.NewVehicleRepository(t)
+
+	params := &domain.ListVehicleParams{
+		CustomerID: "123",
+		Page:       1,
+		PageSize:   10,
+	}
+
+	searchParams := params.SearchVehicleParams()
+
+	expectedErr := errors.New("count error")
+
+	repo.
+		EXPECT().
+		Count(mock.Anything, searchParams).
+		Return(int64(0), expectedErr)
+
+	repo.
+		EXPECT().
+		Search(mock.Anything, searchParams).
+		Return(nil, nil)
+
+	service := NewService(nil, repo)
+
+	result, err := service.List(ctx, params)
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	if result != nil {
+		t.Fatalf("expected nil result, got %v", result)
+	}
+}
+
+func TestService_List_SearchError(t *testing.T) {
+	ctx := context.Background()
+
+	repo := domainMocks.NewVehicleRepository(t)
+
+	params := &domain.ListVehicleParams{
+		CustomerID: "123",
+		Page:       1,
+		PageSize:   10,
+	}
+
+	searchParams := params.SearchVehicleParams()
+
+	expectedErr := errors.New("search error")
+
+	repo.
+		EXPECT().
+		Count(mock.Anything, searchParams).
+		Return(int64(1), nil)
+
+	repo.
+		EXPECT().
+		Search(mock.Anything, searchParams).
+		Return(nil, expectedErr)
+
+	service := NewService(nil, repo)
+
+	result, err := service.List(ctx, params)
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	if result != nil {
+		t.Fatalf("expected nil result, got %v", result)
+	}
+}
+
+func TestService_List_EmptyResult(t *testing.T) {
+	ctx := context.Background()
+
+	repo := domainMocks.NewVehicleRepository(t)
+
+	params := &domain.ListVehicleParams{
+		CustomerID: "123",
+		Page:       1,
+		PageSize:   10,
+	}
+
+	searchParams := params.SearchVehicleParams()
+
+	repo.
+		EXPECT().
+		Count(mock.Anything, searchParams).
+		Return(int64(0), nil)
+
+	repo.
+		EXPECT().
+		Search(mock.Anything, searchParams).
+		Return([]domain.Vehicle{}, nil)
+
+	service := NewService(nil, repo)
+
+	result, err := service.List(ctx, params)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if result.TotalItems != 0 {
+		t.Fatalf("expected 0 items, got %d", result.TotalItems)
+	}
+
+	if len(result.Items) != 0 {
+		t.Fatalf("expected empty items, got %v", result.Items)
+	}
+}
+
+func TestService_List_ValidateSearchParams(t *testing.T) {
+	ctx := context.Background()
+
+	repo := domainMocks.NewVehicleRepository(t)
+
+	params := &domain.ListVehicleParams{
+		CustomerID: "123",
+		Page:       2,
+		PageSize:   10,
+	}
+
+	expectedOffset := int64(10) // (page-1)*limit
+
+	repo.
+		EXPECT().
+		Count(
+			mock.Anything,
+			mock.MatchedBy(func(p *domain.SearchVehicleParams) bool {
+				return p.CustomerId == "123" &&
+					p.Limit == 10 &&
+					p.Offset == expectedOffset
+			}),
+		).
+		Return(int64(0), nil)
+
+	repo.
+		EXPECT().
+		Search(
+			mock.Anything,
+			mock.MatchedBy(func(p *domain.SearchVehicleParams) bool {
+				return p.CustomerId == "123" &&
+					p.Limit == 10 &&
+					p.Offset == expectedOffset
+			}),
+		).
+		Return([]domain.Vehicle{}, nil)
+
+	service := NewService(nil, repo)
+
+	_, err := service.List(ctx, params)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}

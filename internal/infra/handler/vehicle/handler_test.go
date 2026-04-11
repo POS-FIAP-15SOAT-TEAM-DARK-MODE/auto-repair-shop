@@ -355,3 +355,96 @@ func TestHandler_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestHandler_FindByCustomer(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	domainPaginatorResponseMock := &domain.PaginatorResponse[domain.Vehicle]{
+		Items:      []domain.Vehicle{},
+		TotalItems: 0,
+		TotalPages: 0,
+		PageSize:   10,
+		Page:       1,
+	}
+
+	tests := []struct {
+		name           string
+		body           []byte
+		queryParams    map[string]string
+		customerID     string
+		mockSetup      func(m *mocks.VehicleService)
+		expectedStatus int
+	}{
+		{
+			name:       "success - should return vehicles",
+			customerID: "123",
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					List(
+						mock.Anything,
+						mock.MatchedBy(func(p *domain.ListVehicleParams) bool {
+							return p.CustomerID == "123"
+						}),
+					).
+					Return(domainPaginatorResponseMock, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "error - invalid query params (createListParams error)",
+			queryParams: map[string]string{
+				"limit": "invalid",
+			},
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "error - service returns error",
+			customerID: "123",
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					List(
+						mock.Anything,
+						mock.AnythingOfType("*domain.ListVehicleParams"),
+					).
+					Return(nil, errors.New("service error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+
+			q := req.URL.Query()
+			for k, v := range tt.queryParams {
+				q.Add(k, v)
+			}
+			req.URL.RawQuery = q.Encode()
+
+			c.Params = gin.Params{
+				{Key: customerIDParam, Value: tt.customerID},
+			}
+
+			c.Request = req
+
+			mockService := mocks.NewVehicleService(t)
+
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			h := HttpHandler(mockService)
+
+			handlerFunc := h.FindByCustomer
+			handlerFunc(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
