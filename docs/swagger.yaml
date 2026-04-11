@@ -633,6 +633,22 @@ paths:
           schema:
             type: string
           description: Service order UUID
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based)
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page
       responses:
         "200":
           description: History retrieved successfully
