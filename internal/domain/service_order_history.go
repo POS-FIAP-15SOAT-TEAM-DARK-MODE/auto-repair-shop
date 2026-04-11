@@ -7,13 +7,27 @@ import (
 	"github.com/google/uuid"
 )
 
-type ServiceOrderHistory struct {
+type (
+	ServiceOrderHistory struct {
 	ID             string
 	ServiceOrderID string
 	PreviousStatus SERVICE_ORDER_STATUS
 	NewStatus      SERVICE_ORDER_STATUS
 	CreatedAt      time.Time
 }
+
+	ListServiceOrderHistoryByIDParams struct {
+		ID       string
+		Page     int64
+		PageSize int64
+	}
+
+	FindServiceOrderHistoryParams struct {
+		ID       string
+		Page     int64
+		PageSize int64
+	}
+)
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryRepository --with-expecter
@@ -25,11 +39,14 @@ type (
 	ServiceOrderHistoryRepository interface {
 		Find(ctx context.Context, params FindServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
 	}
-
-	FindServiceOrderHistoryParams struct {
-		ID string
-	}
 )
+
+func (p *ListServiceOrderHistoryByIDParams) Validate() error {
+	if p.ID == "" {
+		return ErrServiceOrderIDRequired
+	}
+	return nil
+}
 
 func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistory {
 	return &ServiceOrderHistory{

@@ -1,18 +1,34 @@
 package service_order_history
 
 import (
-	"strings"
+	"strconv"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/gin-gonic/gin"
 )
 
-type getServiceOrderHistoryDTO struct {
-	ID string `json:"id"`
-}
+const (
+	defaultPage     = int64(1)
+	defaultPageSize = int64(10)
+)
 
-func (r *getServiceOrderHistoryDTO) validate() error {
-	if strings.TrimSpace(r.ID) == "" {
-		return domain.ErrServiceOrderIDRequired
+func mapListParamsToDomain(c *gin.Context) domain.ListServiceOrderHistoryByIDParams {
+	page := defaultPage
+	pageSize := defaultPageSize
+
+	if p := c.Query("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = int64(v)
+		}
 	}
-	return nil
+
+	if ps := c.Query("pageSize"); ps != "" {
+		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
+			pageSize = int64(v)
+		}
+	}
+
+	id := c.Param("id")
+
+	return domain.ListServiceOrderHistoryByIDParams{Page: page, PageSize: pageSize, ID: id}
 }

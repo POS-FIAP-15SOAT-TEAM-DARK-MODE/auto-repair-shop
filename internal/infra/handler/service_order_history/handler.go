@@ -20,9 +20,9 @@ func HttpHandler(svc domain.ServiceOrderHistoryService) *handler {
 
 func (h *handler) GetHistoryByID(c *gin.Context) {
 	ctx := c.Request.Context()
+	params := mapListParamsToDomain(c)
 
-	req := getServiceOrderHistoryDTO{ID: c.Param("id")}
-	if err := req.validate(); err != nil {
+	if err := params.Validate(); err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
 		logger.Of(ctx).Debug("Failed to bind service order history request",
@@ -34,7 +34,7 @@ func (h *handler) GetHistoryByID(c *gin.Context) {
 		return
 	}
 
-	history, err := h.svc.GetHistoryByID(ctx, req.ID)
+	history, err := h.svc.GetHistoryByID(ctx, params)
 	if err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
