@@ -22,29 +22,29 @@ func (_m *ServiceOrderHistoryService) EXPECT() *ServiceOrderHistoryService_Expec
 	return &ServiceOrderHistoryService_Expecter{mock: &_m.Mock}
 }
 
-// GetHistoryByID provides a mock function with given fields: ctx, id
-func (_m *ServiceOrderHistoryService) GetHistoryByID(ctx context.Context, id string) ([]domain.ServiceOrderHistory, error) {
-	ret := _m.Called(ctx, id)
+// GetHistoryByID provides a mock function with given fields: ctx, params
+func (_m *ServiceOrderHistoryService) GetHistoryByID(ctx context.Context, params *domain.ListServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
+	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetHistoryByID")
 	}
 
-	var r0 []domain.ServiceOrderHistory
+	var r0 *domain.PaginatorResponse[domain.ServiceOrderHistory]
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.ServiceOrderHistory, error)); ok {
-		return rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error)); ok {
+		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.ServiceOrderHistory); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListServiceOrderHistoryParams) *domain.PaginatorResponse[domain.ServiceOrderHistory]); ok {
+		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.ServiceOrderHistory)
+			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.ServiceOrderHistory])
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ListServiceOrderHistoryParams) error); ok {
+		r1 = rf(ctx, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -59,24 +59,24 @@ type ServiceOrderHistoryService_GetHistoryByID_Call struct {
 
 // GetHistoryByID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id string
-func (_e *ServiceOrderHistoryService_Expecter) GetHistoryByID(ctx interface{}, id interface{}) *ServiceOrderHistoryService_GetHistoryByID_Call {
-	return &ServiceOrderHistoryService_GetHistoryByID_Call{Call: _e.mock.On("GetHistoryByID", ctx, id)}
+//   - params *domain.ListServiceOrderHistoryParams
+func (_e *ServiceOrderHistoryService_Expecter) GetHistoryByID(ctx interface{}, params interface{}) *ServiceOrderHistoryService_GetHistoryByID_Call {
+	return &ServiceOrderHistoryService_GetHistoryByID_Call{Call: _e.mock.On("GetHistoryByID", ctx, params)}
 }
 
-func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) Run(run func(ctx context.Context, id string)) *ServiceOrderHistoryService_GetHistoryByID_Call {
+func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) Run(run func(ctx context.Context, params *domain.ListServiceOrderHistoryParams)) *ServiceOrderHistoryService_GetHistoryByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(*domain.ListServiceOrderHistoryParams))
 	})
 	return _c
 }
 
-func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) Return(_a0 []domain.ServiceOrderHistory, _a1 error) *ServiceOrderHistoryService_GetHistoryByID_Call {
+func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) Return(_a0 *domain.PaginatorResponse[domain.ServiceOrderHistory], _a1 error) *ServiceOrderHistoryService_GetHistoryByID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) RunAndReturn(run func(context.Context, string) ([]domain.ServiceOrderHistory, error)) *ServiceOrderHistoryService_GetHistoryByID_Call {
+func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) RunAndReturn(run func(context.Context, *domain.ListServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error)) *ServiceOrderHistoryService_GetHistoryByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

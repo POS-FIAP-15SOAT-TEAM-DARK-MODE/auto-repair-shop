@@ -1,6 +1,7 @@
 package service_order_history_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,94 +13,117 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
+	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	handler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order_history"
 )
 
-func TestGetHistoryByID(t *testing.T) {
+// fakeService implements the current ServiceOrderHistoryService interface for testing.
+type fakeService struct {
+	resp *domain.PaginatorResponse[domain.ServiceOrderHistory]
+	err  error
+}
+
+func (f *fakeService) GetHistoryByID(_ context.Context, _ *domain.ListServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
+	return f.resp, f.err
+}
+
+func TestGetHistoryByID_Handler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
+	expHistory := domain.ServiceOrderHistory{
+		ID:             "history-id-1",
+		PreviousStatus: domain.SERVICE_ORDER_STATUS_RECEIVED,
+		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS,
+		CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
+	}
+
 	tests := []struct {
-		name           string
-		serviceID      string
-		mockSetup      func(m *mocks.ServiceOrderHistoryService)
-		expectedCode   int
-		expectedItems  int
-		expectedErrMsg string
+		name         string
+		setupMock    func(m *domainmocks.ServiceOrderHistoryService)
+		route        string
+		expectedCode int
+		expectedLen  int
+		expectedErr  string
 	}{
 		{
-			name:           "Should fail gracefully when the service order id is not provided",
-			serviceID:      "",
-			expectedCode:   http.StatusBadRequest,
-			expectedItems:  0,
-			expectedErrMsg: domain.ErrServiceOrderIDRequired.Error(),
-		}, {
-			name:      "Should fail gracefully when service returns an error",
-			serviceID: "so-2",
-			mockSetup: func(m *mocks.ServiceOrderHistoryService) {
-				m.EXPECT().GetHistoryByID(mock.Anything, "so-2").Return(nil, domain.ErrDataConflict)
-			},
-			expectedCode:   http.StatusConflict,
-			expectedItems:  0,
-			expectedErrMsg: domain.ErrDataConflict.Error(),
+			name:         "missing id -> bad request",
+			setupMock:    nil,
+			route:        "/v1/service-order//history",
+			expectedCode: http.StatusBadRequest,
+			expectedLen:  0,
+			expectedErr:  domain.ErrServiceOrderIDRequired.Error(),
 		},
 		{
-			name:      "Should return the history when service returns it",
-			serviceID: "so-1",
-			mockSetup: func(m *mocks.ServiceOrderHistoryService) {
-				m.EXPECT().GetHistoryByID(mock.Anything, "so-1").Return([]domain.ServiceOrderHistory{
-					{
-						ID:             "history-id-1",
-						PreviousStatus: domain.SERVICE_ORDER_STATUS_RECEIVED,
-						NewStatus:      domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS,
-						CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
-					},
+			name: "service error -> conflict",
+			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
+				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.ListServiceOrderHistoryParams) bool {
+					return p != nil && p.ID == "so-2"
+				})).Return(nil, domain.ErrDataConflict)
+			},
+			route:        "/v1/service-order/so-2/history",
+			expectedCode: http.StatusConflict,
+			expectedLen:  0,
+			expectedErr:  domain.ErrDataConflict.Error(),
+		},
+		{
+			name: "success",
+			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
+				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.ListServiceOrderHistoryParams) bool {
+					return p != nil && p.ID == "so-1"
+				})).Return(&domain.PaginatorResponse[domain.ServiceOrderHistory]{
+					Items:      []domain.ServiceOrderHistory{expHistory},
+					TotalItems: 1,
+					TotalPages: 1,
+					PageSize:   10,
+					Page:       1,
 				}, nil)
 			},
-			expectedCode:  http.StatusOK,
-			expectedItems: 1,
+			route:        "/v1/service-order/so-1/history",
+			expectedCode: http.StatusOK,
+			expectedLen:  1,
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			mSvc := mocks.NewServiceOrderHistoryService(t)
-			if tt.mockSetup != nil {
-				tt.mockSetup(mSvc)
+			mSvc := domainmocks.NewServiceOrderHistoryService(t)
+			if tt.setupMock != nil {
+				tt.setupMock(mSvc)
 			}
 
 			h := handler.HttpHandler(mSvc)
 			router := gin.New()
 			router.GET("/v1/service-order/:id/history", h.GetHistoryByID)
 
-			req := httptest.NewRequest(http.MethodGet, "/v1/service-order/"+tt.serviceID+"/history", nil)
+			req := httptest.NewRequest(http.MethodGet, tt.route, nil)
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 
-			if rec.Code != tt.expectedCode {
-				t.Fatalf("expected status %d, got %d", tt.expectedCode, rec.Code)
-			}
+			assert.Equal(t, tt.expectedCode, rec.Code)
 
-			var resp struct {
-				Items  []domain.ServiceOrderHistory `json:"items,omitempty"`
-				Code   int                          `json:"code,omitempty"`
-				Errors []string                     `json:"errors,omitempty"`
-				Error  string                       `json:"error,omitempty"`
-			}
+			var resp map[string]any
 			if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 				t.Fatalf("failed to unmarshal response: %v", err)
 			}
 
-			assert.Equal(t, tt.expectedItems, len(resp.Items), "unexpected number of history items")
-			if tt.expectedErrMsg != "" {
-				// Accept error either in Errors array (bad request style) or in Error field (conflict/internal style)
-				if len(resp.Errors) > 0 {
-					assert.Contains(t, resp.Errors, tt.expectedErrMsg)
-				} else {
-					assert.Equal(t, tt.expectedErrMsg, resp.Error)
+			if tt.expectedLen > 0 {
+				items, ok := resp["items"].([]interface{})
+				if !ok {
+					t.Fatalf("expected items array in response")
 				}
-				assert.Equal(t, tt.expectedCode, resp.Code)
+				assert.Len(t, items, tt.expectedLen)
+			}
+
+			if tt.expectedErr != "" {
+				// errors may be in "errors" array or "error" string depending on status code
+				if errs, ok := resp["errors"].([]interface{}); ok && len(errs) > 0 {
+					assert.Contains(t, errs[0], tt.expectedErr)
+				} else if errStr, ok := resp["error"].(string); ok {
+					assert.Equal(t, tt.expectedErr, errStr)
+				} else {
+					t.Fatalf("expected error message in response")
+				}
 			}
 		})
 	}
