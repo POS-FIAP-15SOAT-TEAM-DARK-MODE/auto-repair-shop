@@ -13,19 +13,35 @@ type serviceOrderHistoryResponseDTO struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
-func mapResponseDTOFromDomainList(so []domain.ServiceOrderHistory) []serviceOrderHistoryResponseDTO {
-	soHistory := make([]serviceOrderHistoryResponseDTO, len(so))
-	for i, s := range so {
-		soHistory[i] = mapResponseDTOFromDomain(s)
-	}
-	return soHistory
-}
-
-func mapResponseDTOFromDomain(so domain.ServiceOrderHistory) serviceOrderHistoryResponseDTO {
+func mapResponseDTOFromDomain(so *domain.ServiceOrderHistory) serviceOrderHistoryResponseDTO {
 	return serviceOrderHistoryResponseDTO{
 		ID:             so.ID,
 		PreviousStatus: so.PreviousStatus.String(),
 		NewStatus:      so.NewStatus.String(),
 		CreatedAt:      so.CreatedAt,
+	}
+}
+
+type paginatorResponseDTO struct {
+	Items      []serviceOrderHistoryResponseDTO `json:"items"`
+	TotalItems int64                            `json:"total_items"`
+	TotalPages int64                            `json:"total_pages"`
+	PageSize   int64                            `json:"page_size"`
+	Page       int64                            `json:"page"`
+}
+
+func mapResponseDTOFromDomainList(soHistories *domain.PaginatorResponse[domain.ServiceOrderHistory]) paginatorResponseDTO {
+	items := make([]serviceOrderHistoryResponseDTO, len(soHistories.Items))
+	for i, h := range soHistories.Items {
+		history := h
+		items[i] = mapResponseDTOFromDomain(&history)
+	}
+
+	return paginatorResponseDTO{
+		Items:      items,
+		TotalItems: soHistories.TotalItems,
+		TotalPages: soHistories.TotalPages,
+		PageSize:   soHistories.PageSize,
+		Page:       soHistories.Page,
 	}
 }

@@ -12,7 +12,7 @@ const (
 	defaultPageSize = int64(10)
 )
 
-func mapListParamsToDomain(c *gin.Context) domain.ListServiceOrderHistoryByIDParams {
+func mapListParamsToDomain(c *gin.Context) domain.ListServiceOrderHistoryParams {
 	page := defaultPage
 	pageSize := defaultPageSize
 
@@ -30,5 +30,5 @@ func mapListParamsToDomain(c *gin.Context) domain.ListServiceOrderHistoryByIDPar
 
 	id := c.Param("id")
 
-	return domain.ListServiceOrderHistoryByIDParams{Page: page, PageSize: pageSize, ID: id}
+	return domain.ListServiceOrderHistoryParams{Page: page, PageSize: pageSize, ID: id}
 }

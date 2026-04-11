@@ -66,7 +66,7 @@ func httpContainer(db *sql.DB) *container.HandlersWrapper {
 		VehicleHandler:             newVehicleHandler(db),
 		SupplyHandler:              newSupplyHandler(db),
 		ServiceOrderHandler:        newServiceOrderHandler(db),
-		ServiceOrderHistoryHandler: newServiceOrderHistoryHandler(),
+		ServiceOrderHistoryHandler: newServiceOrderHistoryHandler(db),
 	}
 }
 
@@ -128,8 +128,9 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	return soHandler.HttpHandler(svc)
 }
 
-func newServiceOrderHistoryHandler() container.ServiceOrderHistoryHandler {
+func newServiceOrderHistoryHandler(db *sql.DB) container.ServiceOrderHistoryHandler {
+	uow := postgres.NewTransactionalUoW(db)
 	repo := soHistoryRepo.Repository()
-	svc := soHistorySvc.Service(repo)
+	svc := soHistorySvc.Service(uow, repo)
 	return soHistoryHandler.HttpHandler(svc)
 }

@@ -9,20 +9,20 @@ import (
 
 type (
 	ServiceOrderHistory struct {
-	ID             string
-	ServiceOrderID string
-	PreviousStatus SERVICE_ORDER_STATUS
-	NewStatus      SERVICE_ORDER_STATUS
-	CreatedAt      time.Time
-}
+		ID             string
+		ServiceOrderID string
+		PreviousStatus SERVICE_ORDER_STATUS
+		NewStatus      SERVICE_ORDER_STATUS
+		CreatedAt      time.Time
+	}
 
-	ListServiceOrderHistoryByIDParams struct {
+	ListServiceOrderHistoryParams struct {
 		ID       string
 		Page     int64
 		PageSize int64
 	}
 
-	FindServiceOrderHistoryParams struct {
+	SearchServiceOrderHistoryParams struct {
 		ID       string
 		Page     int64
 		PageSize int64
@@ -33,15 +33,24 @@ type (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryRepository --with-expecter
 type (
 	ServiceOrderHistoryService interface {
-		GetHistoryByID(ctx context.Context, id string) ([]ServiceOrderHistory, error)
+		GetHistoryByID(ctx context.Context, params *ListServiceOrderHistoryParams) (*PaginatorResponse[ServiceOrderHistory], error)
 	}
 
 	ServiceOrderHistoryRepository interface {
-		Find(ctx context.Context, params FindServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
+		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
+		Count(ctx context.Context, params *SearchServiceOrderHistoryParams) (int64, error)
 	}
 )
 
-func (p *ListServiceOrderHistoryByIDParams) Validate() error {
+func (p ListServiceOrderHistoryParams) SearchServiceOrderHistoryParams() *SearchServiceOrderHistoryParams {
+	return &SearchServiceOrderHistoryParams{
+		ID:       p.ID,
+		Page:     p.Page,
+		PageSize: p.PageSize,
+	}
+}
+
+func (p *ListServiceOrderHistoryParams) Validate() error {
 	if p.ID == "" {
 		return ErrServiceOrderIDRequired
 	}

@@ -34,7 +34,7 @@ func (h *handler) GetHistoryByID(c *gin.Context) {
 		return
 	}
 
-	history, err := h.svc.GetHistoryByID(ctx, params)
+	history, err := h.svc.GetHistoryByID(ctx, &params)
 	if err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
@@ -49,5 +49,5 @@ func (h *handler) GetHistoryByID(c *gin.Context) {
 
 	response := mapResponseDTOFromDomainList(history)
 
-	c.JSON(http.StatusOK, gin.H{"items": response})
+	c.JSON(http.StatusOK, response)
 }
