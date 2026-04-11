@@ -3,6 +3,7 @@ package work
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -16,6 +17,30 @@ type pg_repo struct{}
 
 func Repository() domain.WorkRepository {
 	return &pg_repo{}
+}
+
+func (r *pg_repo) FindByID(ctx context.Context, id string) (domain.Work, error) {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return domain.Work{}, err
+	}
+
+	var w domain.Work
+	err = tx.QueryRowContext(ctx, findByIDQuery, id).Scan(
+		&w.ID,
+		&w.Name,
+		&w.Description,
+		&w.Price,
+		&w.Status,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Work{}, domain.ErrWorkNotFound
+	}
+	if err != nil {
+		return domain.Work{}, pgPkg.Error(ctx, err)
+	}
+
+	return w, nil
 }
 
 func (r *pg_repo) Save(ctx context.Context, w *domain.Work) error {
@@ -41,14 +66,9 @@ func (r *pg_repo) Save(ctx context.Context, w *domain.Work) error {
 }
 
 func (r *pg_repo) Count(ctx context.Context, params *domain.SearchWorkParams) (int64, error) {
-	var runner interface {
-		QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-	}
-
-	if tx, err := postgres.GetTransaction(ctx); err == nil {
-		runner = tx
-	} else {
-		runner = postgres.Connect()
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return 0, err
 	}
 
 	queryBuilder := db.QueryBuilder(countQuery)
@@ -60,7 +80,7 @@ func (r *pg_repo) Count(ctx context.Context, params *domain.SearchWorkParams) (i
 	query, args := queryBuilder.Build()
 
 	var total int64
-	if err := runner.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+	if err := tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
 		return 0, pgPkg.Error(ctx, err)
 	}
 

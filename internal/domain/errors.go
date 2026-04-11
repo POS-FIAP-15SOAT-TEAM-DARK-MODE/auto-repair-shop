@@ -43,6 +43,15 @@ var (
 	ErrInvalidWorkPriceValue              = errors.New("invalid work price value")
 	ErrInvalidWorkStatusValue             = errors.New("work status should be ACTIVE or INACTIVE")
 	ErrInvalidWorkId                      = errors.New("invalid work id")
+	ErrWorkNotFound                       = errors.New("work not found")
+)
+
+// Service order errors
+var (
+	ErrInvalidServiceOrderId    = errors.New("invalid service order id")
+	ErrServiceOrderNotFound     = errors.New("service order not found")
+	ErrServiceOrderWorkNotFound = errors.New("work is not linked to this service order")
+	ErrEmptyServicesList        = errors.New("services list cannot be empty")
 )
 
 // Customer errors

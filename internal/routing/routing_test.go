@@ -1,8 +1,10 @@
 package routing_test
 
 import (
+	"io"
 	goHttp "net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -60,6 +62,9 @@ func TestSetupRouter(t *testing.T) {
 
 	// Service Order
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
+	mockSO.EXPECT().Get(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockSO.EXPECT().AddWork(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockSO.EXPECT().DeleteWork(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	c := &http.HandlersWrapper{
 		PingHandler:         mockPing,
@@ -88,42 +93,46 @@ func TestSetupRouter(t *testing.T) {
 		method string
 		path   string
 		status int
+		body   string
 	}{
 		// Ping
-		{goHttp.MethodGet, "/ping", goHttp.StatusOK},
+		{goHttp.MethodGet, "/ping", goHttp.StatusOK, ""},
 
 		// User
-		{goHttp.MethodPost, "/v1/auth/register", goHttp.StatusCreated},
-		{goHttp.MethodPost, "/v1/auth/login", goHttp.StatusOK},
+		{goHttp.MethodPost, "/v1/auth/register", goHttp.StatusCreated, ""},
+		{goHttp.MethodPost, "/v1/auth/login", goHttp.StatusOK, ""},
 
 		// Customer
-		{goHttp.MethodPost, "/v1/customers", goHttp.StatusCreated},
-		{goHttp.MethodGet, "/v1/customers/:id", goHttp.StatusOK},
-		{goHttp.MethodGet, "/v1/customers", goHttp.StatusOK},
-		{goHttp.MethodPut, "/v1/customers/:id", goHttp.StatusOK},
-		{goHttp.MethodDelete, "/v1/customers/:id", goHttp.StatusNoContent},
+		{goHttp.MethodPost, "/v1/customers", goHttp.StatusCreated, ""},
+		{goHttp.MethodGet, "/v1/customers/:id", goHttp.StatusOK, ""},
+		{goHttp.MethodGet, "/v1/customers", goHttp.StatusOK, ""},
+		{goHttp.MethodPut, "/v1/customers/:id", goHttp.StatusOK, ""},
+		{goHttp.MethodDelete, "/v1/customers/:id", goHttp.StatusNoContent, ""},
 
-		// Work (Service Order)
-		{goHttp.MethodPost, "/v1/works", goHttp.StatusCreated},
-		{goHttp.MethodGet, "/v1/works", goHttp.StatusOK},
-		{goHttp.MethodPut, "/v1/works/:id", goHttp.StatusOK},
-		{goHttp.MethodDelete, "/v1/works/:id", goHttp.StatusNoContent},
+		// Work (catalog)
+		{goHttp.MethodPost, "/v1/works", goHttp.StatusCreated, ""},
+		{goHttp.MethodGet, "/v1/works", goHttp.StatusOK, ""},
+		{goHttp.MethodPut, "/v1/works/:id", goHttp.StatusOK, ""},
+		{goHttp.MethodDelete, "/v1/works/:id", goHttp.StatusNoContent, ""},
 
 		// Vehicle
-		{goHttp.MethodGet, "/v1/vehicles", goHttp.StatusOK},
-		{goHttp.MethodPost, "/v1/vehicles", goHttp.StatusCreated},
-		{goHttp.MethodPut, "/v1/vehicles/:id", goHttp.StatusOK},
-		{goHttp.MethodDelete, "/v1/vehicles/:id", goHttp.StatusNoContent},
+		{goHttp.MethodGet, "/v1/vehicles", goHttp.StatusOK, ""},
+		{goHttp.MethodPost, "/v1/vehicles", goHttp.StatusCreated, ""},
+		{goHttp.MethodPut, "/v1/vehicles/:id", goHttp.StatusOK, ""},
+		{goHttp.MethodDelete, "/v1/vehicles/:id", goHttp.StatusNoContent, ""},
 
 		// Supply
-		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated},
+		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated, ""},
 
 		// Service Order
-		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated},
+		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},
+		{goHttp.MethodGet, "/v1/service-order/:id/services", goHttp.StatusOK, ""},
+		{goHttp.MethodPost, "/v1/service-order/:id/services", goHttp.StatusNoContent, `{"services":["work-id-1"]}`},
+		{goHttp.MethodDelete, "/v1/service-order/:id/services/:serviceId", goHttp.StatusNoContent, ""},
 
 		// Swagger UI (based on mountSwaggerUI in routing.go)
-		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK},
-		{goHttp.MethodGet, "/swagger/index.html", goHttp.StatusOK},
+		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK, ""},
+		{goHttp.MethodGet, "/swagger/index.html", goHttp.StatusOK, ""},
 	}
 
 	// Replace :id with a concrete value in test URLs for request generation
@@ -132,7 +141,14 @@ func TestSetupRouter(t *testing.T) {
 		// Replace :id with "1" for tests
 		path = replacePathParamsWithSampleValues(path)
 		t.Run(path, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, path, nil)
+			var body io.Reader
+			if tt.body != "" {
+				body = strings.NewReader(tt.body)
+			}
+			req := httptest.NewRequest(tt.method, path, body)
+			if tt.body != "" {
+				req.Header.Set("Content-Type", "application/json")
+			}
 			// add Authorization header with long-lived token so protected routes pass
 			req.Header.Set("Authorization", "Bearer "+testToken)
 			rec := httptest.NewRecorder()
@@ -144,9 +160,9 @@ func TestSetupRouter(t *testing.T) {
 
 // Helper to replace :id and similar path params with a dummy value.
 func replacePathParamsWithSampleValues(path string) string {
-	// Only replacing ":id" with "1"
-	// If more params are needed in the future, extend this.
-	return replace(path, ":id", "1")
+	path = replace(path, ":id", "1")
+	path = replace(path, ":serviceId", "1")
+	return path
 }
 
 // Local replacement so we don't require strings.ReplaceAll (Go 1.12+)

@@ -126,6 +126,63 @@ func (_c *WorkRepository_Delete_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
+// FindByID provides a mock function with given fields: _a0, _a1
+func (_m *WorkRepository) FindByID(_a0 context.Context, _a1 string) (domain.Work, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindByID")
+	}
+
+	var r0 domain.Work
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Work, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Work); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Get(0).(domain.Work)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// WorkRepository_FindByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindByID'
+type WorkRepository_FindByID_Call struct {
+	*mock.Call
+}
+
+// FindByID is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *WorkRepository_Expecter) FindByID(_a0 interface{}, _a1 interface{}) *WorkRepository_FindByID_Call {
+	return &WorkRepository_FindByID_Call{Call: _e.mock.On("FindByID", _a0, _a1)}
+}
+
+func (_c *WorkRepository_FindByID_Call) Run(run func(_a0 context.Context, _a1 string)) *WorkRepository_FindByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *WorkRepository_FindByID_Call) Return(_a0 domain.Work, _a1 error) *WorkRepository_FindByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *WorkRepository_FindByID_Call) RunAndReturn(run func(context.Context, string) (domain.Work, error)) *WorkRepository_FindByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Save provides a mock function with given fields: _a0, _a1
 func (_m *WorkRepository) Save(_a0 context.Context, _a1 *domain.Work) error {
 	ret := _m.Called(_a0, _a1)
