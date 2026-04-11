@@ -15,3 +15,15 @@ func mapBodyToRequestDTO(body *gin.Context) (*initServiceOrderDTO, error) {
 
 	return req, nil
 }
+
+type addWorksToServiceOrderDTO struct {
+	Services []string `json:"services"`
+}
+
+func mapAddWorksBody(c *gin.Context) (*addWorksToServiceOrderDTO, error) {
+	req := new(addWorksToServiceOrderDTO)
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, err
+	}
+	return req, nil
+}

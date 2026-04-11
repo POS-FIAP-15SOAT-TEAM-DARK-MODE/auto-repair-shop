@@ -21,4 +21,10 @@ const (
 	`
 
 	deleteQuery = `DELETE FROM "work" s where s.id = $1`
+
+	findByIDQuery = `
+	SELECT s.id, s.name, s.description, s.unit_price, s.status
+	FROM "work" s
+	WHERE s.id = $1
+	`
 )

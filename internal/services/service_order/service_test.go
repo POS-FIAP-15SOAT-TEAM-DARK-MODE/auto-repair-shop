@@ -17,8 +17,8 @@ func TestService_Create_ReturnsServiceOrderWithDefaults(t *testing.T) {
 	customerId := c.ID
 	vehicleId := domain.NewVehicle("", "", "", "", 2026).ID
 
-	executor, mockRepo, customerMock, vehicleMock := setupCreateTestMock(t, nil, customerId, nil, vehicleId, nil)
-	s := Service(executor, mockRepo, customerMock, vehicleMock)
+	executor, mockRepo, workRepo, customerMock, vehicleMock := setupCreateTestMock(t, nil, customerId, nil, vehicleId, nil)
+	s := Service(executor, mockRepo, workRepo, customerMock, vehicleMock)
 	ctx := context.Background()
 
 	so, err := s.Create(ctx, customerId, vehicleId)
@@ -35,8 +35,8 @@ func TestService_Create_VerifyCustomerID(t *testing.T) {
 	customerId := c.ID
 	vehicleId := domain.NewVehicle("", "", "", "", 2026).ID
 
-	executor, mockRepo, customerMock, vehicleMock := setupCreateTestMock(t, nil, customerId, domain.ErrCustomerNotFound, vehicleId, nil)
-	s := Service(executor, mockRepo, customerMock, vehicleMock)
+	executor, mockRepo, workRepo, customerMock, vehicleMock := setupCreateTestMock(t, nil, customerId, domain.ErrCustomerNotFound, vehicleId, nil)
+	s := Service(executor, mockRepo, workRepo, customerMock, vehicleMock)
 	ctx := context.Background()
 
 	_, err := s.Create(ctx, customerId, vehicleId)
@@ -48,8 +48,8 @@ func TestService_Create_VerifyVehicleID(t *testing.T) {
 	customerId := c.ID
 	vehicleId := domain.NewVehicle("", "", "", "", 2026).ID
 
-	executor, mockRepo, customerMock, vehicleMock := setupCreateTestMock(t, nil, customerId, nil, vehicleId, domain.ErrVehicleNotFound)
-	s := Service(executor, mockRepo, customerMock, vehicleMock)
+	executor, mockRepo, workRepo, customerMock, vehicleMock := setupCreateTestMock(t, nil, customerId, nil, vehicleId, domain.ErrVehicleNotFound)
+	s := Service(executor, mockRepo, workRepo, customerMock, vehicleMock)
 	ctx := context.Background()
 
 	_, err := s.Create(ctx, customerId, vehicleId)
@@ -61,8 +61,8 @@ func TestService_Create_InsertSO_RepositoryFailure(t *testing.T) {
 	customerId := c.ID
 	vehicleId := domain.NewVehicle("", "", "", "", 2026).ID
 
-	executor, mockRepo, customerMock, vehicleMock := setupCreateTestMock(t, domain.ErrInfraConflict, c.ID, nil, vehicleId, nil)
-	s := Service(executor, mockRepo, customerMock, vehicleMock)
+	executor, mockRepo, workRepo, customerMock, vehicleMock := setupCreateTestMock(t, domain.ErrInfraConflict, c.ID, nil, vehicleId, nil)
+	s := Service(executor, mockRepo, workRepo, customerMock, vehicleMock)
 	ctx := context.Background()
 
 	so, err := s.Create(ctx, customerId, vehicleId)
@@ -77,10 +77,12 @@ func setupCreateTestMock(t *testing.T,
 	vehicleID string,
 	vehicleError error) (uow.Executor,
 	domain.ServiceOrderRepository,
+	domain.WorkRepository,
 	domain.CustomerService,
 	domain.VehicleService) {
 	executor := uowmocks.NewExecutor(t)
 	mockRepo := mocks.NewServiceOrderRepository(t)
+	mockWorkRepo := mocks.NewWorkRepository(t)
 	mockCustomerSvc := mocks.NewCustomerService(t)
 	mockVehicleSvc := mocks.NewVehicleService(t)
 
@@ -94,7 +96,7 @@ func setupCreateTestMock(t *testing.T,
 		}
 	}
 
-	return executor, mockRepo, mockCustomerSvc, mockVehicleSvc
+	return executor, mockRepo, mockWorkRepo, mockCustomerSvc, mockVehicleSvc
 }
 
 func runAllSteps() func(context.Context, ...uow.Step) error {

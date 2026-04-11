@@ -112,13 +112,14 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	uow := postgres.NewTransactionalUoW(db)
 
 	repo := soRepo.Repository()
+	workRepository := workRepo.Repository()
 	userRepository := userRepo.Repository()
 	customerRepository := customerRepo.Repository()
 	vehicleRepository := vehicleRepo.NewVehicleRepository()
 
 	vehicle := vehicleSvc.NewService(uow, vehicleRepository)
 	customer := customerSvc.Service(uow, userRepository, customerRepository)
-	svc := soSvc.Service(uow, repo, customer, vehicle)
+	svc := soSvc.Service(uow, repo, workRepository, customer, vehicle)
 
 	return soHandler.HttpHandler(svc)
 }
