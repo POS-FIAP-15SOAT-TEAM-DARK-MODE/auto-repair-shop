@@ -27,11 +27,11 @@ func TestHandler_Create(t *testing.T) {
 		{
 			name: "success",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			mockSetup: func(m *mocks.VehicleService) {
 				m.EXPECT().
@@ -43,29 +43,29 @@ func TestHandler_Create(t *testing.T) {
 		{
 			name: "validation error (missing fields)",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "",
 				"model": "",
 				"year": 2020,
-				"customer_id": ""
+				"customerId": ""
 			}`,
 			mockSetup:      func(m *mocks.VehicleService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "invalid json",
-			body:           `{"license_plate":`,
+			body:           `{"licensePlate":`,
 			mockSetup:      func(m *mocks.VehicleService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name: "service error",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			mockSetup: func(m *mocks.VehicleService) {
 				m.EXPECT().
@@ -207,11 +207,11 @@ func TestHandler_Update(t *testing.T) {
 			name: "success",
 			id:   "veh-1",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			mockSetup: func(m *mocks.VehicleService) {
 				m.EXPECT().
@@ -226,11 +226,11 @@ func TestHandler_Update(t *testing.T) {
 			name: "missing id",
 			id:   "",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			mockSetup:      func(m *mocks.VehicleService) {},
 			expectedStatus: http.StatusBadRequest,
@@ -239,11 +239,11 @@ func TestHandler_Update(t *testing.T) {
 			name: "validation error (missing fields)",
 			id:   "veh-1",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "",
 				"model": "",
 				"year": 2020,
-				"customer_id": ""
+				"customerId": ""
 			}`,
 			mockSetup:      func(m *mocks.VehicleService) {},
 			expectedStatus: http.StatusBadRequest,
@@ -251,7 +251,7 @@ func TestHandler_Update(t *testing.T) {
 		{
 			name:           "invalid json",
 			id:             "veh-1",
-			body:           `{"license_plate":`,
+			body:           `{"licensePlate":`,
 			mockSetup:      func(m *mocks.VehicleService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -259,11 +259,11 @@ func TestHandler_Update(t *testing.T) {
 			name: "service error",
 			id:   "veh-1",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			mockSetup: func(m *mocks.VehicleService) {
 				m.EXPECT().

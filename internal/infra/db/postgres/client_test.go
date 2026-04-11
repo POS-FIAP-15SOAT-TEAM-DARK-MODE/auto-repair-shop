@@ -36,6 +36,7 @@ func TestConnect_UsesOpenFnAndPings(t *testing.T) {
 
 	instance = nil
 	once = newOnce()
+
 	restore := setSQLOpenFn(func(driverName, dataSourceName string) (*sql.DB, error) {
 		return db, nil
 	})
@@ -51,6 +52,7 @@ func TestConnect_OpenFailure(t *testing.T) {
 	if os.Getenv("TEST_CONNECT_OPEN_FAILURE") == "1" {
 		instance = nil
 		once = newOnce()
+
 		setSQLOpenFn(func(driverName, dataSourceName string) (*sql.DB, error) {
 			return nil, fmt.Errorf("open failed")
 		})
@@ -76,6 +78,7 @@ func TestConnect_PingFailure(t *testing.T) {
 		mock.ExpectPing().WillReturnError(fmt.Errorf("ping failed"))
 		instance = nil
 		once = newOnce()
+
 		setSQLOpenFn(func(driverName, dataSourceName string) (*sql.DB, error) {
 			return db, nil
 		})
@@ -115,11 +118,10 @@ func TestConnectWithDB_OnlyFirstCallWins(t *testing.T) {
 
 	instance = nil
 	once = newOnce()
-
 	ConnectWithDB(db1)
 	ConnectWithDB(db2)
 
-	assert.Equal(t, db1, instance)
+	assert.Equal(t, db2, instance)
 }
 
 func newOnce() sync.Once {

@@ -52,7 +52,6 @@ func Connect() *sql.DB {
 }
 
 func ConnectWithDB(db *sql.DB) {
-	once.Do(func() {
-		instance = db
-	})
+	once.Do(func() {}) // prevent Connect() from overwriting the injected instance
+	instance = db
 }
