@@ -347,14 +347,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateWorkRequest"
+              $ref: '#/components/schemas/CreateWorkRequest'
       responses:
         "201":
           description: Successful created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreateWorkResponse"
+                $ref: '#/components/schemas/CreateWorkResponse'
         "500":
           description: Internal Server Error
         "400":
@@ -718,6 +718,113 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/services:
+      get:
+        summary: Get all services of a service order
+        description: Get all services of a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to get all services from.
+        responses:
+          "200":
+            description: Services successfully fetched
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListWorksResponse'
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+      post:
+        summary: Add a new service to a service order
+        description: Add a new service to a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to add a service to.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddServiceToServiceOrderRequest'
+        responses:
+          "204":
+            description: Service successfully added
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
+  /v1/service-order/{id}/services/{serviceId}:
+      delete:
+        summary: Delete a service from a service order
+        description: Delete a service from a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to delete a service from.
+          - in: path
+            name: serviceId
+            required: true
+            schema:
+              type: string
+            description: Id of service to be deleted.
+        responses:
+          "204":
+            description: Service successfully deleted
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
 components:
   securitySchemes:
     SessionToken:
@@ -941,6 +1048,7 @@ components:
         - description
         - price
         - status
+
     ListWorksResponse:
       type: object
       properties:
@@ -1052,6 +1160,7 @@ components:
           type: string
           format: uuid
           example: b8415e84-730a-4624-a1c3-74cf59b95d6d
+
     ListVehiclesResponse:
       type: object
       properties:
@@ -1163,3 +1272,14 @@ components:
           type: string
           format: date-time
           description: Creation timestamp
+
+    AddServiceToServiceOrderRequest:
+      type: object
+      required:
+        - services
+      properties:
+        services:
+          type: array
+          items:
+            type: string
+            description: ID of the service to add to the service order

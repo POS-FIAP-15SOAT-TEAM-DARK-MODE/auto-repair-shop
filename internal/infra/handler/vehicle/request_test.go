@@ -123,17 +123,17 @@ func TestReqBodyVehicleToDTO(t *testing.T) {
 		{
 			name: "valid json",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			expectError: false,
 		},
 		{
 			name:        "invalid json",
-			body:        `{"license_plate":`,
+			body:        `{"licensePlate":`,
 			expectError: true,
 		},
 		{
@@ -177,27 +177,27 @@ func TestValidateAndCreateDTO(t *testing.T) {
 		{
 			name: "valid request",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			expectedErr: nil,
 		},
 		{
 			name:        "invalid json",
-			body:        `{"license_plate":`,
+			body:        `{"licensePlate":`,
 			expectedErr: errors.New("json error"),
 		},
 		{
 			name: "validation error",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "",
 				"model": "",
 				"year": 2020,
-				"customer_id": ""
+				"customerId": ""
 			}`,
 			expectedErr: domain.ErrRequiredVehicleBrand,
 		},

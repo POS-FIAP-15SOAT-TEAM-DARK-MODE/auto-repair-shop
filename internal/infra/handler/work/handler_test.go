@@ -446,8 +446,8 @@ func TestListWorkHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d", http.StatusCreated, rec.Code)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 
 	var resp domain.PaginatorResponse[map[string]any]
@@ -536,8 +536,8 @@ func TestListWorkHandler_Integration(t *testing.T) {
 	listRec := httptest.NewRecorder()
 	router.ServeHTTP(listRec, listReq)
 
-	if listRec.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d", http.StatusCreated, listRec.Code)
+	if listRec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, listRec.Code)
 	}
 
 	var resp domain.PaginatorResponse[map[string]any]

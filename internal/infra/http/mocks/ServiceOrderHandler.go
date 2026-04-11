@@ -21,6 +21,39 @@ func (_m *ServiceOrderHandler) EXPECT() *ServiceOrderHandler_Expecter {
 	return &ServiceOrderHandler_Expecter{mock: &_m.Mock}
 }
 
+// AddWork provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) AddWork(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_AddWork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddWork'
+type ServiceOrderHandler_AddWork_Call struct {
+	*mock.Call
+}
+
+// AddWork is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) AddWork(_a0 interface{}) *ServiceOrderHandler_AddWork_Call {
+	return &ServiceOrderHandler_AddWork_Call{Call: _e.mock.On("AddWork", _a0)}
+}
+
+func (_c *ServiceOrderHandler_AddWork_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_AddWork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_AddWork_Call) Return() *ServiceOrderHandler_AddWork_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_AddWork_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_AddWork_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Create provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) Create(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -50,6 +83,72 @@ func (_c *ServiceOrderHandler_Create_Call) Return() *ServiceOrderHandler_Create_
 }
 
 func (_c *ServiceOrderHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Create_Call {
+	_c.Run(run)
+	return _c
+}
+
+// DeleteWork provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) DeleteWork(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_DeleteWork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteWork'
+type ServiceOrderHandler_DeleteWork_Call struct {
+	*mock.Call
+}
+
+// DeleteWork is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) DeleteWork(_a0 interface{}) *ServiceOrderHandler_DeleteWork_Call {
+	return &ServiceOrderHandler_DeleteWork_Call{Call: _e.mock.On("DeleteWork", _a0)}
+}
+
+func (_c *ServiceOrderHandler_DeleteWork_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_DeleteWork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_DeleteWork_Call) Return() *ServiceOrderHandler_DeleteWork_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_DeleteWork_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_DeleteWork_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Get provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) Get(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
+type ServiceOrderHandler_Get_Call struct {
+	*mock.Call
+}
+
+// Get is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) Get(_a0 interface{}) *ServiceOrderHandler_Get_Call {
+	return &ServiceOrderHandler_Get_Call{Call: _e.mock.On("Get", _a0)}
+}
+
+func (_c *ServiceOrderHandler_Get_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Get_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Get_Call) Return() *ServiceOrderHandler_Get_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Get_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Get_Call {
 	_c.Run(run)
 	return _c
 }

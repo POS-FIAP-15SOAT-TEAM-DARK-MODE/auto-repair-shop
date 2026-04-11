@@ -99,6 +99,8 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrEmptyWorkDescription) ||
 		errors.Is(err, domain.ErrWorkDescriptionShorterThenRequired) ||
 		errors.Is(err, domain.ErrInvalidWorkId) ||
+		errors.Is(err, domain.ErrInvalidServiceOrderId) ||
+		errors.Is(err, domain.ErrEmptyServicesList) ||
 		errors.Is(err, json.ErrJSONSyntax) ||
 		errors.Is(err, json.ErrJSONType) ||
 		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
@@ -112,7 +114,11 @@ func isBadRequestError(err error) bool {
 }
 
 func isNotFoundError(err error) bool {
-	return errors.Is(err, domain.ErrCustomerNotFound) || errors.Is(err, domain.ErrVehicleNotFound)
+	return errors.Is(err, domain.ErrCustomerNotFound) ||
+		errors.Is(err, domain.ErrVehicleNotFound) ||
+		errors.Is(err, domain.ErrWorkNotFound) ||
+		errors.Is(err, domain.ErrServiceOrderNotFound) ||
+		errors.Is(err, domain.ErrServiceOrderWorkNotFound)
 }
 
 func isUnauthorizedError(err error) bool {

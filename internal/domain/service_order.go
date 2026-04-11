@@ -3,7 +3,7 @@ package domain
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 	"github.com/shopspring/decimal"
 )
 
@@ -38,16 +38,23 @@ type ServiceOrder struct {
 type (
 	ServiceOrderService interface {
 		Create(ctx context.Context, customerId, vehicleId string) (ServiceOrder, error)
+		ListWorks(ctx context.Context, serviceOrderID string) ([]Work, error)
+		AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error
+		RemoveWork(ctx context.Context, serviceOrderID, workID string) error
 	}
 
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
+		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
+		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
+		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
+		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
 	}
 )
 
 func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 	return &ServiceOrder{
-		ID:          uuid.NewString(),
+		ID:          ulid.Make().String(),
 		Status:      SERVICE_ORDER_STATUS_NEW,
 		Customer:    Customer,
 		Vehicle:     Vehicle,

@@ -17,7 +17,7 @@ import (
 func TestPostgresRepository_Save(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -47,7 +47,7 @@ func TestPostgresRepository_Save(t *testing.T) {
 func TestPostgresRepository_Save_Error(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -135,7 +135,7 @@ func TestPostgresRepository_Find(t *testing.T) {
 
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -185,7 +185,7 @@ func TestPostgresRepository_Update_MissingTx(t *testing.T) {
 func TestPostgresRepository_Update_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -215,7 +215,7 @@ func TestPostgresRepository_Update_Success(t *testing.T) {
 func TestPostgresRepository_Update_Error(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -252,7 +252,7 @@ func TestPostgresRepository_Delete_MissingTx(t *testing.T) {
 func TestPostgresRepository_Delete_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -274,7 +274,7 @@ func TestPostgresRepository_Delete_Success(t *testing.T) {
 func TestPostgresRepository_Delete_Error(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -296,7 +296,7 @@ func TestPostgresRepository_Delete_Error(t *testing.T) {
 func TestVehicleRepository_Count_Success_NoFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
@@ -318,7 +318,7 @@ func TestVehicleRepository_Count_Success_NoFilter(t *testing.T) {
 func TestVehicleRepository_Count_WithCustomerFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
@@ -363,7 +363,7 @@ func TestVehicleRepository_Count_QueryError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -394,7 +394,7 @@ func TestVehicleRepository_Count_ScanError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -425,7 +425,7 @@ func TestVehicleRepository_Search_RowsError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -462,7 +462,7 @@ func TestVehicleRepository_Search_ScanError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -497,7 +497,7 @@ func TestVehicleRepository_Search_QueryError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -546,7 +546,7 @@ func TestVehicleRepository_Search_TransactionError(t *testing.T) {
 func TestVehicleRepository_Search_WithCustomerFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
@@ -581,7 +581,7 @@ func TestVehicleRepository_Search_WithCustomerFilter(t *testing.T) {
 func TestVehicleRepository_Search_Success_NoFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
