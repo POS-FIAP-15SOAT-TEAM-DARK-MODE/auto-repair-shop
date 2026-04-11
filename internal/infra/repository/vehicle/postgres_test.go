@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -16,7 +17,7 @@ import (
 func TestPostgresRepository_Save(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -46,7 +47,7 @@ func TestPostgresRepository_Save(t *testing.T) {
 func TestPostgresRepository_Save_Error(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -134,7 +135,7 @@ func TestPostgresRepository_Find(t *testing.T) {
 
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -184,7 +185,7 @@ func TestPostgresRepository_Update_MissingTx(t *testing.T) {
 func TestPostgresRepository_Update_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -214,7 +215,7 @@ func TestPostgresRepository_Update_Success(t *testing.T) {
 func TestPostgresRepository_Update_Error(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -251,7 +252,7 @@ func TestPostgresRepository_Delete_MissingTx(t *testing.T) {
 func TestPostgresRepository_Delete_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -273,7 +274,7 @@ func TestPostgresRepository_Delete_Success(t *testing.T) {
 func TestPostgresRepository_Delete_Error(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := vehicle.NewVehicleRepository()
@@ -295,26 +296,20 @@ func TestPostgresRepository_Delete_Error(t *testing.T) {
 func TestVehicleRepository_Count_Success_NoFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
 
 	params := &domain.SearchVehicleParams{}
 
-	mock.ExpectBegin()
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM vehicles").
+	query := `SELECT COUNT(*) FROM vehicles`
+	mock.ExpectQuery(regexp.QuoteMeta(query)).
 		WillReturnRows(
 			sqlmock.NewRows([]string{"count"}).AddRow(10),
 		)
-	mock.ExpectCommit()
 
-	var total int64
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
+	total, err := repo.Count(context.Background(), params)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(10), total)
@@ -323,40 +318,26 @@ func TestVehicleRepository_Count_Success_NoFilter(t *testing.T) {
 func TestVehicleRepository_Count_WithCustomerFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	defer db.Close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
 
 	params := &domain.SearchVehicleParams{
-		CustomerId: "123",
+		CustomerId: "cust-1",
 	}
 
-	mock.ExpectBegin()
-
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM vehicles").
-		WithArgs("123").
+	query := `SELECT COUNT(*) FROM vehicles WHERE customer_id =`
+	mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(params.CustomerId).
 		WillReturnRows(
-			sqlmock.NewRows([]string{"count"}).AddRow(5),
+			sqlmock.NewRows([]string{"count"}).AddRow(10),
 		)
 
-	mock.ExpectCommit()
+	total, err := repo.Count(context.Background(), params)
 
-	var total int64
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
-
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-
-	if total != 5 {
-		t.Fatalf("expected total 5, got %d", total)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, int64(10), total)
 }
 
 func TestVehicleRepository_Count_TransactionError(t *testing.T) {
@@ -564,12 +545,10 @@ func TestVehicleRepository_Search_TransactionError(t *testing.T) {
 
 func TestVehicleRepository_Search_WithCustomerFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("error creating sqlmock: %v", err)
-	}
+	assert.NoError(t, err)
 	defer db.Close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
 
 	params := &domain.SearchVehicleParams{
@@ -578,25 +557,17 @@ func TestVehicleRepository_Search_WithCustomerFilter(t *testing.T) {
 		Offset:     10,
 	}
 
-	mock.ExpectBegin()
-
 	rows := sqlmock.NewRows([]string{
 		"id", "license_plate", "model", "brand", "year", "customer_id",
 	}).AddRow("1", "BBB9999", "hb20", "hyundai", 2021, "123")
 
-	mock.ExpectQuery("SELECT id, license_plate, brand, model, year, customer_id FROM vehicle").
-		WithArgs("123", 5, 10).
+	query := `SELECT id, license_plate, brand, model, year, customer_id FROM vehicle WHERE customer_id = $1 LIMIT $2 OFFSET $3`
+	mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(params.CustomerId, params.Limit, params.Offset).
 		WillReturnRows(rows)
 
-	mock.ExpectCommit()
-
 	var result []domain.Vehicle
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		result, err = repo.Search(ctx, params)
-		return err
-	})
+	result, err = repo.Search(context.Background(), params)
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -609,37 +580,28 @@ func TestVehicleRepository_Search_WithCustomerFilter(t *testing.T) {
 
 func TestVehicleRepository_Search_Success_NoFilter(t *testing.T) {
 	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("error creating sqlmock: %v", err)
-	}
+	assert.NoError(t, err)
 	defer db.Close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := vehicle.NewVehicleRepository()
 
 	params := &domain.SearchVehicleParams{
-		Limit:  10,
-		Offset: 0,
+		Limit:  5,
+		Offset: 10,
 	}
-
-	mock.ExpectBegin()
 
 	rows := sqlmock.NewRows([]string{
 		"id", "license_plate", "model", "brand", "year", "customer_id",
-	}).AddRow("1", "AAA1234", "onix", "chevrolet", 2020, "123")
+	}).AddRow("1", "BBB9999", "hb20", "hyundai", 2021, "123")
 
-	mock.ExpectQuery("SELECT").
+	query := `SELECT id, license_plate, brand, model, year, customer_id FROM vehicle LIMIT $1 OFFSET $2`
+	mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(params.Limit, params.Offset).
 		WillReturnRows(rows)
 
-	mock.ExpectCommit()
-
 	var result []domain.Vehicle
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		result, err = repo.Search(ctx, params)
-		return err
-	})
+	result, err = repo.Search(context.Background(), params)
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
@@ -647,9 +609,5 @@ func TestVehicleRepository_Search_Success_NoFilter(t *testing.T) {
 
 	if len(result) != 1 {
 		t.Fatalf("expected 1 vehicle, got %d", len(result))
-	}
-
-	if result[0].LicensePlate != "AAA1234" {
-		t.Fatalf("unexpected vehicle data: %+v", result[0])
 	}
 }

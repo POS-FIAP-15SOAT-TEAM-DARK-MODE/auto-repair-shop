@@ -13,11 +13,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type dbRunner interface {
-	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
-}
-
 type vehicleRepository struct{}
 
 func NewVehicleRepository() *vehicleRepository {
@@ -55,11 +50,11 @@ func (r *vehicleRepository) Find(ctx context.Context, params domain.FindVehicleP
 
 	qb := db.QueryBuilder(selectVehicle)
 	if params.LicensePlate != "" {
-		qb.Add("license_plate = ", params.LicensePlate)
+		qb.Add("license_plate =", params.LicensePlate)
 	}
 
 	if params.ID != "" {
-		qb.Add("id = ", params.ID)
+		qb.Add("id =", params.ID)
 	}
 
 	query, args := qb.Build()
@@ -113,11 +108,14 @@ func (r *vehicleRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVehicleParams) ([]domain.Vehicle, error) {
-	runner := instanceDbRunner(ctx)
+	runner, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	qb := db.QueryBuilder(selectVehicle).AddPagination(params.Limit, params.Offset)
 	if params.CustomerId != "" {
-		qb.Add("customer_id = ", params.CustomerId)
+		qb.Add("customer_id =", params.CustomerId)
 	}
 	query, args := qb.Build()
 
@@ -150,28 +148,21 @@ func (r *vehicleRepository) Search(ctx context.Context, params *domain.SearchVeh
 }
 
 func (r *vehicleRepository) Count(ctx context.Context, params *domain.SearchVehicleParams) (int64, error) {
-	runner := instanceDbRunner(ctx)
+	runner, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
 
 	qb := db.QueryBuilder(countVehicles)
 	if params.CustomerId != "" {
-		qb.Add("customer_id = ", params.CustomerId)
+		qb.Add("customer_id =", params.CustomerId)
 	}
 	query, args := qb.Build()
 
 	var total int64
-	if err := runner.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+	if err = runner.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
 		return 0, pgPkg.Error(ctx, err)
 	}
 
 	return total, nil
-}
-
-func instanceDbRunner(ctx context.Context) dbRunner {
-	var runner dbRunner
-	if tx, err := postgres.GetTransaction(ctx); err == nil {
-		runner = tx
-	} else {
-		runner = postgres.Connect()
-	}
-	return runner
 }
