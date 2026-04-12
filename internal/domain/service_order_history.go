@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 )
 
 type (
@@ -45,7 +45,7 @@ func (p *SearchServiceOrderHistoryParams) Validate() error {
 
 func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistory {
 	return &ServiceOrderHistory{
-		ID:             uuid.New().String(),
+		ID:             ulid.Make().String(),
 		PreviousStatus: previousStatus,
 		NewStatus:      newStatus,
 		CreatedAt:      createdAt,
