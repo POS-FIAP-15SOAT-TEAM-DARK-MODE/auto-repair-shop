@@ -50,3 +50,24 @@ func (h *handler) Create(c *gin.Context) {
 	logger.Of(supplyRequest).Debug("create response", zap.Any("service", supply))
 	c.JSON(http.StatusCreated, mapSupplyToResponseDTO(supply))
 }
+
+func (h *handler) List(c *gin.Context) {
+	supplyRequest := c.Request.Context()
+	supplies, err := h.service.List(supplyRequest)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(supplyRequest).Error(err)
+		logger.Of(supplyRequest).Debug("Failed to list supplies in service layer",
+			zap.String("operation", "list_supplies"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, response)
+		return
+	}
+	responseDTOs := make([]interface{}, len(supplies))
+	for i, supply := range supplies {
+		responseDTOs[i] = mapSupplyToResponseDTO(supply)
+	}
+	c.JSON(http.StatusOK, responseDTOs)
+}

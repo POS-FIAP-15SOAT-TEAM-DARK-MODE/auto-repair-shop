@@ -40,5 +40,8 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.GET("/vehicle", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.FindByLicensePlate)
 
 	v1.POST("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Create)
+	//v1.GET("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.List)
+	v1.GET("/supplies", c.SupplyHandler.List)
+
 	return router
 }

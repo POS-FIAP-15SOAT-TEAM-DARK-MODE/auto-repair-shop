@@ -35,6 +35,23 @@ func (s *service) Create(ctx context.Context, req *domain.Supply) error {
 	return nil
 }
 
+func (s *service) List(ctx context.Context) ([]*domain.Supply, error) {
+	var supplies []*domain.Supply
+
+	if err := s.uow.Execute(ctx, func(ctx context.Context) error {
+		var err error
+		supplies, err = s.repo.List(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to list supplies: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return supplies, nil
+}
+
 func (s *service) createRepositoryStep(user *domain.Supply) func(context.Context) error {
 	return func(ctx context.Context) error {
 		if err := s.repo.Create(ctx, user); err != nil {

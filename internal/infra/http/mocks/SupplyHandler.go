@@ -54,6 +54,39 @@ func (_c *SupplyHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *Suppl
 	return _c
 }
 
+// List provides a mock function with given fields: _a0
+func (_m *SupplyHandler) List(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// SupplyHandler_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type SupplyHandler_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *SupplyHandler_Expecter) List(_a0 interface{}) *SupplyHandler_List_Call {
+	return &SupplyHandler_List_Call{Call: _e.mock.On("List", _a0)}
+}
+
+func (_c *SupplyHandler_List_Call) Run(run func(_a0 *gin.Context)) *SupplyHandler_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *SupplyHandler_List_Call) Return() *SupplyHandler_List_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *SupplyHandler_List_Call) RunAndReturn(run func(*gin.Context)) *SupplyHandler_List_Call {
+	_c.Run(run)
+	return _c
+}
+
 // NewSupplyHandler creates a new instance of SupplyHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewSupplyHandler(t interface {

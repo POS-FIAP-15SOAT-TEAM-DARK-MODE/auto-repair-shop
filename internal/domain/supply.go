@@ -21,12 +21,14 @@ type (
 
 type SupplyService interface {
 	Create(ctx context.Context, req *Supply) error
+	List(ctx context.Context) ([]*Supply, error)
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
 type SupplyRepository interface {
 	Create(ctx context.Context, c *Supply) error
+	List(ctx context.Context) ([]*Supply, error)
 }
 
 func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantity, version int) *Supply {

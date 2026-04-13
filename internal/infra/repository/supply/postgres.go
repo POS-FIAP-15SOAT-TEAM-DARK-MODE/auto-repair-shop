@@ -28,3 +28,27 @@ func (u *repo) Create(ctx context.Context, supply *domain.Supply) error {
 	}
 	return nil
 }
+
+func (u *repo) List(ctx context.Context) ([]*domain.Supply, error) {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logger.Of(ctx).Debug("Executing query", zap.String("query", listSuppliesQuery))
+	rows, err := tx.QueryContext(ctx, listSuppliesQuery)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer rows.Close()
+
+	var supplies []*domain.Supply
+	for rows.Next() {
+		supply := &domain.Supply{}
+		if err = rows.Scan(&supply.ID, &supply.Name, &supply.Description, &supply.UnitPrice, &supply.StockQuantity, &supply.Version); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		supplies = append(supplies, supply)
+	}
+
+	return supplies, nil
+}

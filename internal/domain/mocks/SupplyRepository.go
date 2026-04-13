@@ -22,9 +22,9 @@ func (_m *SupplyRepository) EXPECT() *SupplyRepository_Expecter {
 	return &SupplyRepository_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: ctx, supply
-func (_m *SupplyRepository) Create(ctx context.Context, supply *domain.Supply) error {
-	ret := _m.Called(ctx, supply)
+// Create provides a mock function with given fields: ctx, c
+func (_m *SupplyRepository) Create(ctx context.Context, c *domain.Supply) error {
+	ret := _m.Called(ctx, c)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -32,7 +32,7 @@ func (_m *SupplyRepository) Create(ctx context.Context, supply *domain.Supply) e
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *domain.Supply) error); ok {
-		r0 = rf(ctx, supply)
+		r0 = rf(ctx, c)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -47,12 +47,12 @@ type SupplyRepository_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - supply *domain.Supply
-func (_e *SupplyRepository_Expecter) Create(ctx interface{}, supply interface{}) *SupplyRepository_Create_Call {
-	return &SupplyRepository_Create_Call{Call: _e.mock.On("Create", ctx, supply)}
+//   - c *domain.Supply
+func (_e *SupplyRepository_Expecter) Create(ctx interface{}, c interface{}) *SupplyRepository_Create_Call {
+	return &SupplyRepository_Create_Call{Call: _e.mock.On("Create", ctx, c)}
 }
 
-func (_c *SupplyRepository_Create_Call) Run(run func(ctx context.Context, supply *domain.Supply)) *SupplyRepository_Create_Call {
+func (_c *SupplyRepository_Create_Call) Run(run func(ctx context.Context, c *domain.Supply)) *SupplyRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*domain.Supply))
 	})
@@ -65,6 +65,64 @@ func (_c *SupplyRepository_Create_Call) Return(_a0 error) *SupplyRepository_Crea
 }
 
 func (_c *SupplyRepository_Create_Call) RunAndReturn(run func(context.Context, *domain.Supply) error) *SupplyRepository_Create_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// List provides a mock function with given fields: ctx
+func (_m *SupplyRepository) List(ctx context.Context) ([]*domain.Supply, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
+	var r0 []*domain.Supply
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*domain.Supply, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []*domain.Supply); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*domain.Supply)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SupplyRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type SupplyRepository_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *SupplyRepository_Expecter) List(ctx interface{}) *SupplyRepository_List_Call {
+	return &SupplyRepository_List_Call{Call: _e.mock.On("List", ctx)}
+}
+
+func (_c *SupplyRepository_List_Call) Run(run func(ctx context.Context)) *SupplyRepository_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_List_Call) Return(_a0 []*domain.Supply, _a1 error) *SupplyRepository_List_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SupplyRepository_List_Call) RunAndReturn(run func(context.Context) ([]*domain.Supply, error)) *SupplyRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

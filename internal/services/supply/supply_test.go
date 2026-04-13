@@ -39,7 +39,7 @@ func validSupply() *domain.Supply {
 	}
 }
 
-// --- Create ---
+// ─── Create ───────────────────────────────────────────────────────────────────
 
 func TestService_Create(t *testing.T) {
 	tests := []struct {
@@ -62,7 +62,7 @@ func TestService_Create(t *testing.T) {
 			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
 				// neither the UoW nor the repository should be called
 			},
-			wantErr: domain.ErrInvalidSupplyName, // adjust to whatever your Validate() returns
+			wantErr: domain.ErrInvalidSupplyName,
 		},
 		{
 			name:  "repository_conflict_returns_error",
@@ -96,6 +96,82 @@ func TestService_Create(t *testing.T) {
 				assert.ErrorIs(t, err, tt.wantErr)
 			} else {
 				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// ─── List ─────────────────────────────────────────────────────────────────────
+
+func TestService_List(t *testing.T) {
+	tests := []struct {
+		name      string
+		mockSetup func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository)
+		wantLen   int
+		wantErr   error
+	}{
+		{
+			name: "success_returns_supplies",
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				repo.EXPECT().
+					List(mock.Anything).
+					Return([]*domain.Supply{validSupply(), validSupply()}, nil)
+				executor.EXPECT().
+					Execute(mock.Anything, mock.Anything).
+					RunAndReturn(runAllSteps())
+			},
+			wantLen: 2,
+		},
+		{
+			name: "success_returns_empty_list",
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				repo.EXPECT().
+					List(mock.Anything).
+					Return([]*domain.Supply{}, nil)
+				executor.EXPECT().
+					Execute(mock.Anything, mock.Anything).
+					RunAndReturn(runAllSteps())
+			},
+			wantLen: 0,
+		},
+		{
+			name: "repository_error_returns_error",
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				repo.EXPECT().
+					List(mock.Anything).
+					Return([]*domain.Supply{}, assert.AnError)
+				executor.EXPECT().
+					Execute(mock.Anything, mock.Anything).
+					RunAndReturn(runAllSteps())
+			},
+			wantErr: assert.AnError,
+		},
+		{
+			name: "transaction_failure_returns_error",
+			mockSetup: func(executor *uowmocks.Executor, _ *domainmocks.SupplyRepository) {
+				executor.EXPECT().
+					Execute(mock.Anything, mock.Anything).
+					Return(assert.AnError)
+			},
+			wantErr: assert.AnError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			executor := uowmocks.NewExecutor(t)
+			repo := domainmocks.NewSupplyRepository(t)
+
+			tt.mockSetup(executor, repo)
+
+			result, err := svc.Service(executor, repo).List(context.Background())
+
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+				assert.Nil(t, result)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, result, tt.wantLen)
 			}
 		})
 	}

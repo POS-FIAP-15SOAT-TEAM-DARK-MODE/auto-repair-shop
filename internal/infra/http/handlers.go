@@ -40,6 +40,7 @@ type (
 	}
 	SupplyHandler interface {
 		Create(*gin.Context)
+		List(*gin.Context)
 	}
 )
 

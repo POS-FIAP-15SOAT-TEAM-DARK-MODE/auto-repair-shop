@@ -102,6 +102,7 @@ func TestSetupRouter(t *testing.T) {
 
 		// Supply
 		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated},
+		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK},
 
 		// Swagger UI (based on mountSwaggerUI in routing.go)
 		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK},
