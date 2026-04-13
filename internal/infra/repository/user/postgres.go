@@ -9,6 +9,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -72,5 +73,45 @@ func (u *repo) Create(ctx context.Context, c *domain.User) error {
 	if _, err = tx.ExecContext(ctx, createUserQuery, c.ID, c.Name, c.Email, c.Password); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
+	return nil
+}
+
+func (u *repo) Update(ctx context.Context, id, name, email string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, updateUserQuery, name, email, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (u *repo) AssignRole(ctx context.Context, userID string, role domain.Role) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	id := uuid.New().String()
+	if _, err = tx.ExecContext(ctx, assignRoleQuery, id, userID, string(role)); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (u *repo) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteUserQuery, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
 	return nil
 }

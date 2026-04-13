@@ -44,12 +44,12 @@ Available roles and helpers
   - `domain.ADMIN`
   - `domain.ATTENDANT`
   - `domain.MECHANIC`
-  - `domain.CLIENT`
+  - `domain.CUSTOMER`
 
 - Convenience role slices (already defined):
   - `domain.AttendantRoles`            -> `{ATTENDANT, ADMIN}`
   - `domain.MechanicRoles`             -> `{MECHANIC, ADMIN}`
-  - `domain.ClientRoles`               -> `{CLIENT, ADMIN}`
+  - `domain.CustomerRoles`              -> `{CUSTOMER, ADMIN}`
   - `domain.AttendantAndMechanicRoles` -> `{ATTENDANT, MECHANIC, ADMIN}`
 
 Notes and best practices

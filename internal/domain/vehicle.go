@@ -32,13 +32,46 @@ type (
 	VehicleService interface {
 		Create(ctx context.Context, vehicle *Vehicle) error
 		FindByLicensePlate(ctx context.Context, licensePlate string) (*Vehicle, error)
+		FindByID(ctx context.Context, id string) (*Vehicle, error)
+		List(ctx context.Context, params *ListVehicleParams) (*PaginatorResponse[Vehicle], error)
+		Update(ctx context.Context, vehicle *Vehicle) error
+		Delete(ctx context.Context, id string) error
 	}
 
 	VehicleRepository interface {
 		Save(ctx context.Context, vehicle *Vehicle) error
-		Find(ctx context.Context, licensePlate string) (*Vehicle, error)
+		Find(ctx context.Context, params FindVehicleParams) (*Vehicle, error)
+		Update(ctx context.Context, vehicle *Vehicle) error
+		Delete(ctx context.Context, id string) error
+		Search(ctx context.Context, params *SearchVehicleParams) ([]Vehicle, error)
+		Count(ctx context.Context, params *SearchVehicleParams) (int64, error)
+	}
+
+	FindVehicleParams struct {
+		ID           string
+		LicensePlate string
+	}
+
+	ListVehicleParams struct {
+		CustomerID string
+		PageSize   int64
+		Page       int64
+	}
+
+	SearchVehicleParams struct {
+		CustomerId string
+		Limit      int64
+		Offset     int64
 	}
 )
+
+func (l ListVehicleParams) SearchVehicleParams() *SearchVehicleParams {
+	return &SearchVehicleParams{
+		CustomerId: l.CustomerID,
+		Limit:      l.PageSize,
+		Offset:     (l.Page - 1) * l.PageSize,
+	}
+}
 
 func NewVehicle(plate, brand, model, customerId string, year int) *Vehicle {
 	return &Vehicle{

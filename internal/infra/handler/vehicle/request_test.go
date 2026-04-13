@@ -123,17 +123,17 @@ func TestReqBodyVehicleToDTO(t *testing.T) {
 		{
 			name: "valid json",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			expectError: false,
 		},
 		{
 			name:        "invalid json",
-			body:        `{"license_plate":`,
+			body:        `{"licensePlate":`,
 			expectError: true,
 		},
 		{
@@ -177,27 +177,27 @@ func TestValidateAndCreateDTO(t *testing.T) {
 		{
 			name: "valid request",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			expectedErr: nil,
 		},
 		{
 			name:        "invalid json",
-			body:        `{"license_plate":`,
+			body:        `{"licensePlate":`,
 			expectedErr: errors.New("json error"),
 		},
 		{
 			name: "validation error",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "",
 				"model": "",
 				"year": 2020,
-				"customer_id": ""
+				"customerId": ""
 			}`,
 			expectedErr: domain.ErrRequiredVehicleBrand,
 		},
@@ -225,6 +225,137 @@ func TestValidateAndCreateDTO(t *testing.T) {
 			if errors.Is(tt.expectedErr, domain.ErrRequiredVehicleBrand) {
 				assert.True(t, errors.Is(err, tt.expectedErr))
 			}
+		})
+	}
+}
+
+func TestCreateListParams(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name        string
+		customerID  string
+		query       map[string]string
+		expected    *domain.ListVehicleParams
+		expectedErr error
+	}{
+		{
+			name:       "success with defaults",
+			customerID: "cust-1",
+			query:      map[string]string{},
+			expected: &domain.ListVehicleParams{
+				CustomerID: "cust-1",
+				Page:       int64(defaultPage),
+				PageSize:   int64(defaultPageSize),
+			},
+			expectedErr: nil,
+		},
+		{
+			name:       "success with custom page and pageSize",
+			customerID: "cust-1",
+			query: map[string]string{
+				pageParam:     "2",
+				pageSizeParam: "20",
+			},
+			expected: &domain.ListVehicleParams{
+				CustomerID: "cust-1",
+				Page:       2,
+				PageSize:   20,
+			},
+			expectedErr: nil,
+		},
+		{
+			name:       "invalid page ignored",
+			customerID: "cust-1",
+			query: map[string]string{
+				pageParam: "invalid",
+			},
+			expected: &domain.ListVehicleParams{
+				CustomerID: "cust-1",
+				Page:       int64(defaultPage),
+				PageSize:   int64(defaultPageSize),
+			},
+			expectedErr: nil,
+		},
+		{
+			name:       "page less than default ignored",
+			customerID: "cust-1",
+			query: map[string]string{
+				pageParam: "0",
+			},
+			expected: &domain.ListVehicleParams{
+				CustomerID: "cust-1",
+				Page:       int64(defaultPage),
+				PageSize:   int64(defaultPageSize),
+			},
+			expectedErr: nil,
+		},
+		{
+			name:       "invalid pageSize ignored",
+			customerID: "cust-1",
+			query: map[string]string{
+				pageSizeParam: "invalid",
+			},
+			expected: &domain.ListVehicleParams{
+				CustomerID: "cust-1",
+				Page:       int64(defaultPage),
+				PageSize:   int64(defaultPageSize),
+			},
+			expectedErr: nil,
+		},
+		{
+			name:       "pageSize less than default ignored",
+			customerID: "cust-1",
+			query: map[string]string{
+				pageSizeParam: "0",
+			},
+			expected: &domain.ListVehicleParams{
+				CustomerID: "cust-1",
+				Page:       int64(defaultPage),
+				PageSize:   int64(defaultPageSize),
+			},
+			expectedErr: nil,
+		},
+		{
+			name:        "missing customer id",
+			customerID:  "",
+			query:       map[string]string{},
+			expected:    nil,
+			expectedErr: domain.ErrInvalidCustomerId,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			// 🔹 set params
+			c.Params = gin.Params{
+				{Key: customerIDParam, Value: tt.customerID},
+			}
+
+			// 🔹 build query string
+			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+			q := req.URL.Query()
+			for k, v := range tt.query {
+				q.Add(k, v)
+			}
+			req.URL.RawQuery = q.Encode()
+			c.Request = req
+
+			result, err := createListParams(c)
+
+			if tt.expectedErr != nil {
+				assert.Error(t, err)
+				assert.True(t, errors.Is(err, tt.expectedErr),
+					"expected error to wrap %v, got %v", tt.expectedErr, err)
+				assert.Nil(t, result)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

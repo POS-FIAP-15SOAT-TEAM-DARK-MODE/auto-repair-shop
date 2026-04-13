@@ -54,3 +54,28 @@ func (r *getCustomerByDocumentRequest) validate() error {
 	}
 	return nil
 }
+
+type updateCustomerRequest struct {
+	Name  *string `json:"name,omitempty"`
+	Email *string `json:"email,omitempty"`
+	Phone *string `json:"phone,omitempty"`
+}
+
+func (r *updateCustomerRequest) validate() error {
+	if r.Name != nil {
+		u := &domain.User{Name: *r.Name}
+		if err := u.IsValidName(); err != nil {
+			return err
+		}
+	}
+	if r.Email != nil {
+		u := &domain.User{Email: *r.Email}
+		if err := u.IsValidEmail(); err != nil {
+			return err
+		}
+	}
+	if r.Phone != nil && strings.TrimSpace(*r.Phone) == "" {
+		return domain.ErrPhoneRequired
+	}
+	return nil
+}

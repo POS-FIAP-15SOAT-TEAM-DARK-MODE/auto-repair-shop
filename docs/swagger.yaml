@@ -9,14 +9,34 @@ servers:
     variables:
       PORT:
         default: "8080"
-        description: Port number for the server  
+        description: Port number for the server
 security:
   - SessionToken: []
 paths:
+  /ping:
+    get:
+      summary: Ping the API
+      description: Health check endpoint that returns a simple message.
+      tags:
+        - Health
+      security: []
+      responses:
+        "200":
+          description: Successful ping
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: pong
+
   /v1/customers:
     post:
       summary: Create a customer
-      description: Creates a new customer along with a linked user account. Supports both individual (CPF) and company (CNPJ) types. Alphanumeric CNPJ format is supported (RFB 2243/2024).
+      description: Creates a new customer along with a linked user account and assigns the CUSTOMER role. Supports both individual (CPF) and company (CNPJ) types. Alphanumeric CNPJ format is supported (RFB 2243/2024).
       tags:
         - Customers
       security:
@@ -33,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreateCustomerResponse"
+                $ref: "#/components/schemas/CustomerResponse"
         "400":
           description: Invalid request body or document validation failed (CPF/CNPJ)
           content:
@@ -72,25 +92,177 @@ paths:
                 code: 500
                 error: Internal Server Error
 
-  /ping:
     get:
-      summary: Ping the API
-      description: Health check endpoint that returns a simple message.
+      summary: Get customer by document
+      description: Returns the customer matching the provided CPF or CNPJ document. Accepts formatted (e.g. `111.444.777-35`) or plain (`11144477735`) values.
       tags:
-        - Health
-      security: []
+        - Customers
+      parameters:
+        - in: query
+          name: document
+          required: true
+          schema:
+            type: string
+          description: CPF or CNPJ of the customer (formatted or plain digits)
+          example: "111.444.777-35"
       responses:
         "200":
-          description: Successful ping
+          description: Customer found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Missing or invalid document format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
               example:
-                message: pong
+                code: 400
+                errors:
+                  - document must be a valid CPF (11 digits) or CNPJ (14 characters)
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: customer not found
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/customers/{id}:
+    get:
+      summary: Get customer by ID
+      description: Returns the customer with the specified UUID.
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      responses:
+        "200":
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "404":
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 404
+                error: customer not found
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      summary: Update a customer
+      description: Partially updates name, email and/or phone. All fields are optional — only provided fields are changed. CPF and CNPJ are immutable. Returns 204 when the customer does not exist (idempotent).
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomerRequest"
+      responses:
+        "200":
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "204":
+          description: Customer not found (no-op)
+        "400":
+          description: Validation error (e.g. invalid name format, empty phone)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 400
+                errors:
+                  - the username must be longer than 3 characters and can only contain letters and spaces
+        "409":
+          description: Email already in use by another account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: resource already exists
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: Delete a customer
+      description: Removes the customer and its associated user account in a single transaction. Returns 204 on success or when the customer does not exist (idempotent). Returns an error for business rule violations (e.g. linked service orders).
+      tags:
+        - Customers
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      responses:
+        "204":
+          description: Customer deleted or not found
+        "409":
+          description: Customer has linked service orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 409
+                error: customer has associated service orders
+        "500":
+          description: Unexpected internal error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/auth/login:
     post:
@@ -276,7 +448,50 @@ paths:
         "500":
           description: Internal Server Error
 
-  /v1/vehicle:
+  /v1/vehicles/{customer-id}:
+    get:
+      summary: Get vehicles by customer id
+      description: Retrieve vehicles that belongs to a customer looking by its id
+      tags:
+        - Vehicle
+      parameters:
+        - in: path
+          name: customer-id
+          required: true
+          schema:
+            type: string
+          description: customer-id to search vehicles
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based).
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page.
+      responses:
+        "200":
+          description: Vehicles found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListVehiclesResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/vehicles:
     get:
       summary: Get vehicle by license plate
       description: Retrieve a vehicle by its normalized license plate. The license plate must follow supported formats (old or Mercosul).
@@ -319,20 +534,62 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VehicleRequest"
+              $ref: '#/components/schemas/VehicleRequest'
       responses:
         "201":
           description: Successful created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/VehicleResponse"
+                $ref: '#/components/schemas/VehicleResponse'
         "500":
           description: Internal Server Error
         "400":
           description: Invalid Body Content
 
- /v1/supply:
+  /v1/vehicles/{id}:
+    put:
+      summary: update a vehicle register
+      description: update a vehicle in our database
+      tags:
+        - Vehicle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleRequest'
+      responses:
+        "200":
+          description: Successful updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleResponse'
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+    delete:
+      summary: delete a vehicle register
+      description: delete a vehicle in our database
+      tags:
+        - Vehicle
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of vehicle to be deleted.
+      responses:
+        "204":
+          description: Successful deleted
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
+  /v1/supplies:
     post:
       summary: Create a supply
       description: Creates a new supply with name, description, unit price, stock quantity and version.
@@ -343,14 +600,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SupplyRequest"
+              $ref: '#/components/schemas/SupplyRequest'
       responses:
         "201":
           description: Supply created successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SupplyResponse"
+                $ref: '#/components/schemas/SupplyResponse'
         "400":
           description: Invalid request body or validation failed
           content:
@@ -369,7 +626,148 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-                
+
+  /v1/service-order:
+      post:
+        summary: Create a new service order
+        description: Create a new service order for a given customer and vehicle
+        tags:
+          - ServiceOrder
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateServiceOrderRequest'
+        responses:
+          "201":
+            description: Service order successfully created
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateServiceOrderResponse'
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
+  /v1/service-order/{id}/services:
+      get:
+        summary: Get all services of a service order
+        description: Get all services of a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to get all services from.
+        responses:
+          "200":
+            description: Services successfully fetched
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListWorksResponse'
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+      post:
+        summary: Add a new service to a service order
+        description: Add a new service to a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to add a service to.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddServiceToServiceOrderRequest'
+        responses:
+          "204":
+            description: Service successfully added
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
+  /v1/service-order/{id}/services/{serviceId}:
+      delete:
+        summary: Delete a service from a service order
+        description: Delete a service from a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to delete a service from.
+          - in: path
+            name: serviceId
+            required: true
+            schema:
+              type: string
+            description: Id of service to be deleted.
+        responses:
+          "204":
+            description: Service successfully deleted
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
 components:
   securitySchemes:
       SessionToken:
@@ -477,8 +875,8 @@ components:
           example: joao@example.com
         password:
           type: string
-          minLength: 6
-          example: secret123
+          minLength: 8
+          example: Secret@123
         type:
           type: string
           enum: [INDIVIDUAL, COMPANY]
@@ -495,7 +893,7 @@ components:
           type: string
           example: "11999999999"
 
-    CreateCustomerResponse:
+    CustomerResponse:
       type: object
       properties:
         id:
@@ -510,9 +908,11 @@ components:
           example: joao@example.com
         type:
           type: string
+          enum: [INDIVIDUAL, COMPANY]
           example: INDIVIDUAL
         document:
           type: string
+          description: Sanitized CPF (11 digits) for INDIVIDUAL or CNPJ (14 chars) for COMPANY
           example: "11144477735"
         company_name:
           type: string
@@ -520,6 +920,22 @@ components:
         phone:
           type: string
           example: "11999999999"
+
+    UpdateCustomerRequest:
+      type: object
+      description: All fields are optional. Only provided fields are updated.
+      properties:
+        name:
+          type: string
+          description: Full name (min 3 chars, letters and spaces only)
+          example: Novo Nome
+        email:
+          type: string
+          format: email
+          example: novo@example.com
+        phone:
+          type: string
+          example: "11888888888"
 
     CreateWorkRequest:
       type: object
@@ -575,6 +991,7 @@ components:
         - description
         - price
         - status
+
     ListWorksResponse:
       type: object
       properties:
@@ -605,18 +1022,18 @@ components:
       type: object
       required:
         - brand
-        - license_plate
-        - customer_id
+        - licensePlate
+        - customerId
         - model
         - year
       properties:
         brand:
           type: string
           example: chevrolet
-        license_plate:
+        licensePlate:
           type: string
           example: aaa-2a22
-        customer_id:
+        customerId:
           type: string
           format: uuid
           example: b8415e84-730a-4624-a1c3-74cf59b95d6d
@@ -631,28 +1048,54 @@ components:
       type: object
       required:
         - id
-        - license_plate
-        - brand_model
+        - licensePlate
+        - brandModel
         - year
-        - customer_id
+        - customerId
       properties:
         id:
           type: string
           format: uuid
           example: 55160da4-d243-4920-9426-5ce97aefb2fc
-        license_plate:
+        licensePlate:
           type: string
           example: AAA2A22
-        brand_model:
+        brandModel:
           type: string
           example: chevrolet - onix
         year:
           type: integer
           example: 2019
-        customer_id:
+        customerId:
           type: string
           format: uuid
           example: b8415e84-730a-4624-a1c3-74cf59b95d6d
+
+    ListVehiclesResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VehicleResponse'
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+      required:
+        - items
+        - totalItems
+        - totalPages
+        - pageSize
+        - page
     SupplyRequest:
       type: object
       required:
@@ -702,3 +1145,51 @@ components:
         version:
           type: integer
           example: 0
+
+    CreateServiceOrderRequest:
+      type: object
+      required:
+        - client
+        - vehicle
+      properties:
+        client:
+          type: string
+          description: ID of the customer/client requesting the service
+        vehicle:
+          type: string
+          description: ID of the vehicle for the service order
+
+    CreateServiceOrderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the service order
+        customer_id:
+          type: string
+          description: Customer ID
+        vehicle_id:
+          type: string
+          description: Vehicle ID
+        status:
+          type: string
+          description: Service order status (e.g. RECEIVED, IN_DIAGNOSIS, etc)
+        total_amount:
+          type: number
+          format: float
+          description: Total budget amount for this service order
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    AddServiceToServiceOrderRequest:
+      type: object
+      required:
+        - services
+      properties:
+        services:
+          type: array
+          items:
+            type: string
+            description: ID of the service to add to the service order

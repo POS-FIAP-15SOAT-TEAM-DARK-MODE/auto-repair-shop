@@ -2,18 +2,28 @@ package vehicle
 
 import (
 	"errors"
+	"strconv"
+	"strings"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/gin-gonic/gin"
-	"strings"
+)
+
+const (
+	customerIDParam = "customerId"
+	pageParam       = "page"
+	pageSizeParam   = "pageSize"
+	defaultPageSize = 10
+	defaultPage     = 1
 )
 
 type vehicleRequestDto struct {
-	LicensePlate string `json:"license_plate"`
+	LicensePlate string `json:"licensePlate"`
 	Brand        string `json:"brand"`
 	Model        string `json:"model"`
 	Year         int    `json:"year"`
-	CustomerId   string `json:"customer_id"`
+	CustomerId   string `json:"customerId"`
 }
 
 func (v *vehicleRequestDto) Domain() *domain.Vehicle {
@@ -55,4 +65,31 @@ func (v *vehicleRequestDto) validate() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+func createListParams(ctx *gin.Context) (*domain.ListVehicleParams, error) {
+	pg := int64(defaultPage)
+	pgSize := int64(defaultPageSize)
+
+	id := ctx.Param(customerIDParam)
+	if id == "" {
+		return nil, domain.ErrInvalidCustomerId
+	}
+
+	if page := ctx.Query(pageParam); page != "" {
+		if p, err := strconv.Atoi(page); err == nil && p > defaultPage {
+			pg = int64(p)
+		}
+	}
+	if pageSize := ctx.Query(pageSizeParam); pageSize != "" {
+		if ps, err := strconv.Atoi(pageSize); err == nil && ps > 0 {
+			pgSize = int64(ps)
+		}
+	}
+
+	return &domain.ListVehicleParams{
+		CustomerID: id,
+		Page:       pg,
+		PageSize:   pgSize,
+	}, nil
 }

@@ -13,9 +13,9 @@ import (
 func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	router := gin.New()
 
-	for name, mw := range *m {
+	for name, mid := range *m {
 		logger.Global().Info("Starting new middleware", zap.String("name", name))
-		router.Use(mw)
+		router.Use(mid)
 	}
 
 	mountSwaggerUI(router)
@@ -30,18 +30,27 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.POST("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Create)
 	v1.GET("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByID)
 	v1.GET("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByDocument)
+	v1.PUT("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Update)
+	v1.DELETE("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Delete)
 
 	v1.POST("/works", middleware.Auth(role.AttendantRoles...), c.WorkHandler.Create)
 	v1.GET("/works", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.List)
 	v1.PUT("/works/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.Update)
 	v1.DELETE("/works/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.WorkHandler.Delete)
 
-	v1.POST("/vehicle", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.Create)
-	v1.GET("/vehicle", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.FindByLicensePlate)
+	v1.POST("/vehicles", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.Create)
+	v1.GET("/vehicles", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.FindByLicensePlate)
+	v1.PUT("/vehicles/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.Update)
+	v1.DELETE("/vehicles/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.Delete)
+	v1.GET("/vehicles/:customerId", middleware.Auth(role.AttendantRoles...), c.VehicleHandler.FindByCustomer)
 
 	v1.POST("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Create)
-	//v1.GET("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.List)
-	v1.GET("/supplies", c.SupplyHandler.List)
+
+	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
+
+	v1.GET("/service-order/:id/services", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Get)
+	v1.POST("/service-order/:id/services", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.AddWork)
+	v1.DELETE("/service-order/:id/services/:serviceId", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.DeleteWork)
 
 	return router
 }

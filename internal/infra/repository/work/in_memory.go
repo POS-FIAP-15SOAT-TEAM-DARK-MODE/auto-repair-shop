@@ -21,6 +21,14 @@ func (r *memory_repo) Save(_ context.Context, svc *domain.Work) error {
 	return nil
 }
 
+func (r *memory_repo) FindByID(_ context.Context, id string) (domain.Work, error) {
+	w, ok := r.data[id]
+	if !ok {
+		return domain.Work{}, domain.ErrWorkNotFound
+	}
+	return w, nil
+}
+
 func (r *memory_repo) Count(_ context.Context, params *domain.SearchWorkParams) (int64, error) {
 	if params.Status == "" {
 		return int64(len(r.data)), nil

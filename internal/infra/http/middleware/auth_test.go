@@ -43,15 +43,15 @@ func TestAuthMiddleware_TableDriven(t *testing.T) {
 		},
 		{
 			name:             "expired token",
-			middlewareRoles:  []domain.Role{domain.CLIENT},
-			tokenRoles:       []domain.Role{domain.CLIENT},
+			middlewareRoles:  []domain.Role{domain.CUSTOMER},
+			tokenRoles:       []domain.Role{domain.CUSTOMER},
 			tokenExpiry:      time.Now().Add(-time.Hour),
 			expectedHTTPCode: http.StatusForbidden,
 		},
 		{
 			name:             "roles mismatch",
 			middlewareRoles:  []domain.Role{domain.ADMIN},
-			tokenRoles:       []domain.Role{domain.CLIENT},
+			tokenRoles:       []domain.Role{domain.CUSTOMER},
 			tokenExpiry:      time.Now().Add(time.Hour),
 			expectedHTTPCode: http.StatusForbidden,
 		},

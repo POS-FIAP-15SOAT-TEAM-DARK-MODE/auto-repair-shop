@@ -41,6 +41,7 @@ type (
 
 	WorkRepository interface {
 		Save(context.Context, *Work) error
+		FindByID(context.Context, string) (Work, error)
 		Search(context.Context, *SearchWorkParams) ([]Work, error)
 		Count(context.Context, *SearchWorkParams) (int64, error)
 		Delete(context.Context, string) error

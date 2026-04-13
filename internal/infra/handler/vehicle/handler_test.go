@@ -27,11 +27,11 @@ func TestHandler_Create(t *testing.T) {
 		{
 			name: "success",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			mockSetup: func(m *mocks.VehicleService) {
 				m.EXPECT().
@@ -43,29 +43,29 @@ func TestHandler_Create(t *testing.T) {
 		{
 			name: "validation error (missing fields)",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "",
 				"model": "",
 				"year": 2020,
-				"customer_id": ""
+				"customerId": ""
 			}`,
 			mockSetup:      func(m *mocks.VehicleService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "invalid json",
-			body:           `{"license_plate":`,
+			body:           `{"licensePlate":`,
 			mockSetup:      func(m *mocks.VehicleService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name: "service error",
 			body: `{
-				"license_plate": "ABC1D23",
+				"licensePlate": "ABC1D23",
 				"brand": "chevrolet",
 				"model": "onix",
 				"year": 2020,
-				"customer_id": "123"
+				"customerId": "123"
 			}`,
 			mockSetup: func(m *mocks.VehicleService) {
 				m.EXPECT().
@@ -184,6 +184,264 @@ func TestHandler_FindByLicensePlate(t *testing.T) {
 			c.Request = req
 
 			handlerFunc := h.FindByLicensePlate
+			handlerFunc(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestHandler_Update(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	const idParam = "id"
+
+	tests := []struct {
+		name           string
+		id             string
+		body           string
+		mockSetup      func(m *mocks.VehicleService)
+		expectedStatus int
+	}{
+		{
+			name: "success",
+			id:   "veh-1",
+			body: `{
+				"licensePlate": "ABC1D23",
+				"brand": "chevrolet",
+				"model": "onix",
+				"year": 2020,
+				"customerId": "123"
+			}`,
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					Update(mock.Anything, mock.MatchedBy(func(v *domain.Vehicle) bool {
+						return v.ID == "veh-1" && v.LicensePlate == "ABC1D23"
+					})).
+					Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "missing id",
+			id:   "",
+			body: `{
+				"licensePlate": "ABC1D23",
+				"brand": "chevrolet",
+				"model": "onix",
+				"year": 2020,
+				"customerId": "123"
+			}`,
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "validation error (missing fields)",
+			id:   "veh-1",
+			body: `{
+				"licensePlate": "ABC1D23",
+				"brand": "",
+				"model": "",
+				"year": 2020,
+				"customerId": ""
+			}`,
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "invalid json",
+			id:             "veh-1",
+			body:           `{"licensePlate":`,
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "service error",
+			id:   "veh-1",
+			body: `{
+				"licensePlate": "ABC1D23",
+				"brand": "chevrolet",
+				"model": "onix",
+				"year": 2020,
+				"customerId": "123"
+			}`,
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					Update(mock.Anything, mock.AnythingOfType("*domain.Vehicle")).
+					Return(errors.New("service error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := mocks.NewVehicleService(t)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			h := HttpHandler(mockService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Params = gin.Params{
+				{Key: idParam, Value: tt.id},
+			}
+
+			req, _ := http.NewRequest(http.MethodPut, "/", bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			c.Request = req
+
+			h.Update(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestHandler_Delete(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	const idParam = "id"
+
+	tests := []struct {
+		name           string
+		id             string
+		mockSetup      func(m *mocks.VehicleService)
+		expectedStatus int
+	}{
+		{
+			name:           "missing id",
+			id:             "",
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "service error",
+			id:   "veh-1",
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					Delete(mock.Anything, "veh-1").
+					Return(errors.New("service error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockService := mocks.NewVehicleService(t)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			h := HttpHandler(mockService)
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			c.Params = gin.Params{
+				{Key: idParam, Value: tt.id},
+			}
+
+			req, _ := http.NewRequest(http.MethodDelete, "/", nil)
+			c.Request = req
+
+			h.Delete(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}
+
+func TestHandler_FindByCustomer(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	domainPaginatorResponseMock := &domain.PaginatorResponse[domain.Vehicle]{
+		Items:      []domain.Vehicle{},
+		TotalItems: 0,
+		TotalPages: 0,
+		PageSize:   10,
+		Page:       1,
+	}
+
+	tests := []struct {
+		name           string
+		body           []byte
+		queryParams    map[string]string
+		customerID     string
+		mockSetup      func(m *mocks.VehicleService)
+		expectedStatus int
+	}{
+		{
+			name:       "success - should return vehicles",
+			customerID: "123",
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					List(
+						mock.Anything,
+						mock.MatchedBy(func(p *domain.ListVehicleParams) bool {
+							return p.CustomerID == "123"
+						}),
+					).
+					Return(domainPaginatorResponseMock, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "error - invalid query params (createListParams error)",
+			queryParams: map[string]string{
+				"limit": "invalid",
+			},
+			mockSetup:      func(m *mocks.VehicleService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:       "error - service returns error",
+			customerID: "123",
+			mockSetup: func(m *mocks.VehicleService) {
+				m.EXPECT().
+					List(
+						mock.Anything,
+						mock.AnythingOfType("*domain.ListVehicleParams"),
+					).
+					Return(nil, errors.New("service error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBuffer(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+
+			q := req.URL.Query()
+			for k, v := range tt.queryParams {
+				q.Add(k, v)
+			}
+			req.URL.RawQuery = q.Encode()
+
+			c.Params = gin.Params{
+				{Key: customerIDParam, Value: tt.customerID},
+			}
+
+			c.Request = req
+
+			mockService := mocks.NewVehicleService(t)
+
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			h := HttpHandler(mockService)
+
+			handlerFunc := h.FindByCustomer
 			handlerFunc(c)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)

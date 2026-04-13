@@ -28,6 +28,9 @@ const (
 func Error(ctx context.Context, err error) error {
 	var pgErr *pq.Error
 	if !errors.As(err, &pgErr) {
+		logger.Of(ctx).Warn("database error",
+			zap.Error(err),
+		)
 		return err
 	}
 

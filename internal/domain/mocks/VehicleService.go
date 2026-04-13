@@ -69,6 +69,112 @@ func (_c *VehicleService_Create_Call) RunAndReturn(run func(context.Context, *do
 	return _c
 }
 
+// Delete provides a mock function with given fields: ctx, id
+func (_m *VehicleService) Delete(ctx context.Context, id string) error {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// VehicleService_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type VehicleService_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *VehicleService_Expecter) Delete(ctx interface{}, id interface{}) *VehicleService_Delete_Call {
+	return &VehicleService_Delete_Call{Call: _e.mock.On("Delete", ctx, id)}
+}
+
+func (_c *VehicleService_Delete_Call) Run(run func(ctx context.Context, id string)) *VehicleService_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *VehicleService_Delete_Call) Return(_a0 error) *VehicleService_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *VehicleService_Delete_Call) RunAndReturn(run func(context.Context, string) error) *VehicleService_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindByID provides a mock function with given fields: ctx, id
+func (_m *VehicleService) FindByID(ctx context.Context, id string) (*domain.Vehicle, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindByID")
+	}
+
+	var r0 *domain.Vehicle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Vehicle, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Vehicle); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Vehicle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleService_FindByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindByID'
+type VehicleService_FindByID_Call struct {
+	*mock.Call
+}
+
+// FindByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *VehicleService_Expecter) FindByID(ctx interface{}, id interface{}) *VehicleService_FindByID_Call {
+	return &VehicleService_FindByID_Call{Call: _e.mock.On("FindByID", ctx, id)}
+}
+
+func (_c *VehicleService_FindByID_Call) Run(run func(ctx context.Context, id string)) *VehicleService_FindByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *VehicleService_FindByID_Call) Return(_a0 *domain.Vehicle, _a1 error) *VehicleService_FindByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleService_FindByID_Call) RunAndReturn(run func(context.Context, string) (*domain.Vehicle, error)) *VehicleService_FindByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindByLicensePlate provides a mock function with given fields: ctx, licensePlate
 func (_m *VehicleService) FindByLicensePlate(ctx context.Context, licensePlate string) (*domain.Vehicle, error) {
 	ret := _m.Called(ctx, licensePlate)
@@ -124,6 +230,112 @@ func (_c *VehicleService_FindByLicensePlate_Call) Return(_a0 *domain.Vehicle, _a
 }
 
 func (_c *VehicleService_FindByLicensePlate_Call) RunAndReturn(run func(context.Context, string) (*domain.Vehicle, error)) *VehicleService_FindByLicensePlate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// List provides a mock function with given fields: ctx, params
+func (_m *VehicleService) List(ctx context.Context, params *domain.ListVehicleParams) (*domain.PaginatorResponse[domain.Vehicle], error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
+	var r0 *domain.PaginatorResponse[domain.Vehicle]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListVehicleParams) (*domain.PaginatorResponse[domain.Vehicle], error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListVehicleParams) *domain.PaginatorResponse[domain.Vehicle]); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.Vehicle])
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ListVehicleParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// VehicleService_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type VehicleService_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.ListVehicleParams
+func (_e *VehicleService_Expecter) List(ctx interface{}, params interface{}) *VehicleService_List_Call {
+	return &VehicleService_List_Call{Call: _e.mock.On("List", ctx, params)}
+}
+
+func (_c *VehicleService_List_Call) Run(run func(ctx context.Context, params *domain.ListVehicleParams)) *VehicleService_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.ListVehicleParams))
+	})
+	return _c
+}
+
+func (_c *VehicleService_List_Call) Return(_a0 *domain.PaginatorResponse[domain.Vehicle], _a1 error) *VehicleService_List_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *VehicleService_List_Call) RunAndReturn(run func(context.Context, *domain.ListVehicleParams) (*domain.PaginatorResponse[domain.Vehicle], error)) *VehicleService_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: ctx, vehicle
+func (_m *VehicleService) Update(ctx context.Context, vehicle *domain.Vehicle) error {
+	ret := _m.Called(ctx, vehicle)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Vehicle) error); ok {
+		r0 = rf(ctx, vehicle)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// VehicleService_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type VehicleService_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - vehicle *domain.Vehicle
+func (_e *VehicleService_Expecter) Update(ctx interface{}, vehicle interface{}) *VehicleService_Update_Call {
+	return &VehicleService_Update_Call{Call: _e.mock.On("Update", ctx, vehicle)}
+}
+
+func (_c *VehicleService_Update_Call) Run(run func(ctx context.Context, vehicle *domain.Vehicle)) *VehicleService_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Vehicle))
+	})
+	return _c
+}
+
+func (_c *VehicleService_Update_Call) Return(_a0 error) *VehicleService_Update_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *VehicleService_Update_Call) RunAndReturn(run func(context.Context, *domain.Vehicle) error) *VehicleService_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

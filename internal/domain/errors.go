@@ -43,19 +43,31 @@ var (
 	ErrInvalidWorkPriceValue              = errors.New("invalid work price value")
 	ErrInvalidWorkStatusValue             = errors.New("work status should be ACTIVE or INACTIVE")
 	ErrInvalidWorkId                      = errors.New("invalid work id")
+	ErrWorkNotFound                       = errors.New("work not found")
+)
+
+// Service order errors
+var (
+	ErrInvalidServiceOrderId    = errors.New("invalid service order id")
+	ErrServiceOrderNotFound     = errors.New("service order not found")
+	ErrServiceOrderNotNew       = errors.New("service order isn't at NEW state")
+	ErrServiceOrderWorkNotFound = errors.New("work is not linked to this service order")
+	ErrEmptyServicesList        = errors.New("services list cannot be empty")
 )
 
 // Customer errors
 var (
-	ErrPhoneRequired         = errors.New("phone is required")
-	ErrCompanyNameRequired   = errors.New("company_name is required for COMPANY type")
-	ErrInvalidCustomerType   = errors.New("invalid customer type")
-	ErrInvalidCPF            = errors.New("invalid CPF")
-	ErrInvalidCNPJ           = errors.New("invalid CNPJ")
-	ErrCPFLength             = errors.New("CPF must have 11 digits")
-	ErrCNPJLength            = errors.New("CNPJ must have 14 characters")
-	ErrCustomerNotFound      = errors.New("customer not found")
-	ErrInvalidDocumentFormat = ValidationError{Message: "document must be a valid CPF (11 digits) or CNPJ (14 characters)"}
+	ErrPhoneRequired            = errors.New("phone is required")
+	ErrCompanyNameRequired      = errors.New("company_name is required for COMPANY type")
+	ErrInvalidCustomerType      = errors.New("invalid customer type")
+	ErrInvalidCPF               = errors.New("invalid CPF")
+	ErrInvalidCNPJ              = errors.New("invalid CNPJ")
+	ErrCPFLength                = errors.New("CPF must have 11 digits")
+	ErrCNPJLength               = errors.New("CNPJ must have 14 characters")
+	ErrCustomerNotFound         = errors.New("customer not found")
+	ErrCustomerHasServiceOrders = errors.New("customer has associated service orders")
+	ErrInvalidDocumentFormat    = ValidationError{Message: "document must be a valid CPF (11 digits) or CNPJ (14 characters)"}
+	ErrInvalidCustomerId        = errors.New("invalid customer id")
 )
 
 // Vehicle errors
@@ -66,6 +78,7 @@ var (
 	ErrRequiredVehicleModel        = errors.New("model of the vehicle is required")
 	ErrParamVehicleYear            = errors.New("year of the vehicle is not valid")
 	ErrVehicleNotFound             = errors.New("vehicle not found")
+	ErrInvalidVehicleId            = errors.New("invalid vehicle id")
 )
 
 // Supply errors

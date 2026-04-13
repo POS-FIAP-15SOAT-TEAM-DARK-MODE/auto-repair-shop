@@ -36,7 +36,7 @@ func (r *repository) Create(ctx context.Context, customer *domain.Customer) erro
 	)
 	if err != nil {
 		mapped := pgPkg.Error(ctx, err)
-		if mapped != domain.ErrDataConflict && mapped != domain.ErrDataViolation {
+		if !errors.Is(mapped, domain.ErrDataConflict) && !errors.Is(mapped, domain.ErrDataViolation) {
 			logger.Of(ctx).Warn("customer repository: failed to create customer",
 				zap.String("operation", "create_customer"),
 				zap.String("entity_id", customer.ID),
@@ -106,6 +106,40 @@ func (r *repository) GetByDocument(ctx context.Context, document string) (domain
 
 	c.User.ID = c.UserID
 	return c, nil
+}
+
+func (r *repository) Update(ctx context.Context, id, phone string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, updateCustomerQuery, phone, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (r *repository) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	var count int
+	if err = tx.QueryRowContext(ctx, countServiceOrdersByCustomerQuery, id).Scan(&count); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	if count > 0 {
+		return domain.ErrCustomerHasServiceOrders
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteCustomerQuery, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
 }
 
 // nullableString converts an empty string to nil so the DB receives NULL
