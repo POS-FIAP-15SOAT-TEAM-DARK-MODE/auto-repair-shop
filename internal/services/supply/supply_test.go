@@ -39,6 +39,13 @@ func validSupply() *domain.Supply {
 	}
 }
 
+func defaultParams() *domain.ListSupplyParams {
+	return &domain.ListSupplyParams{
+		Page:     1,
+		PageSize: 10,
+	}
+}
+
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 func TestService_Create(t *testing.T) {
@@ -58,7 +65,7 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			name:  "validation_error",
-			input: &domain.Supply{}, // deliberately empty / invalid
+			input: &domain.Supply{},
 			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
 				// neither the UoW nor the repository should be called
 			},
@@ -106,52 +113,50 @@ func TestService_Create(t *testing.T) {
 func TestService_List(t *testing.T) {
 	tests := []struct {
 		name      string
-		mockSetup func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository)
+		params    *domain.ListSupplyParams
+		mockSetup func(repo *domainmocks.SupplyRepository)
 		wantLen   int
 		wantErr   error
 	}{
 		{
-			name: "success_returns_supplies",
-			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+			name:   "success_returns_supplies",
+			params: defaultParams(),
+			mockSetup: func(repo *domainmocks.SupplyRepository) {
 				repo.EXPECT().
-					List(mock.Anything).
-					Return([]*domain.Supply{validSupply(), validSupply()}, nil)
-				executor.EXPECT().
-					Execute(mock.Anything, mock.Anything).
-					RunAndReturn(runAllSteps())
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(&domain.PaginatorResponse[domain.Supply]{
+						Items:      []domain.Supply{*validSupply(), *validSupply()},
+						TotalItems: 2,
+						TotalPages: 1,
+						PageSize:   10,
+						Page:       1,
+					}, nil)
 			},
 			wantLen: 2,
 		},
 		{
-			name: "success_returns_empty_list",
-			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+			name:   "success_returns_empty_list",
+			params: defaultParams(),
+			mockSetup: func(repo *domainmocks.SupplyRepository) {
 				repo.EXPECT().
-					List(mock.Anything).
-					Return([]*domain.Supply{}, nil)
-				executor.EXPECT().
-					Execute(mock.Anything, mock.Anything).
-					RunAndReturn(runAllSteps())
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(&domain.PaginatorResponse[domain.Supply]{
+						Items:      []domain.Supply{},
+						TotalItems: 0,
+						TotalPages: 0,
+						PageSize:   10,
+						Page:       1,
+					}, nil)
 			},
 			wantLen: 0,
 		},
 		{
-			name: "repository_error_returns_error",
-			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+			name:   "repository_error_returns_error",
+			params: defaultParams(),
+			mockSetup: func(repo *domainmocks.SupplyRepository) {
 				repo.EXPECT().
-					List(mock.Anything).
-					Return([]*domain.Supply{}, assert.AnError)
-				executor.EXPECT().
-					Execute(mock.Anything, mock.Anything).
-					RunAndReturn(runAllSteps())
-			},
-			wantErr: assert.AnError,
-		},
-		{
-			name: "transaction_failure_returns_error",
-			mockSetup: func(executor *uowmocks.Executor, _ *domainmocks.SupplyRepository) {
-				executor.EXPECT().
-					Execute(mock.Anything, mock.Anything).
-					Return(assert.AnError)
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(nil, assert.AnError)
 			},
 			wantErr: assert.AnError,
 		},
@@ -162,16 +167,18 @@ func TestService_List(t *testing.T) {
 			executor := uowmocks.NewExecutor(t)
 			repo := domainmocks.NewSupplyRepository(t)
 
-			tt.mockSetup(executor, repo)
+			tt.mockSetup(repo)
 
-			result, err := svc.Service(executor, repo).List(context.Background())
+			result, err := svc.Service(executor, repo).List(context.Background(), tt.params)
 
 			if tt.wantErr != nil {
 				assert.ErrorIs(t, err, tt.wantErr)
 				assert.Nil(t, result)
 			} else {
 				assert.NoError(t, err)
-				assert.Len(t, result, tt.wantLen)
+				assert.Len(t, result.Items, tt.wantLen)
+				assert.Equal(t, tt.params.Page, result.Page)
+				assert.Equal(t, tt.params.PageSize, result.PageSize)
 			}
 		})
 	}

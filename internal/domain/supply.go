@@ -17,18 +17,22 @@ type (
 		StockQuantity int
 		Version       int
 	}
+	ListSupplyParams struct {
+		Page     int64
+		PageSize int64
+	}
 )
 
 type SupplyService interface {
 	Create(ctx context.Context, req *Supply) error
-	List(ctx context.Context) ([]*Supply, error)
+	List(ctx context.Context, params *ListSupplyParams) (*PaginatorResponse[Supply], error)
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
 type SupplyRepository interface {
 	Create(ctx context.Context, c *Supply) error
-	List(ctx context.Context) ([]*Supply, error)
+	List(ctx context.Context, params *ListSupplyParams) (*PaginatorResponse[Supply], error)
 }
 
 func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantity, version int) *Supply {

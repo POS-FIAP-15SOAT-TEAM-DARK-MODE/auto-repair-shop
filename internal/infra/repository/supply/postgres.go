@@ -29,26 +29,42 @@ func (u *repo) Create(ctx context.Context, supply *domain.Supply) error {
 	return nil
 }
 
-func (u *repo) List(ctx context.Context) ([]*domain.Supply, error) {
-	tx, err := postgres.GetTransaction(ctx)
+func (u *repo) List(ctx context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
-	logger.Of(ctx).Debug("Executing query", zap.String("query", listSuppliesQuery))
-	rows, err := tx.QueryContext(ctx, listSuppliesQuery)
+
+	offset := (params.Page - 1) * params.PageSize
+
+	// total de registros
+	var total int64
+	if err := db.QueryRowContext(ctx, countSuppliesQuery).Scan(&total); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	rows, err := db.QueryContext(ctx, listSuppliesQuery, params.PageSize, offset)
 	if err != nil {
 		return nil, pgPkg.Error(ctx, err)
 	}
 	defer rows.Close()
 
-	var supplies []*domain.Supply
+	var supplies []domain.Supply
 	for rows.Next() {
-		supply := &domain.Supply{}
+		supply := domain.Supply{}
 		if err = rows.Scan(&supply.ID, &supply.Name, &supply.Description, &supply.UnitPrice, &supply.StockQuantity, &supply.Version); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
 		supplies = append(supplies, supply)
 	}
 
-	return supplies, nil
+	totalPages := (total + params.PageSize - 1) / params.PageSize
+
+	return &domain.PaginatorResponse[domain.Supply]{
+		Items:      supplies,
+		TotalItems: total,
+		TotalPages: totalPages,
+		PageSize:   params.PageSize,
+		Page:       params.Page,
+	}, nil
 }

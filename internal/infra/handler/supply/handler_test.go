@@ -35,37 +35,61 @@ func validSupplyDomain() *domain.Supply {
 	}
 }
 
+func paginatedResponse(items ...domain.Supply) *domain.PaginatorResponse[domain.Supply] {
+	return &domain.PaginatorResponse[domain.Supply]{
+		Items:      items,
+		TotalItems: int64(len(items)),
+		TotalPages: 1,
+		PageSize:   10,
+		Page:       1,
+	}
+}
+
 // --- List ---
 
 func TestList(t *testing.T) {
 	tests := []struct {
 		name           string
+		query          string
 		mockSetup      func(*domainmocks.SupplyService)
 		expectedStatus int
 	}{
 		{
-			name: "success_returns_supplies",
+			name:  "success_returns_supplies",
+			query: "?page=1&pageSize=10",
 			mockSetup: func(svc *domainmocks.SupplyService) {
 				svc.EXPECT().
-					List(mock.Anything).
-					Return([]*domain.Supply{validSupplyDomain(), validSupplyDomain()}, nil)
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(paginatedResponse(*validSupplyDomain(), *validSupplyDomain()), nil)
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name: "success_returns_empty_list",
+			name:  "success_returns_empty_list",
+			query: "?page=1&pageSize=10",
 			mockSetup: func(svc *domainmocks.SupplyService) {
 				svc.EXPECT().
-					List(mock.Anything).
-					Return([]*domain.Supply{}, nil)
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(paginatedResponse(), nil)
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name: "service_internal_error",
+			name:  "success_uses_default_params_when_no_query",
+			query: "",
 			mockSetup: func(svc *domainmocks.SupplyService) {
 				svc.EXPECT().
-					List(mock.Anything).
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(paginatedResponse(), nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:  "service_internal_error",
+			query: "?page=1&pageSize=10",
+			mockSetup: func(svc *domainmocks.SupplyService) {
+				svc.EXPECT().
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 					Return(nil, errors.New("internal error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -77,7 +101,7 @@ func TestList(t *testing.T) {
 			svc := domainmocks.NewSupplyService(t)
 			tt.mockSetup(svc)
 
-			req := httptest.NewRequest(http.MethodGet, "/supplies", nil)
+			req := httptest.NewRequest(http.MethodGet, "/supplies"+tt.query, nil)
 			rec := httptest.NewRecorder()
 			setupSupplyRouterWithList(svc).ServeHTTP(rec, req)
 
@@ -92,20 +116,27 @@ func TestList_ResponseBody(t *testing.T) {
 
 	svc := domainmocks.NewSupplyService(t)
 	svc.EXPECT().
-		List(mock.Anything).
-		Return([]*domain.Supply{supply1, supply2}, nil)
+		List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+		Return(paginatedResponse(*supply1, *supply2), nil)
 
-	req := httptest.NewRequest(http.MethodGet, "/supplies", nil)
+	req := httptest.NewRequest(http.MethodGet, "/supplies?page=1&pageSize=10", nil)
 	rec := httptest.NewRecorder()
 	setupSupplyRouterWithList(svc).ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	var body []map[string]any
+	var body map[string]any
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
-	assert.Len(t, body, 2)
 
-	for _, item := range body {
+	assert.Equal(t, float64(2), body["total_items"])
+	assert.Equal(t, float64(1), body["total_pages"])
+	assert.Equal(t, float64(10), body["page_size"])
+	assert.Equal(t, float64(1), body["page"])
+
+	items := body["items"].([]any)
+	assert.Len(t, items, 2)
+	for _, raw := range items {
+		item := raw.(map[string]any)
 		assert.NotEmpty(t, item["id"])
 		assert.Equal(t, "Brake Pad", item["name"])
 		assert.Equal(t, "High performance brake pad", item["description"])
@@ -116,16 +147,19 @@ func TestList_ResponseBody(t *testing.T) {
 func TestList_ResponseBody_Empty(t *testing.T) {
 	svc := domainmocks.NewSupplyService(t)
 	svc.EXPECT().
-		List(mock.Anything).
-		Return([]*domain.Supply{}, nil)
+		List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+		Return(paginatedResponse(), nil)
 
-	req := httptest.NewRequest(http.MethodGet, "/supplies", nil)
+	req := httptest.NewRequest(http.MethodGet, "/supplies?page=1&pageSize=10", nil)
 	rec := httptest.NewRecorder()
 	setupSupplyRouterWithList(svc).ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	var body []map[string]any
+	var body map[string]any
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
-	assert.Empty(t, body)
+
+	items := body["items"].([]any)
+	assert.Empty(t, items)
+	assert.Equal(t, float64(0), body["total_items"])
 }

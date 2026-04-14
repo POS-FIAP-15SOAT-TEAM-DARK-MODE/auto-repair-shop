@@ -69,29 +69,29 @@ func (_c *SupplyRepository_Create_Call) RunAndReturn(run func(context.Context, *
 	return _c
 }
 
-// List provides a mock function with given fields: ctx
-func (_m *SupplyRepository) List(ctx context.Context) ([]*domain.Supply, error) {
-	ret := _m.Called(ctx)
+// List provides a mock function with given fields: ctx, params
+func (_m *SupplyRepository) List(ctx context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
+	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
 	}
 
-	var r0 []*domain.Supply
+	var r0 *domain.PaginatorResponse[domain.Supply]
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*domain.Supply, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error)); ok {
+		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*domain.Supply); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) *domain.PaginatorResponse[domain.Supply]); ok {
+		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*domain.Supply)
+			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.Supply])
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ListSupplyParams) error); ok {
+		r1 = rf(ctx, params)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -106,23 +106,24 @@ type SupplyRepository_List_Call struct {
 
 // List is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *SupplyRepository_Expecter) List(ctx interface{}) *SupplyRepository_List_Call {
-	return &SupplyRepository_List_Call{Call: _e.mock.On("List", ctx)}
+//   - params *domain.ListSupplyParams
+func (_e *SupplyRepository_Expecter) List(ctx interface{}, params interface{}) *SupplyRepository_List_Call {
+	return &SupplyRepository_List_Call{Call: _e.mock.On("List", ctx, params)}
 }
 
-func (_c *SupplyRepository_List_Call) Run(run func(ctx context.Context)) *SupplyRepository_List_Call {
+func (_c *SupplyRepository_List_Call) Run(run func(ctx context.Context, params *domain.ListSupplyParams)) *SupplyRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(*domain.ListSupplyParams))
 	})
 	return _c
 }
 
-func (_c *SupplyRepository_List_Call) Return(_a0 []*domain.Supply, _a1 error) *SupplyRepository_List_Call {
+func (_c *SupplyRepository_List_Call) Return(_a0 *domain.PaginatorResponse[domain.Supply], _a1 error) *SupplyRepository_List_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *SupplyRepository_List_Call) RunAndReturn(run func(context.Context) ([]*domain.Supply, error)) *SupplyRepository_List_Call {
+func (_c *SupplyRepository_List_Call) RunAndReturn(run func(context.Context, *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error)) *SupplyRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }
