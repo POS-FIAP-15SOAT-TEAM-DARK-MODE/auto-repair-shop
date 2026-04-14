@@ -71,3 +71,24 @@ func (h *handler) List(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, responseDTOs)
 }
+
+func (h *handler) Update(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("id") // ← vem da rota, não do body
+
+	req, err := mapBodyToUpdateSupplyRequest(c)
+	if err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	supply := mapUpdateSupplyRequestDTOToDomain(id, req)
+	if err := h.service.Update(ctx, supply); err != nil {
+		status, response := web.Error(err)
+		c.JSON(status, response)
+		return
+	}
+
+	c.JSON(http.StatusOK, supply)
+}

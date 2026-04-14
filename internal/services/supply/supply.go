@@ -60,3 +60,22 @@ func (s *service) createRepositoryStep(user *domain.Supply) func(context.Context
 		return nil
 	}
 }
+
+func (s *service) Update(ctx context.Context, req *domain.SupplyUpdate) error {
+	if err := req.Validate(); err != nil {
+		err := fmt.Errorf("supply validation failed: %w", err)
+		logger.Of(ctx).Error(err)
+		return err
+	}
+
+	if err := s.uow.Execute(ctx, func(ctx context.Context) error {
+		if err := s.repo.Update(ctx, req); err != nil {
+			return fmt.Errorf("failed to update supply in repository: %w", err)
+		}
+		return nil
+	}); err != nil {
+		logger.Of(ctx).Error(err)
+		return err
+	}
+	return nil
+}

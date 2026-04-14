@@ -39,6 +39,20 @@ func validSupply() *domain.Supply {
 	}
 }
 
+func validSupplyUpdate() *domain.SupplyUpdate {
+	name := "Brake Pad"
+	description := "High-performance brake pads for daily driving"
+	unitPrice := decimal.NewFromFloat(49.99)
+	stockQuantity := 10
+	return &domain.SupplyUpdate{
+		ID:            uuid.New().String(),
+		Name:          &name,
+		Description:   &description,
+		UnitPrice:     &unitPrice,
+		StockQuantity: &stockQuantity,
+	}
+}
+
 // ─── Create ───────────────────────────────────────────────────────────────────
 
 func TestService_Create(t *testing.T) {
@@ -58,7 +72,7 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			name:  "validation_error",
-			input: &domain.Supply{}, // deliberately empty / invalid
+			input: &domain.Supply{},
 			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
 				// neither the UoW nor the repository should be called
 			},
@@ -172,6 +186,104 @@ func TestService_List(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Len(t, result, tt.wantLen)
+			}
+		})
+	}
+}
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+func TestService_Update(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     *domain.SupplyUpdate
+		mockSetup func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository)
+		wantErr   error
+	}{
+		{
+			name:  "success",
+			input: validSupplyUpdate(),
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				repo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*domain.SupplyUpdate")).Return(nil)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+		},
+		{
+			name: "success_partial_update_only_name",
+			input: func() *domain.SupplyUpdate {
+				name := "New Brake Pad"
+				return &domain.SupplyUpdate{ID: uuid.New().String(), Name: &name}
+			}(),
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				repo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*domain.SupplyUpdate")).Return(nil)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+		},
+		{
+			name: "success_partial_update_only_price",
+			input: func() *domain.SupplyUpdate {
+				price := decimal.NewFromFloat(99.99)
+				return &domain.SupplyUpdate{ID: uuid.New().String(), UnitPrice: &price}
+			}(),
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				repo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*domain.SupplyUpdate")).Return(nil)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+		},
+		{
+			name: "validation_error_invalid_name",
+			input: func() *domain.SupplyUpdate {
+				name := "Ab" // too short
+				return &domain.SupplyUpdate{ID: uuid.New().String(), Name: &name}
+			}(),
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				// neither the UoW nor the repository should be called
+			},
+			wantErr: domain.ErrInvalidSupplyName,
+		},
+		{
+			name: "validation_error_invalid_price",
+			input: func() *domain.SupplyUpdate {
+				price := decimal.Zero
+				return &domain.SupplyUpdate{ID: uuid.New().String(), UnitPrice: &price}
+			}(),
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				// neither the UoW nor the repository should be called
+			},
+			wantErr: domain.ErrInvalidSupplyUnitPrice,
+		},
+		{
+			name:  "repository_not_found_returns_error",
+			input: validSupplyUpdate(),
+			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
+				repo.EXPECT().Update(mock.Anything, mock.AnythingOfType("*domain.SupplyUpdate")).Return(domain.ErrNotFound)
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+			},
+			wantErr: domain.ErrNotFound,
+		},
+		{
+			name:  "transaction_failure_returns_error",
+			input: validSupplyUpdate(),
+			mockSetup: func(executor *uowmocks.Executor, _ *domainmocks.SupplyRepository) {
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).Return(assert.AnError)
+			},
+			wantErr: assert.AnError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			executor := uowmocks.NewExecutor(t)
+			repo := domainmocks.NewSupplyRepository(t)
+
+			tt.mockSetup(executor, repo)
+
+			err := svc.Service(executor, repo).Update(context.Background(), tt.input)
+
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

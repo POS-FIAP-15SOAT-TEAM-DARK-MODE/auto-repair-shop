@@ -15,6 +15,13 @@ type supplyRequestDTO struct {
 	Version       int             `json:"version" binding:"required"`
 }
 
+type UpdateSupplyRequest struct {
+	Name          *string          `json:"name"`
+	Description   *string          `json:"description"`
+	UnitPrice     *decimal.Decimal `json:"unit_price"`
+	StockQuantity *int             `json:"stock_quantity"`
+}
+
 func mapBodyToCreateSupplyRequest(body *gin.Context) (*supplyRequestDTO, error) {
 	var req supplyRequestDTO
 	if err := body.ShouldBindJSON(&req); err != nil {
@@ -25,4 +32,16 @@ func mapBodyToCreateSupplyRequest(body *gin.Context) (*supplyRequestDTO, error) 
 
 func mapSupplyRequestDTOToDomain(req *supplyRequestDTO) *domain.Supply {
 	return domain.NewSupply(req.Name, req.Description, req.UnitPrice, req.StockQuantity, req.Version)
+}
+
+func mapBodyToUpdateSupplyRequest(body *gin.Context) (*UpdateSupplyRequest, error) {
+	var req UpdateSupplyRequest
+	if err := body.ShouldBindJSON(&req); err != nil {
+		return nil, json.CheckJsonError(err)
+	}
+	return &req, nil
+}
+
+func mapUpdateSupplyRequestDTOToDomain(id string, req *UpdateSupplyRequest) *domain.SupplyUpdate {
+	return domain.UpdateSupply(id, req.Name, req.Description, req.UnitPrice, req.StockQuantity)
 }

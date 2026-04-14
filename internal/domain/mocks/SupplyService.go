@@ -127,6 +127,53 @@ func (_c *SupplyService_List_Call) RunAndReturn(run func(context.Context) ([]*do
 	return _c
 }
 
+// Update provides a mock function with given fields: ctx, req
+func (_m *SupplyService) Update(ctx context.Context, req *domain.SupplyUpdate) error {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SupplyUpdate) error); ok {
+		r0 = rf(ctx, req)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyService_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type SupplyService_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *domain.SupplyUpdate
+func (_e *SupplyService_Expecter) Update(ctx interface{}, req interface{}) *SupplyService_Update_Call {
+	return &SupplyService_Update_Call{Call: _e.mock.On("Update", ctx, req)}
+}
+
+func (_c *SupplyService_Update_Call) Run(run func(ctx context.Context, req *domain.SupplyUpdate)) *SupplyService_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SupplyUpdate))
+	})
+	return _c
+}
+
+func (_c *SupplyService_Update_Call) Return(_a0 error) *SupplyService_Update_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyService_Update_Call) RunAndReturn(run func(context.Context, *domain.SupplyUpdate) error) *SupplyService_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewSupplyService creates a new instance of SupplyService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewSupplyService(t interface {

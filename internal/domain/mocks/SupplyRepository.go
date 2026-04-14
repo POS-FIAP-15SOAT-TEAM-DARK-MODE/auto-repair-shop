@@ -69,6 +69,65 @@ func (_c *SupplyRepository_Create_Call) RunAndReturn(run func(context.Context, *
 	return _c
 }
 
+// GetByID provides a mock function with given fields: ctx, id
+func (_m *SupplyRepository) GetByID(ctx context.Context, id string) (*domain.Supply, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
+	var r0 *domain.Supply
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*domain.Supply, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *domain.Supply); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Supply)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SupplyRepository_GetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByID'
+type SupplyRepository_GetByID_Call struct {
+	*mock.Call
+}
+
+// GetByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *SupplyRepository_Expecter) GetByID(ctx interface{}, id interface{}) *SupplyRepository_GetByID_Call {
+	return &SupplyRepository_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
+}
+
+func (_c *SupplyRepository_GetByID_Call) Run(run func(ctx context.Context, id string)) *SupplyRepository_GetByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_GetByID_Call) Return(_a0 *domain.Supply, _a1 error) *SupplyRepository_GetByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SupplyRepository_GetByID_Call) RunAndReturn(run func(context.Context, string) (*domain.Supply, error)) *SupplyRepository_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function with given fields: ctx
 func (_m *SupplyRepository) List(ctx context.Context) ([]*domain.Supply, error) {
 	ret := _m.Called(ctx)
@@ -123,6 +182,53 @@ func (_c *SupplyRepository_List_Call) Return(_a0 []*domain.Supply, _a1 error) *S
 }
 
 func (_c *SupplyRepository_List_Call) RunAndReturn(run func(context.Context) ([]*domain.Supply, error)) *SupplyRepository_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: ctx, c
+func (_m *SupplyRepository) Update(ctx context.Context, c *domain.SupplyUpdate) error {
+	ret := _m.Called(ctx, c)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SupplyUpdate) error); ok {
+		r0 = rf(ctx, c)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyRepository_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type SupplyRepository_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - c *domain.SupplyUpdate
+func (_e *SupplyRepository_Expecter) Update(ctx interface{}, c interface{}) *SupplyRepository_Update_Call {
+	return &SupplyRepository_Update_Call{Call: _e.mock.On("Update", ctx, c)}
+}
+
+func (_c *SupplyRepository_Update_Call) Run(run func(ctx context.Context, c *domain.SupplyUpdate)) *SupplyRepository_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.SupplyUpdate))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_Update_Call) Return(_a0 error) *SupplyRepository_Update_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyRepository_Update_Call) RunAndReturn(run func(context.Context, *domain.SupplyUpdate) error) *SupplyRepository_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

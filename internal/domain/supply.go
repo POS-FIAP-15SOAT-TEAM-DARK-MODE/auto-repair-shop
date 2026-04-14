@@ -17,11 +17,19 @@ type (
 		StockQuantity int
 		Version       int
 	}
+	SupplyUpdate struct {
+		ID            string
+		Name          *string // ponteiro — nil = não enviado
+		Description   *string
+		UnitPrice     *decimal.Decimal
+		StockQuantity *int
+	}
 )
 
 type SupplyService interface {
 	Create(ctx context.Context, req *Supply) error
 	List(ctx context.Context) ([]*Supply, error)
+	Update(ctx context.Context, req *SupplyUpdate) error
 }
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyService --with-expecter
@@ -29,6 +37,8 @@ type SupplyService interface {
 type SupplyRepository interface {
 	Create(ctx context.Context, c *Supply) error
 	List(ctx context.Context) ([]*Supply, error)
+	Update(ctx context.Context, c *SupplyUpdate) error
+	GetByID(ctx context.Context, id string) (*Supply, error) // ← adiciona
 }
 
 func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantity, version int) *Supply {
@@ -39,6 +49,15 @@ func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantit
 		UnitPrice:     unitPrice,
 		StockQuantity: stockQuantity,
 		Version:       version,
+	}
+}
+func UpdateSupply(id string, name *string, description *string, unitPrice *decimal.Decimal, stockQuantity *int) *SupplyUpdate {
+	return &SupplyUpdate{
+		ID:            id,
+		Name:          name,
+		Description:   description,
+		UnitPrice:     unitPrice,
+		StockQuantity: stockQuantity,
 	}
 }
 
@@ -99,5 +118,25 @@ func (s *Supply) Validate() error {
 		return errors.Join(errs...)
 	}
 
+	return nil
+}
+
+func (s *SupplyUpdate) Validate() error {
+	var errs []error
+	if s.Name != nil && len(*s.Name) < 3 {
+		errs = append(errs, ErrInvalidSupplyName)
+	}
+	if s.Description != nil && len(*s.Description) < 10 {
+		errs = append(errs, ErrInvalidSupplyDescription)
+	}
+	if s.UnitPrice != nil && s.UnitPrice.LessThanOrEqual(decimal.Zero) {
+		errs = append(errs, ErrInvalidSupplyUnitPrice)
+	}
+	if s.StockQuantity != nil && *s.StockQuantity < 0 {
+		errs = append(errs, ErrInvalidSupplyStockQuantity)
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
 	return nil
 }
