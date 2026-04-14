@@ -89,3 +89,8 @@ var (
 	ErrInvalidSupplyStockQuantity = errors.New("supply stock quantity must be greater than or equal to 0")
 	ErrInvalidSupplyVersion       = errors.New("supply version must be greater than or equal to 0")
 )
+
+// Service Order errors
+var (
+	ErrServiceOrderIDRequired = errors.New("service order id is required")
+)

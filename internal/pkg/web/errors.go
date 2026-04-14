@@ -109,6 +109,7 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrVehicleInvalidPlate) ||
 		errors.Is(err, domain.ErrInvalidVehicleId) ||
 		errors.Is(err, domain.ErrPhoneRequired) ||
+		errors.Is(err, domain.ErrServiceOrderIDRequired) ||
 		errors.Is(err, domain.ErrInvalidCustomerId)
 }
 
