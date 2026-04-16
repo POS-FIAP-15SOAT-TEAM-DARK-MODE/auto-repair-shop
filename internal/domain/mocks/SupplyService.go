@@ -22,9 +22,9 @@ func (_m *SupplyService) EXPECT() *SupplyService_Expecter {
 	return &SupplyService_Expecter{mock: &_m.Mock}
 }
 
-// Create provides a mock function with given fields: ctx, req
-func (_m *SupplyService) Create(ctx context.Context, req *domain.Supply) error {
-	ret := _m.Called(ctx, req)
+// Create provides a mock function with given fields: ctx, c
+func (_m *SupplyService) Create(ctx context.Context, c *domain.Supply) error {
+	ret := _m.Called(ctx, c)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -32,7 +32,7 @@ func (_m *SupplyService) Create(ctx context.Context, req *domain.Supply) error {
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *domain.Supply) error); ok {
-		r0 = rf(ctx, req)
+		r0 = rf(ctx, c)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -47,12 +47,12 @@ type SupplyService_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - req *domain.Supply
-func (_e *SupplyService_Expecter) Create(ctx interface{}, req interface{}) *SupplyService_Create_Call {
-	return &SupplyService_Create_Call{Call: _e.mock.On("Create", ctx, req)}
+//   - c *domain.Supply
+func (_e *SupplyService_Expecter) Create(ctx interface{}, c interface{}) *SupplyService_Create_Call {
+	return &SupplyService_Create_Call{Call: _e.mock.On("Create", ctx, c)}
 }
 
-func (_c *SupplyService_Create_Call) Run(run func(ctx context.Context, req *domain.Supply)) *SupplyService_Create_Call {
+func (_c *SupplyService_Create_Call) Run(run func(ctx context.Context, c *domain.Supply)) *SupplyService_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*domain.Supply))
 	})
@@ -69,29 +69,29 @@ func (_c *SupplyService_Create_Call) RunAndReturn(run func(context.Context, *dom
 	return _c
 }
 
-// List provides a mock function with given fields: ctx
-func (_m *SupplyService) List(ctx context.Context) ([]*domain.Supply, error) {
-	ret := _m.Called(ctx)
+// List provides a mock function with given fields: _a0, _a1
+func (_m *SupplyService) List(_a0 context.Context, _a1 *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
+	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
 	}
 
-	var r0 []*domain.Supply
+	var r0 *domain.PaginatorResponse[domain.Supply]
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*domain.Supply, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error)); ok {
+		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*domain.Supply); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) *domain.PaginatorResponse[domain.Supply]); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*domain.Supply)
+			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.Supply])
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ListSupplyParams) error); ok {
+		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -105,39 +105,40 @@ type SupplyService_List_Call struct {
 }
 
 // List is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *SupplyService_Expecter) List(ctx interface{}) *SupplyService_List_Call {
-	return &SupplyService_List_Call{Call: _e.mock.On("List", ctx)}
+//   - _a0 context.Context
+//   - _a1 *domain.ListSupplyParams
+func (_e *SupplyService_Expecter) List(_a0 interface{}, _a1 interface{}) *SupplyService_List_Call {
+	return &SupplyService_List_Call{Call: _e.mock.On("List", _a0, _a1)}
 }
 
-func (_c *SupplyService_List_Call) Run(run func(ctx context.Context)) *SupplyService_List_Call {
+func (_c *SupplyService_List_Call) Run(run func(_a0 context.Context, _a1 *domain.ListSupplyParams)) *SupplyService_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(*domain.ListSupplyParams))
 	})
 	return _c
 }
 
-func (_c *SupplyService_List_Call) Return(_a0 []*domain.Supply, _a1 error) *SupplyService_List_Call {
+func (_c *SupplyService_List_Call) Return(_a0 *domain.PaginatorResponse[domain.Supply], _a1 error) *SupplyService_List_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *SupplyService_List_Call) RunAndReturn(run func(context.Context) ([]*domain.Supply, error)) *SupplyService_List_Call {
+func (_c *SupplyService_List_Call) RunAndReturn(run func(context.Context, *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error)) *SupplyService_List_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Update provides a mock function with given fields: ctx, req
-func (_m *SupplyService) Update(ctx context.Context, req *domain.SupplyUpdate) error {
-	ret := _m.Called(ctx, req)
+// Update provides a mock function with given fields: _a0, _a1
+func (_m *SupplyService) Update(_a0 context.Context, _a1 *domain.Supply) error {
+	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Update")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SupplyUpdate) error); ok {
-		r0 = rf(ctx, req)
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Supply) error); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -151,15 +152,15 @@ type SupplyService_Update_Call struct {
 }
 
 // Update is a helper method to define mock.On call
-//   - ctx context.Context
-//   - req *domain.SupplyUpdate
-func (_e *SupplyService_Expecter) Update(ctx interface{}, req interface{}) *SupplyService_Update_Call {
-	return &SupplyService_Update_Call{Call: _e.mock.On("Update", ctx, req)}
+//   - _a0 context.Context
+//   - _a1 *domain.Supply
+func (_e *SupplyService_Expecter) Update(_a0 interface{}, _a1 interface{}) *SupplyService_Update_Call {
+	return &SupplyService_Update_Call{Call: _e.mock.On("Update", _a0, _a1)}
 }
 
-func (_c *SupplyService_Update_Call) Run(run func(ctx context.Context, req *domain.SupplyUpdate)) *SupplyService_Update_Call {
+func (_c *SupplyService_Update_Call) Run(run func(_a0 context.Context, _a1 *domain.Supply)) *SupplyService_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.SupplyUpdate))
+		run(args[0].(context.Context), args[1].(*domain.Supply))
 	})
 	return _c
 }
@@ -169,7 +170,7 @@ func (_c *SupplyService_Update_Call) Return(_a0 error) *SupplyService_Update_Cal
 	return _c
 }
 
-func (_c *SupplyService_Update_Call) RunAndReturn(run func(context.Context, *domain.SupplyUpdate) error) *SupplyService_Update_Call {
+func (_c *SupplyService_Update_Call) RunAndReturn(run func(context.Context, *domain.Supply) error) *SupplyService_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

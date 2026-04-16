@@ -14,6 +14,17 @@ type supplyResponseDTO struct {
 	Version       int             `json:"version"`
 }
 
+func mapResponseDTOFromDomain(supply *domain.Supply) supplyResponseDTO {
+	return supplyResponseDTO{
+		ID:            supply.ID,
+		Name:          supply.Name,
+		Description:   supply.Description,
+		UnitPrice:     supply.UnitPrice,
+		StockQuantity: supply.StockQuantity,
+		Version:       supply.Version,
+	}
+}
+
 func mapSupplyToResponseDTO(supply *domain.Supply) supplyResponseDTO {
 	return supplyResponseDTO{
 		ID:            supply.ID,
@@ -22,5 +33,29 @@ func mapSupplyToResponseDTO(supply *domain.Supply) supplyResponseDTO {
 		UnitPrice:     supply.UnitPrice,
 		StockQuantity: supply.StockQuantity,
 		Version:       supply.Version,
+	}
+}
+
+type paginatorResponseDTO struct {
+	Items      []supplyResponseDTO
+	TotalItems int64
+	TotalPages int64
+	PageSize   int64
+	Page       int64
+}
+
+func mapListResponseDTOFromDomain(supplies *domain.PaginatorResponse[domain.Supply]) paginatorResponseDTO {
+	items := make([]supplyResponseDTO, len(supplies.Items))
+	for i, s := range supplies.Items {
+		supply := s
+		items[i] = mapSupplyToResponseDTO(&supply)
+	}
+
+	return paginatorResponseDTO{
+		Items:      items,
+		TotalItems: supplies.TotalItems,
+		TotalPages: supplies.TotalPages,
+		PageSize:   supplies.PageSize,
+		Page:       supplies.Page,
 	}
 }

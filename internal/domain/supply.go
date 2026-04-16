@@ -8,39 +8,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type (
-	Supply struct {
-		ID            string
-		Name          string
-		Description   string
-		UnitPrice     decimal.Decimal
-		StockQuantity int
-		Version       int
-	}
-	SupplyUpdate struct {
-		ID            string
-		Name          *string // ponteiro — nil = não enviado
-		Description   *string
-		UnitPrice     *decimal.Decimal
-		StockQuantity *int
-	}
-)
-
-type SupplyService interface {
-	Create(ctx context.Context, req *Supply) error
-	List(ctx context.Context) ([]*Supply, error)
-	Update(ctx context.Context, req *SupplyUpdate) error
-}
-
-//go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyService --with-expecter
-//go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
-type SupplyRepository interface {
-	Create(ctx context.Context, c *Supply) error
-	List(ctx context.Context) ([]*Supply, error)
-	Update(ctx context.Context, c *SupplyUpdate) error
-	GetByID(ctx context.Context, id string) (*Supply, error) // ← adiciona
-}
-
 func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantity, version int) *Supply {
 	return &Supply{
 		ID:            uuid.New().String(),
@@ -51,6 +18,59 @@ func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantit
 		Version:       version,
 	}
 }
+
+//go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyService --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
+type (
+	SupplyService interface {
+		Create(ctx context.Context, c *Supply) error
+		List(context.Context, *ListSupplyParams) (*PaginatorResponse[Supply], error)
+		Update(context.Context, *Supply) error
+	}
+
+	SupplyRepository interface {
+		Save(context.Context, *Supply) error
+		Search(context.Context, *SearchSupplyParams) ([]Supply, error)
+		Count(context.Context, *SearchSupplyParams) (int64, error)
+	}
+)
+
+type (
+	Supply struct {
+		ID            string
+		Name          string
+		Description   string
+		UnitPrice     decimal.Decimal
+		StockQuantity int
+		Version       int
+	}
+	ListSupplyParams struct {
+		PageSize int64
+		Page     int64
+		Status   string
+	}
+	SearchSupplyParams struct {
+		Limit  int64
+		Offset int64
+		Status string
+	}
+	SupplyUpdate struct {
+		ID            string
+		Name          *string
+		Description   *string
+		UnitPrice     *decimal.Decimal
+		StockQuantity *int
+	}
+)
+
+func (l ListSupplyParams) SearchSupplyParams() *SearchSupplyParams {
+	return &SearchSupplyParams{
+		Limit:  l.PageSize,
+		Offset: (l.Page - 1) * l.PageSize,
+		Status: l.Status,
+	}
+}
+
 func UpdateSupply(id string, name *string, description *string, unitPrice *decimal.Decimal, stockQuantity *int) *SupplyUpdate {
 	return &SupplyUpdate{
 		ID:            id,
