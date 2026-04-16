@@ -46,6 +46,7 @@ type (
 	SupplyHandler interface {
 		Create(*gin.Context)
 		List(*gin.Context)
+		Update(*gin.Context)
 	}
 
 	ServiceOrderHandler interface {
