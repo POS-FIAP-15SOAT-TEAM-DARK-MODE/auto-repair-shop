@@ -8,6 +8,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	"golang.org/x/sync/errgroup"
 )
 
 type service struct {
@@ -62,14 +63,30 @@ func (s *service) List(c context.Context, params *domain.ListSupplyParams) (*dom
 func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
 	p := params.SearchSupplyParams()
 
-	total, err := s.repo.Count(ctx, p)
-	if err != nil {
-		return nil, fmt.Errorf("fail to count supplies: %w", err)
-	}
+	var total int64
+	var items []domain.Supply
+	var eg errgroup.Group
 
-	items, err := s.repo.Search(ctx, p)
-	if err != nil {
-		return nil, fmt.Errorf("fail to search supplies: %w", err)
+	eg.Go(func() error {
+		t, err := s.repo.Count(ctx, p)
+		if err != nil {
+			return err
+		}
+		total = t
+		return nil
+	})
+
+	eg.Go(func() error {
+		list, err := s.repo.Search(ctx, p)
+		if err != nil {
+			return err
+		}
+		items = list
+		return err
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, fmt.Errorf("fail to list works: %w", err)
 	}
 
 	return &domain.PaginatorResponse[domain.Supply]{
@@ -80,6 +97,7 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSuppl
 		PageSize:   params.PageSize,
 	}, nil
 }
+
 func (s *service) Update(ctx context.Context, supply *domain.Supply) error {
 	if err := supply.Validate(); err != nil {
 		err = fmt.Errorf("supply validation failed: %w", err)

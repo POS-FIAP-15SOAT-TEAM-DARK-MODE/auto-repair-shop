@@ -2,7 +2,6 @@ package supply
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
@@ -64,27 +63,6 @@ func (h *handler) Create(c *gin.Context) {
 
 	logger.Of(ctx).Debug("create response", zap.Any("service", body))
 	c.JSON(http.StatusCreated, mapSupplyToResponseDTO(body))
-}
-
-func createSupplyListParams(c *gin.Context) *domain.ListSupplyParams {
-	pg := int64(defaultPage)
-	pgSize := int64(defaultPageSize)
-
-	if page := c.Query(pageParam); page != "" {
-		if p, err := strconv.Atoi(page); err == nil && p > defaultPage {
-			pg = int64(p)
-		}
-	}
-	if pageSize := c.Query(pageSizeParam); pageSize != "" {
-		if ps, err := strconv.Atoi(pageSize); err == nil && ps > 0 {
-			pgSize = int64(ps)
-		}
-	}
-
-	return &domain.ListSupplyParams{
-		Page:     pg,
-		PageSize: pgSize,
-	}
 }
 
 func (h *handler) List(c *gin.Context) {

@@ -54,46 +54,6 @@ func (u *repo) Create(ctx context.Context, supply *domain.Supply) error {
 	return nil
 }
 
-func (u *repo) List(ctx context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
-	db, err := postgres.GetOneTimeTransaction(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	offset := (params.Page - 1) * params.PageSize
-
-	// total de registros
-	var total int64
-	if err := db.QueryRowContext(ctx, countSuppliesQuery).Scan(&total); err != nil {
-		return nil, pgPkg.Error(ctx, err)
-	}
-
-	rows, err := db.QueryContext(ctx, listSuppliesQuery, params.PageSize, offset)
-	if err != nil {
-		return nil, pgPkg.Error(ctx, err)
-	}
-	defer rows.Close()
-
-	var supplies []domain.Supply
-	for rows.Next() {
-		supply := domain.Supply{}
-		if err = rows.Scan(&supply.ID, &supply.Name, &supply.Description, &supply.UnitPrice, &supply.StockQuantity, &supply.Version); err != nil {
-			return nil, pgPkg.Error(ctx, err)
-		}
-		supplies = append(supplies, supply)
-	}
-
-	totalPages := (total + params.PageSize - 1) / params.PageSize
-
-	return &domain.PaginatorResponse[domain.Supply]{
-		Items:      supplies,
-		TotalItems: total,
-		TotalPages: totalPages,
-		PageSize:   params.PageSize,
-		Page:       params.Page,
-	}, nil
-}
-
 func (u *repo) Update(ctx context.Context, supply *domain.SupplyUpdate) error {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
@@ -160,12 +120,12 @@ func buildUpdateSupplyQuery(supply *domain.SupplyUpdate) (string, []any) {
 }
 
 func (r *repo) Count(ctx context.Context, params *domain.SearchSupplyParams) (int64, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	queryBuilder := db.QueryBuilder(countQuery)
+	queryBuilder := db.QueryBuilder(countSuppliesQuery)
 
 	if params.Status != "" {
 		queryBuilder.Add("status = ", domain.StringToWorkStatus(params.Status).Bool())
@@ -181,7 +141,7 @@ func (r *repo) Count(ctx context.Context, params *domain.SearchSupplyParams) (in
 	return total, nil
 }
 func (r *repo) Search(ctx context.Context, params *domain.SearchSupplyParams) ([]domain.Supply, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
