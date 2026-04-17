@@ -474,3 +474,41 @@ func TestService_Update_UnitOfWorkError(t *testing.T) {
 
 	assert.ErrorIs(t, err, expectedErr)
 }
+
+func TestService_Delete_Success(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	id := "supply-id"
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	repo.EXPECT().Delete(ctx, id).Return(nil)
+
+	appService := Service(exec, repo)
+	err := appService.Delete(ctx, id)
+
+	assert.NoError(t, err)
+}
+func TestService_Delete_Error(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	id := "supply-id"
+	expectedErr := errors.New("delete failed")
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	appService := Service(exec, repo)
+	err := appService.Delete(ctx, id)
+
+	assert.ErrorIs(t, err, expectedErr)
+}

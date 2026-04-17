@@ -26,12 +26,14 @@ type (
 		Create(ctx context.Context, c *Supply) error
 		List(context.Context, *ListSupplyParams) (*PaginatorResponse[Supply], error)
 		Update(context.Context, *Supply) error
+		Delete(context.Context, string) error
 	}
 
 	SupplyRepository interface {
 		Save(context.Context, *Supply) error
 		Search(context.Context, *SearchSupplyParams) ([]Supply, error)
 		Count(context.Context, *SearchSupplyParams) (int64, error)
+		Delete(context.Context, string) error
 	}
 )
 

@@ -106,11 +106,11 @@ func (h *handler) Update(c *gin.Context) {
 	body := dto.MapToDomain()
 	id := c.Param(idPathParamKey)
 	if id == "" {
-		status, response := web.Error(domain.ErrInvalidWorkId)
-		logger.Of(ctx).Debug("Work invalid work id",
-			zap.String("operation", "update_work"),
-			zap.Error(domain.ErrInvalidWorkId),
-			zap.String("entity", "work"),
+		status, response := web.Error(domain.ErrInvalidSupplyId)
+		logger.Of(ctx).Debug("Supply invalid supply id",
+			zap.String("operation", "update_supply"),
+			zap.Error(domain.ErrInvalidSupplyId),
+			zap.String("entity", "supply"),
 			zap.String("entity.id", id),
 		)
 		c.JSON(status, response)
@@ -122,10 +122,10 @@ func (h *handler) Update(c *gin.Context) {
 	if err := h.svc.Update(ctx, body); err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
-		logger.Of(ctx).Debug("Work update failed in service layer",
-			zap.String("operation", "update_work"),
+		logger.Of(ctx).Debug("Supply update failed in service layer",
+			zap.String("operation", "update_supply"),
 			zap.Error(err),
-			zap.String("entity", "work"),
+			zap.String("entity", "supply"),
 		)
 		c.JSON(status, response)
 		return
@@ -134,4 +134,37 @@ func (h *handler) Update(c *gin.Context) {
 	logger.Of(ctx).Debug("update response", zap.Any("service", body))
 	c.JSON(http.StatusOK, mapResponseDTOFromDomain(body))
 
+}
+
+func (h *handler) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id := c.Param(idPathParamKey)
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidSupplyId)
+		logger.Of(ctx).Debug("Supply invalid supply id",
+			zap.String("operation", "delete_supply"),
+			zap.Error(domain.ErrInvalidSupplyId),
+			zap.String("entity", "supply"),
+			zap.String("entity.id", id),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	logger.Of(ctx).Debug("delete request", zap.Any(idPathParamKey, id))
+	if err := h.svc.Delete(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("Supply deletion failed in service layer",
+			zap.String("operation", "delete_supply"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	logger.Of(ctx).Debug("deletion ok")
+	c.Status(http.StatusNoContent)
 }

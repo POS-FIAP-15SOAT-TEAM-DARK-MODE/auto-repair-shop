@@ -16,4 +16,5 @@ const (
 	listSuppliesQuery  = `SELECT id, name, description, unit_price, stock_quantity, version FROM "supply" ORDER BY name ASC`
 	countSuppliesQuery = `SELECT COUNT(s.id) FROM "supply" s`
 	searchQuery        = `SELECT s.id, s.name, s.description, s.unit_price, s.stock_quantity, s.version FROM "supply" s`
+	deleteQuery        = `DELETE FROM "supply" s where s.id = $1`
 )

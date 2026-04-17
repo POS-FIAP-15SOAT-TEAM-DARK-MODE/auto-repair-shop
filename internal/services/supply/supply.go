@@ -112,3 +112,12 @@ func (s *service) Update(ctx context.Context, supply *domain.Supply) error {
 
 	return nil
 }
+
+func (s *service) Delete(c context.Context, id string) error {
+	if err := s.uow.Execute(c, func(ctx context.Context) error { return s.repo.Delete(ctx, id) }); err != nil {
+		logger.Of(c).Error(err)
+		return err
+	}
+
+	return nil
+}

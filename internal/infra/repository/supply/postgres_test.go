@@ -493,3 +493,51 @@ func TestPostgresRepository_Supply_Count_NoTransaction(t *testing.T) {
 	_, err := repo.Count(context.Background(), &domain.SearchSupplyParams{})
 	assert.Error(t, err)
 }
+
+func TestPostgresRepository_Delete_Error(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
+	repo := supplyrepo.Repository()
+
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE FROM \"supply\"").WillReturnError(assert.AnError)
+	mock.ExpectRollback()
+
+	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+		return repo.Delete(ctx, "id")
+	})
+
+	assert.Error(t, err)
+}
+func TestPostgresRepository_Delete(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
+	repo := supplyrepo.Repository()
+
+	id := "supply-id"
+
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE FROM \"supply\"").
+		WithArgs(id).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+		return repo.Delete(ctx, id)
+	})
+
+	assert.NoError(t, err)
+}
+
+func TestPostgresRepository_Delete_NoTransaction(t *testing.T) {
+	repo := supplyrepo.Repository()
+
+	err := repo.Delete(context.Background(), "some-id")
+	assert.Error(t, err)
+}

@@ -89,4 +89,5 @@ var (
 	ErrInvalidSupplyStockQuantity = errors.New("supply stock quantity must be greater than or equal to 0")
 	ErrInvalidSupplyVersion       = errors.New("supply version must be greater than or equal to 0")
 	ErrNotFound                   = errors.New("supply not found")
+	ErrInvalidSupplyId            = errors.New("invalid supply id")
 )

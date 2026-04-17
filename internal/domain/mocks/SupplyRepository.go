@@ -79,6 +79,53 @@ func (_c *SupplyRepository_Count_Call) RunAndReturn(run func(context.Context, *d
 	return _c
 }
 
+// Delete provides a mock function with given fields: _a0, _a1
+func (_m *SupplyRepository) Delete(_a0 context.Context, _a1 string) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyRepository_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type SupplyRepository_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *SupplyRepository_Expecter) Delete(_a0 interface{}, _a1 interface{}) *SupplyRepository_Delete_Call {
+	return &SupplyRepository_Delete_Call{Call: _e.mock.On("Delete", _a0, _a1)}
+}
+
+func (_c *SupplyRepository_Delete_Call) Run(run func(_a0 context.Context, _a1 string)) *SupplyRepository_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_Delete_Call) Return(_a0 error) *SupplyRepository_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyRepository_Delete_Call) RunAndReturn(run func(context.Context, string) error) *SupplyRepository_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Save provides a mock function with given fields: _a0, _a1
 func (_m *SupplyRepository) Save(_a0 context.Context, _a1 *domain.Supply) error {
 	ret := _m.Called(_a0, _a1)

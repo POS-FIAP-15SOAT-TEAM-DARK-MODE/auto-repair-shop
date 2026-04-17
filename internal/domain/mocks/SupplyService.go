@@ -69,6 +69,53 @@ func (_c *SupplyService_Create_Call) RunAndReturn(run func(context.Context, *dom
 	return _c
 }
 
+// Delete provides a mock function with given fields: _a0, _a1
+func (_m *SupplyService) Delete(_a0 context.Context, _a1 string) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyService_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type SupplyService_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *SupplyService_Expecter) Delete(_a0 interface{}, _a1 interface{}) *SupplyService_Delete_Call {
+	return &SupplyService_Delete_Call{Call: _e.mock.On("Delete", _a0, _a1)}
+}
+
+func (_c *SupplyService_Delete_Call) Run(run func(_a0 context.Context, _a1 string)) *SupplyService_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *SupplyService_Delete_Call) Return(_a0 error) *SupplyService_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyService_Delete_Call) RunAndReturn(run func(context.Context, string) error) *SupplyService_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function with given fields: _a0, _a1
 func (_m *SupplyService) List(_a0 context.Context, _a1 *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
 	ret := _m.Called(_a0, _a1)
