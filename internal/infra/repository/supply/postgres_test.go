@@ -22,7 +22,7 @@ type fullSupplyRepo interface {
 	domain.SupplyRepository
 	Create(context.Context, *domain.Supply) error
 	List(context.Context) ([]*domain.Supply, error)
-	Update(context.Context, *domain.SupplyUpdate) error
+	Update(context.Context, *domain.UpdateSupply) error
 }
 
 func newRepo() fullSupplyRepo {
@@ -48,7 +48,7 @@ func TestPostgresRepository_Supply_Save(t *testing.T) {
 	s := newTestSupply()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "supply"`).
+	mock.ExpectExec(`INSERT INTO "supply".*ON CONFLICT.*DO UPDATE`).
 		WithArgs(s.ID, s.Name, s.Description, s.UnitPrice, s.StockQuantity).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
@@ -243,8 +243,10 @@ func TestPostgresRepository_Supply_Update(t *testing.T) {
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := newRepo()
 
-	name := "Updated Name"
-	update := domain.UpdateSupply("supply-id", &name, nil, nil, nil)
+	update := &domain.UpdateSupply{
+		ID:   "supply-id",
+		Name: "Updated Name",
+	}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`UPDATE "supply"`).
@@ -267,8 +269,10 @@ func TestPostgresRepository_Supply_Update_NotFound(t *testing.T) {
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := newRepo()
 
-	name := "Updated Name"
-	update := domain.UpdateSupply("nonexistent-id", &name, nil, nil, nil)
+	update := &domain.UpdateSupply{
+		ID:   "supply-id",
+		Name: "Updated Name",
+	}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`UPDATE "supply"`).
@@ -279,7 +283,7 @@ func TestPostgresRepository_Supply_Update_NotFound(t *testing.T) {
 		return repo.Update(ctx, update)
 	})
 
-	assert.ErrorIs(t, err, domain.ErrNotFound)
+	assert.ErrorIs(t, err, domain.ErrSupplyNotFound)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -291,8 +295,10 @@ func TestPostgresRepository_Supply_Update_Error(t *testing.T) {
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := newRepo()
 
-	name := "Updated Name"
-	update := domain.UpdateSupply("supply-id", &name, nil, nil, nil)
+	update := &domain.UpdateSupply{
+		ID:   "supply-id",
+		Name: "Updated Name",
+	}
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`UPDATE "supply"`).WillReturnError(assert.AnError)
@@ -308,8 +314,10 @@ func TestPostgresRepository_Supply_Update_Error(t *testing.T) {
 
 func TestPostgresRepository_Supply_Update_NoTransaction(t *testing.T) {
 	repo := newRepo()
-	name := "Updated Name"
-	update := domain.UpdateSupply("supply-id", &name, nil, nil, nil)
+	update := &domain.UpdateSupply{
+		ID:   "supply-id",
+		Name: "Updated Name",
+	}
 
 	err := repo.Update(context.Background(), update)
 	assert.Error(t, err)
@@ -327,7 +335,7 @@ func TestPostgresRepository_Supply_Search(t *testing.T) {
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := newRepo()
 
-	params := &domain.SearchSupplyParams{Limit: 10, Offset: 0}
+	params := &domain.ListSupplyParams{PageSize: 10, Page: 0}
 
 	mock.ExpectBegin()
 	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price"}).
@@ -363,7 +371,7 @@ func TestPostgresRepository_Supply_Search_Error(t *testing.T) {
 	mock.ExpectRollback()
 
 	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.Search(ctx, &domain.SearchSupplyParams{Limit: 10})
+		_, err := repo.Search(ctx, &domain.ListSupplyParams{PageSize: 10})
 		return err
 	})
 
@@ -387,7 +395,7 @@ func TestPostgresRepository_Supply_Search_ScanError(t *testing.T) {
 	mock.ExpectRollback()
 
 	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.Search(ctx, &domain.SearchSupplyParams{Limit: 10})
+		_, err := repo.Search(ctx, &domain.ListSupplyParams{PageSize: 10})
 		return err
 	})
 
@@ -398,7 +406,7 @@ func TestPostgresRepository_Supply_Search_ScanError(t *testing.T) {
 func TestPostgresRepository_Supply_Search_NoTransaction(t *testing.T) {
 	repo := newRepo()
 
-	_, err := repo.Search(context.Background(), &domain.SearchSupplyParams{Limit: 10})
+	_, err := repo.Search(context.Background(), &domain.ListSupplyParams{PageSize: 10})
 	assert.Error(t, err)
 }
 
@@ -414,7 +422,7 @@ func TestPostgresRepository_Supply_Count(t *testing.T) {
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := newRepo()
 
-	params := &domain.SearchSupplyParams{}
+	params := &domain.ListSupplyParams{}
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT COUNT\(s.id\) FROM "supply"`).
@@ -441,7 +449,7 @@ func TestPostgresRepository_Supply_Count_Error(t *testing.T) {
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := newRepo()
 
-	params := &domain.SearchSupplyParams{}
+	params := &domain.ListSupplyParams{}
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT COUNT\(s.id\) FROM "supply"`).
@@ -468,7 +476,7 @@ func TestPostgresRepository_Supply_Count_WithStatus(t *testing.T) {
 	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := newRepo()
 
-	params := &domain.SearchSupplyParams{Status: "ACTIVE"}
+	params := &domain.ListSupplyParams{Status: "ACTIVE"}
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT COUNT\(s.id\) FROM "supply"`).
@@ -490,6 +498,6 @@ func TestPostgresRepository_Supply_Count_WithStatus(t *testing.T) {
 func TestPostgresRepository_Supply_Count_NoTransaction(t *testing.T) {
 	repo := newRepo()
 
-	_, err := repo.Count(context.Background(), &domain.SearchSupplyParams{})
+	_, err := repo.Count(context.Background(), &domain.ListSupplyParams{})
 	assert.Error(t, err)
 }

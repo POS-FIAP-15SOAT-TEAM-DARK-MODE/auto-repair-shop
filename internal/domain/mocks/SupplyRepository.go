@@ -23,7 +23,7 @@ func (_m *SupplyRepository) EXPECT() *SupplyRepository_Expecter {
 }
 
 // Count provides a mock function with given fields: _a0, _a1
-func (_m *SupplyRepository) Count(_a0 context.Context, _a1 *domain.SearchSupplyParams) (int64, error) {
+func (_m *SupplyRepository) Count(_a0 context.Context, _a1 *domain.ListSupplyParams) (int64, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
@@ -32,16 +32,16 @@ func (_m *SupplyRepository) Count(_a0 context.Context, _a1 *domain.SearchSupplyP
 
 	var r0 int64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchSupplyParams) (int64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) (int64, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchSupplyParams) int64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) int64); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.SearchSupplyParams) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ListSupplyParams) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
@@ -57,14 +57,14 @@ type SupplyRepository_Count_Call struct {
 
 // Count is a helper method to define mock.On call
 //   - _a0 context.Context
-//   - _a1 *domain.SearchSupplyParams
+//   - _a1 *domain.ListSupplyParams
 func (_e *SupplyRepository_Expecter) Count(_a0 interface{}, _a1 interface{}) *SupplyRepository_Count_Call {
 	return &SupplyRepository_Count_Call{Call: _e.mock.On("Count", _a0, _a1)}
 }
 
-func (_c *SupplyRepository_Count_Call) Run(run func(_a0 context.Context, _a1 *domain.SearchSupplyParams)) *SupplyRepository_Count_Call {
+func (_c *SupplyRepository_Count_Call) Run(run func(_a0 context.Context, _a1 *domain.ListSupplyParams)) *SupplyRepository_Count_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.SearchSupplyParams))
+		run(args[0].(context.Context), args[1].(*domain.ListSupplyParams))
 	})
 	return _c
 }
@@ -74,7 +74,7 @@ func (_c *SupplyRepository_Count_Call) Return(_a0 int64, _a1 error) *SupplyRepos
 	return _c
 }
 
-func (_c *SupplyRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.SearchSupplyParams) (int64, error)) *SupplyRepository_Count_Call {
+func (_c *SupplyRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.ListSupplyParams) (int64, error)) *SupplyRepository_Count_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -127,7 +127,7 @@ func (_c *SupplyRepository_Save_Call) RunAndReturn(run func(context.Context, *do
 }
 
 // Search provides a mock function with given fields: _a0, _a1
-func (_m *SupplyRepository) Search(_a0 context.Context, _a1 *domain.SearchSupplyParams) ([]domain.Supply, error) {
+func (_m *SupplyRepository) Search(_a0 context.Context, _a1 *domain.ListSupplyParams) ([]domain.Supply, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
@@ -136,10 +136,10 @@ func (_m *SupplyRepository) Search(_a0 context.Context, _a1 *domain.SearchSupply
 
 	var r0 []domain.Supply
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchSupplyParams) ([]domain.Supply, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) ([]domain.Supply, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchSupplyParams) []domain.Supply); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ListSupplyParams) []domain.Supply); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
@@ -147,7 +147,7 @@ func (_m *SupplyRepository) Search(_a0 context.Context, _a1 *domain.SearchSupply
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.SearchSupplyParams) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ListSupplyParams) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
@@ -163,14 +163,14 @@ type SupplyRepository_Search_Call struct {
 
 // Search is a helper method to define mock.On call
 //   - _a0 context.Context
-//   - _a1 *domain.SearchSupplyParams
+//   - _a1 *domain.ListSupplyParams
 func (_e *SupplyRepository_Expecter) Search(_a0 interface{}, _a1 interface{}) *SupplyRepository_Search_Call {
 	return &SupplyRepository_Search_Call{Call: _e.mock.On("Search", _a0, _a1)}
 }
 
-func (_c *SupplyRepository_Search_Call) Run(run func(_a0 context.Context, _a1 *domain.SearchSupplyParams)) *SupplyRepository_Search_Call {
+func (_c *SupplyRepository_Search_Call) Run(run func(_a0 context.Context, _a1 *domain.ListSupplyParams)) *SupplyRepository_Search_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.SearchSupplyParams))
+		run(args[0].(context.Context), args[1].(*domain.ListSupplyParams))
 	})
 	return _c
 }
@@ -180,7 +180,7 @@ func (_c *SupplyRepository_Search_Call) Return(_a0 []domain.Supply, _a1 error) *
 	return _c
 }
 
-func (_c *SupplyRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.SearchSupplyParams) ([]domain.Supply, error)) *SupplyRepository_Search_Call {
+func (_c *SupplyRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.ListSupplyParams) ([]domain.Supply, error)) *SupplyRepository_Search_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -61,14 +61,12 @@ func (s *service) List(c context.Context, params *domain.ListSupplyParams) (*dom
 }
 
 func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
-	p := params.SearchSupplyParams()
-
 	var total int64
 	var items []domain.Supply
 	var eg errgroup.Group
 
 	eg.Go(func() error {
-		t, err := s.repo.Count(ctx, p)
+		t, err := s.repo.Count(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -77,16 +75,16 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSuppl
 	})
 
 	eg.Go(func() error {
-		list, err := s.repo.Search(ctx, p)
+		list, err := s.repo.Search(ctx, params)
 		if err != nil {
 			return err
 		}
 		items = list
-		return err
+		return nil
 	})
 
 	if err := eg.Wait(); err != nil {
-		return nil, fmt.Errorf("fail to list works: %w", err)
+		return nil, fmt.Errorf("fail to list supplies: %w", err)
 	}
 
 	return &domain.PaginatorResponse[domain.Supply]{

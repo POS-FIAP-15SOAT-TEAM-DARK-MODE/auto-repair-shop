@@ -30,8 +30,8 @@ type (
 
 	SupplyRepository interface {
 		Save(context.Context, *Supply) error
-		Search(context.Context, *SearchSupplyParams) ([]Supply, error)
-		Count(context.Context, *SearchSupplyParams) (int64, error)
+		Search(context.Context, *ListSupplyParams) ([]Supply, error)
+		Count(context.Context, *ListSupplyParams) (int64, error)
 	}
 )
 
@@ -49,30 +49,21 @@ type (
 		Page     int64
 		Status   string
 	}
-	SearchSupplyParams struct {
-		Limit  int64
-		Offset int64
-		Status string
-	}
-	SupplyUpdate struct {
+	UpdateSupply struct {
 		ID            string
-		Name          *string
-		Description   *string
-		UnitPrice     *decimal.Decimal
-		StockQuantity *int
+		Name          string
+		Description   string
+		UnitPrice     decimal.Decimal
+		StockQuantity int
 	}
 )
 
-func (l ListSupplyParams) SearchSupplyParams() *SearchSupplyParams {
-	return &SearchSupplyParams{
-		Limit:  l.PageSize,
-		Offset: (l.Page - 1) * l.PageSize,
-		Status: l.Status,
-	}
+func (l ListSupplyParams) Offset() int64 {
+	return (l.Page - 1) * l.PageSize
 }
 
-func UpdateSupply(id string, name *string, description *string, unitPrice *decimal.Decimal, stockQuantity *int) *SupplyUpdate {
-	return &SupplyUpdate{
+func UpdateSupplyConstructor(id string, name string, description string, unitPrice decimal.Decimal, stockQuantity int) *UpdateSupply {
+	return &UpdateSupply{
 		ID:            id,
 		Name:          name,
 		Description:   description,
@@ -141,18 +132,18 @@ func (s *Supply) Validate() error {
 	return nil
 }
 
-func (s *SupplyUpdate) Validate() error {
+func (s *UpdateSupply) Validate() error {
 	var errs []error
-	if s.Name != nil && len(*s.Name) < 3 {
+	if s.Name != "" && len(s.Name) < 3 {
 		errs = append(errs, ErrInvalidSupplyName)
 	}
-	if s.Description != nil && len(*s.Description) < 10 {
+	if s.Description != "" && len(s.Description) < 10 {
 		errs = append(errs, ErrInvalidSupplyDescription)
 	}
-	if s.UnitPrice != nil && s.UnitPrice.LessThanOrEqual(decimal.Zero) {
+	if s.UnitPrice != (decimal.Decimal{}) && s.UnitPrice.LessThanOrEqual(decimal.Zero) {
 		errs = append(errs, ErrInvalidSupplyUnitPrice)
 	}
-	if s.StockQuantity != nil && *s.StockQuantity < 0 {
+	if s.StockQuantity != 0 && s.StockQuantity < 0 {
 		errs = append(errs, ErrInvalidSupplyStockQuantity)
 	}
 	if len(errs) > 0 {

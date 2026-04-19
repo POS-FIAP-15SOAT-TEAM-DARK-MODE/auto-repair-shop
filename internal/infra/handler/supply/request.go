@@ -15,11 +15,11 @@ type createSupplyRequestDTO struct {
 	UnitPrice     decimal.Decimal `json:"unitPrice" binding:"required"`
 	StockQuantity int             `json:"stockQuantity" binding:"required"`
 }
-type UpdateSupplyRequest struct {
-	Name          *string          `json:"name"`
-	Description   *string          `json:"description"`
-	UnitPrice     *decimal.Decimal `json:"unitPrice"`
-	StockQuantity *int             `json:"stockQuantity"`
+type updateSupplyRequest struct {
+	Name          string          `json:"name"`
+	Description   string          `json:"description"`
+	UnitPrice     decimal.Decimal `json:"unitPrice"`
+	StockQuantity int             `json:"stockQuantity"`
 }
 
 func mapBodyToRequestDTO(body *gin.Context) (*createSupplyRequestDTO, error) {
@@ -32,16 +32,22 @@ func mapBodyToRequestDTO(body *gin.Context) (*createSupplyRequestDTO, error) {
 	return req, nil
 }
 
-func mapBodyToUpdateSupplyRequest(body *gin.Context) (*UpdateSupplyRequest, error) {
-	var req UpdateSupplyRequest
+func mapBodyToUpdateSupplyRequest(body *gin.Context) (*updateSupplyRequest, error) {
+	var req updateSupplyRequest
 	if err := body.ShouldBindJSON(&req); err != nil {
 		return nil, json.CheckJsonError(err)
 	}
 	return &req, nil
 }
 
-func mapUpdateSupplyRequestDTOToDomain(id string, req *UpdateSupplyRequest) *domain.SupplyUpdate {
-	return domain.UpdateSupply(id, req.Name, req.Description, req.UnitPrice, req.StockQuantity)
+func mapUpdateSupplyRequestDTOToDomain(id string, req *updateSupplyRequest) *domain.UpdateSupply {
+	return &domain.UpdateSupply{
+		ID:            id,
+		Name:          req.Name,
+		Description:   req.Description,
+		UnitPrice:     req.UnitPrice,
+		StockQuantity: req.StockQuantity,
+	}
 }
 
 func (c *createSupplyRequestDTO) MapToDomain() *domain.Supply {
