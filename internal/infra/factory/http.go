@@ -1,10 +1,12 @@
 package factory
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/seed"
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
@@ -42,6 +44,7 @@ import (
 func HTTPServer() server.Server {
 	middlewares := middlewaresContainer()
 	db := postgres.Connect()
+	seed.Run(context.Background(), db)
 	routes := httpContainer(db)
 	router := routing.SetupRouter(routes, middlewares)
 
