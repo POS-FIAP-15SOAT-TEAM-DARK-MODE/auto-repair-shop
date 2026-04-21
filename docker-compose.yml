@@ -17,8 +17,8 @@ services:
       - BCRYPT_COST=${BCRYPT_COST:-12}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - backend
@@ -27,6 +27,20 @@ services:
         limits:
           cpus: "0.5"
           memory: 256M
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migrations:/migrations
+    command:
+      - "-path=/migrations"
+      - "-database=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-autorepairshop}?sslmode=disable"
+      - "up"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
 
   db:
     image: postgres:15-alpine
