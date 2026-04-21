@@ -10,7 +10,13 @@ import (
 type SERVICE_ORDER_STATUS string
 
 const (
-	SERVICE_ORDER_STATUS_NEW SERVICE_ORDER_STATUS = "NEW"
+	SERVICE_ORDER_STATUS_NEW               SERVICE_ORDER_STATUS = "NEW"
+	SERVICE_ORDER_STATUS_RECEIVED          SERVICE_ORDER_STATUS = "RECEIVED"
+	SERVICE_ORDER_STATUS_IN_DIAGNOSIS      SERVICE_ORDER_STATUS = "IN_DIAGNOSIS"
+	SERVICE_ORDER_STATUS_AWAITING_APPROVAL SERVICE_ORDER_STATUS = "AWAITING_APPROVAL"
+	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
+	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
+	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
 )
 
 func (s SERVICE_ORDER_STATUS) String() string {
@@ -36,6 +42,7 @@ type (
 		AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error
 		RemoveWork(ctx context.Context, serviceOrderID, workID string) error
 	}
+
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
 		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
