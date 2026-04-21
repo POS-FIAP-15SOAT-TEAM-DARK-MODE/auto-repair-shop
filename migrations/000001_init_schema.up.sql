@@ -161,6 +161,18 @@ CREATE TABLE service_order_status_history (
         TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create WORK_SERVICE_ORDER_STATUS_HISTORY table
+CREATE TABLE work_service_order_status_history (
+    id VARCHAR(26) PRIMARY KEY,
+    work_id VARCHAR(36) NOT NULL REFERENCES work (id) ON DELETE CASCADE,
+    service_order_id VARCHAR(36) NOT NULL REFERENCES service_order (id) ON DELETE CASCADE,
+    previous_status VARCHAR(50) NOT NULL,
+    new_status VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP
+    WITH
+        TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for foreign keys and search columns
 CREATE INDEX idx_customer_user_id ON customer (user_id);
 
@@ -177,6 +189,8 @@ CREATE INDEX idx_service_order_work_service_order_id ON service_order_work (serv
 CREATE INDEX idx_service_order_supply_service_order_id ON service_order_supply (service_order_id);
 
 CREATE INDEX idx_status_history_service_order_id ON service_order_status_history (service_order_id);
+
+CREATE INDEX idx_status_history_work_service_order_id ON work_service_order_status_history (service_order_id, work_id);
 
 CREATE INDEX idx_user_role_user_id ON user_role (user_id);
 
