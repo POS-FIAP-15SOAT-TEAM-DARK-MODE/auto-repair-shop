@@ -21,6 +21,39 @@ func (_m *ServiceOrderHandler) EXPECT() *ServiceOrderHandler_Expecter {
 	return &ServiceOrderHandler_Expecter{mock: &_m.Mock}
 }
 
+// AddSupplies provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) AddSupplies(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_AddSupplies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddSupplies'
+type ServiceOrderHandler_AddSupplies_Call struct {
+	*mock.Call
+}
+
+// AddSupplies is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) AddSupplies(_a0 interface{}) *ServiceOrderHandler_AddSupplies_Call {
+	return &ServiceOrderHandler_AddSupplies_Call{Call: _e.mock.On("AddSupplies", _a0)}
+}
+
+func (_c *ServiceOrderHandler_AddSupplies_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_AddSupplies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_AddSupplies_Call) Return() *ServiceOrderHandler_AddSupplies_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_AddSupplies_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_AddSupplies_Call {
+	_c.Run(run)
+	return _c
+}
+
 // AddWork provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) AddWork(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -87,6 +120,39 @@ func (_c *ServiceOrderHandler_Create_Call) RunAndReturn(run func(*gin.Context)) 
 	return _c
 }
 
+// DeleteSupply provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) DeleteSupply(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_DeleteSupply_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteSupply'
+type ServiceOrderHandler_DeleteSupply_Call struct {
+	*mock.Call
+}
+
+// DeleteSupply is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) DeleteSupply(_a0 interface{}) *ServiceOrderHandler_DeleteSupply_Call {
+	return &ServiceOrderHandler_DeleteSupply_Call{Call: _e.mock.On("DeleteSupply", _a0)}
+}
+
+func (_c *ServiceOrderHandler_DeleteSupply_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_DeleteSupply_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_DeleteSupply_Call) Return() *ServiceOrderHandler_DeleteSupply_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_DeleteSupply_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_DeleteSupply_Call {
+	_c.Run(run)
+	return _c
+}
+
 // DeleteWork provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) DeleteWork(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -120,35 +186,68 @@ func (_c *ServiceOrderHandler_DeleteWork_Call) RunAndReturn(run func(*gin.Contex
 	return _c
 }
 
-// Get provides a mock function with given fields: _a0
-func (_m *ServiceOrderHandler) Get(_a0 *gin.Context) {
+// GetSupplies provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) GetSupplies(_a0 *gin.Context) {
 	_m.Called(_a0)
 }
 
-// ServiceOrderHandler_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
-type ServiceOrderHandler_Get_Call struct {
+// ServiceOrderHandler_GetSupplies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSupplies'
+type ServiceOrderHandler_GetSupplies_Call struct {
 	*mock.Call
 }
 
-// Get is a helper method to define mock.On call
+// GetSupplies is a helper method to define mock.On call
 //   - _a0 *gin.Context
-func (_e *ServiceOrderHandler_Expecter) Get(_a0 interface{}) *ServiceOrderHandler_Get_Call {
-	return &ServiceOrderHandler_Get_Call{Call: _e.mock.On("Get", _a0)}
+func (_e *ServiceOrderHandler_Expecter) GetSupplies(_a0 interface{}) *ServiceOrderHandler_GetSupplies_Call {
+	return &ServiceOrderHandler_GetSupplies_Call{Call: _e.mock.On("GetSupplies", _a0)}
 }
 
-func (_c *ServiceOrderHandler_Get_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Get_Call {
+func (_c *ServiceOrderHandler_GetSupplies_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_GetSupplies_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(*gin.Context))
 	})
 	return _c
 }
 
-func (_c *ServiceOrderHandler_Get_Call) Return() *ServiceOrderHandler_Get_Call {
+func (_c *ServiceOrderHandler_GetSupplies_Call) Return() *ServiceOrderHandler_GetSupplies_Call {
 	_c.Call.Return()
 	return _c
 }
 
-func (_c *ServiceOrderHandler_Get_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Get_Call {
+func (_c *ServiceOrderHandler_GetSupplies_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetSupplies_Call {
+	_c.Run(run)
+	return _c
+}
+
+// GetWorks provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) GetWorks(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_GetWorks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetWorks'
+type ServiceOrderHandler_GetWorks_Call struct {
+	*mock.Call
+}
+
+// GetWorks is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) GetWorks(_a0 interface{}) *ServiceOrderHandler_GetWorks_Call {
+	return &ServiceOrderHandler_GetWorks_Call{Call: _e.mock.On("GetWorks", _a0)}
+}
+
+func (_c *ServiceOrderHandler_GetWorks_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_GetWorks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetWorks_Call) Return() *ServiceOrderHandler_GetWorks_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetWorks_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetWorks_Call {
 	_c.Run(run)
 	return _c
 }

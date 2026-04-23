@@ -23,6 +23,56 @@ func (_m *ServiceOrderRepository) EXPECT() *ServiceOrderRepository_Expecter {
 	return &ServiceOrderRepository_Expecter{mock: &_m.Mock}
 }
 
+// AddSupplyLink provides a mock function with given fields: ctx, serviceOrderID, supplyID, amount, unitPrice
+func (_m *ServiceOrderRepository) AddSupplyLink(ctx context.Context, serviceOrderID string, supplyID string, amount int, unitPrice decimal.Decimal) error {
+	ret := _m.Called(ctx, serviceOrderID, supplyID, amount, unitPrice)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddSupplyLink")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, int, decimal.Decimal) error); ok {
+		r0 = rf(ctx, serviceOrderID, supplyID, amount, unitPrice)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderRepository_AddSupplyLink_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddSupplyLink'
+type ServiceOrderRepository_AddSupplyLink_Call struct {
+	*mock.Call
+}
+
+// AddSupplyLink is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - supplyID string
+//   - amount int
+//   - unitPrice decimal.Decimal
+func (_e *ServiceOrderRepository_Expecter) AddSupplyLink(ctx interface{}, serviceOrderID interface{}, supplyID interface{}, amount interface{}, unitPrice interface{}) *ServiceOrderRepository_AddSupplyLink_Call {
+	return &ServiceOrderRepository_AddSupplyLink_Call{Call: _e.mock.On("AddSupplyLink", ctx, serviceOrderID, supplyID, amount, unitPrice)}
+}
+
+func (_c *ServiceOrderRepository_AddSupplyLink_Call) Run(run func(ctx context.Context, serviceOrderID string, supplyID string, amount int, unitPrice decimal.Decimal)) *ServiceOrderRepository_AddSupplyLink_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(int), args[4].(decimal.Decimal))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_AddSupplyLink_Call) Return(_a0 error) *ServiceOrderRepository_AddSupplyLink_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_AddSupplyLink_Call) RunAndReturn(run func(context.Context, string, string, int, decimal.Decimal) error) *ServiceOrderRepository_AddSupplyLink_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AddWorkLink provides a mock function with given fields: ctx, serviceOrderID, workID, unitPrice
 func (_m *ServiceOrderRepository) AddWorkLink(ctx context.Context, serviceOrderID string, workID string, unitPrice decimal.Decimal) error {
 	ret := _m.Called(ctx, serviceOrderID, workID, unitPrice)
@@ -136,6 +186,65 @@ func (_c *ServiceOrderRepository_ExistsByID_Call) RunAndReturn(run func(context.
 	return _c
 }
 
+// ListSuppliesByServiceOrderID provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderRepository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
+	ret := _m.Called(ctx, serviceOrderID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListSuppliesByServiceOrderID")
+	}
+
+	var r0 []domain.Supply
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.Supply, error)); ok {
+		return rf(ctx, serviceOrderID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.Supply); ok {
+		r0 = rf(ctx, serviceOrderID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Supply)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, serviceOrderID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderRepository_ListSuppliesByServiceOrderID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListSuppliesByServiceOrderID'
+type ServiceOrderRepository_ListSuppliesByServiceOrderID_Call struct {
+	*mock.Call
+}
+
+// ListSuppliesByServiceOrderID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+func (_e *ServiceOrderRepository_Expecter) ListSuppliesByServiceOrderID(ctx interface{}, serviceOrderID interface{}) *ServiceOrderRepository_ListSuppliesByServiceOrderID_Call {
+	return &ServiceOrderRepository_ListSuppliesByServiceOrderID_Call{Call: _e.mock.On("ListSuppliesByServiceOrderID", ctx, serviceOrderID)}
+}
+
+func (_c *ServiceOrderRepository_ListSuppliesByServiceOrderID_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderRepository_ListSuppliesByServiceOrderID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_ListSuppliesByServiceOrderID_Call) Return(_a0 []domain.Supply, _a1 error) *ServiceOrderRepository_ListSuppliesByServiceOrderID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_ListSuppliesByServiceOrderID_Call) RunAndReturn(run func(context.Context, string) ([]domain.Supply, error)) *ServiceOrderRepository_ListSuppliesByServiceOrderID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListWorksByServiceOrderID provides a mock function with given fields: ctx, serviceOrderID
 func (_m *ServiceOrderRepository) ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
 	ret := _m.Called(ctx, serviceOrderID)
@@ -191,6 +300,54 @@ func (_c *ServiceOrderRepository_ListWorksByServiceOrderID_Call) Return(_a0 []do
 }
 
 func (_c *ServiceOrderRepository_ListWorksByServiceOrderID_Call) RunAndReturn(run func(context.Context, string) ([]domain.Work, error)) *ServiceOrderRepository_ListWorksByServiceOrderID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RemoveSupplyLink provides a mock function with given fields: ctx, serviceOrderID, supplyID
+func (_m *ServiceOrderRepository) RemoveSupplyLink(ctx context.Context, serviceOrderID string, supplyID string) error {
+	ret := _m.Called(ctx, serviceOrderID, supplyID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RemoveSupplyLink")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, serviceOrderID, supplyID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderRepository_RemoveSupplyLink_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveSupplyLink'
+type ServiceOrderRepository_RemoveSupplyLink_Call struct {
+	*mock.Call
+}
+
+// RemoveSupplyLink is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - supplyID string
+func (_e *ServiceOrderRepository_Expecter) RemoveSupplyLink(ctx interface{}, serviceOrderID interface{}, supplyID interface{}) *ServiceOrderRepository_RemoveSupplyLink_Call {
+	return &ServiceOrderRepository_RemoveSupplyLink_Call{Call: _e.mock.On("RemoveSupplyLink", ctx, serviceOrderID, supplyID)}
+}
+
+func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) Run(run func(ctx context.Context, serviceOrderID string, supplyID string)) *ServiceOrderRepository_RemoveSupplyLink_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) Return(_a0 error) *ServiceOrderRepository_RemoveSupplyLink_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) RunAndReturn(run func(context.Context, string, string) error) *ServiceOrderRepository_RemoveSupplyLink_Call {
 	_c.Call.Return(run)
 	return _c
 }

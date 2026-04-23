@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -27,4 +29,29 @@ func (u *repo) Create(ctx context.Context, supply *domain.Supply) error {
 		return pgPkg.Error(ctx, err)
 	}
 	return nil
+}
+
+func (u *repo) FindById(ctx context.Context, id string) (domain.Supply, error) {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return domain.Supply{}, err
+	}
+
+	var sup domain.Supply
+	err = tx.QueryRowContext(ctx, findByIDQuery, id).Scan(
+		&sup.ID,
+		&sup.Name,
+		&sup.Description,
+		&sup.UnitPrice,
+		&sup.StockQuantity,
+		&sup.Version,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return domain.Supply{}, domain.ErrSupplyNotFound
+	}
+	if err != nil {
+		return domain.Supply{}, pgPkg.Error(ctx, err)
+	}
+
+	return sup, nil
 }

@@ -825,6 +825,113 @@ paths:
           "500":
             description: Internal Server Error
 
+  /v1/service-order/{id}/supplies:
+      get:
+        summary: Get all supplies of a service order
+        description: Get all supplies of a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to get all supplies from.
+        responses:
+          "200":
+            description: Services successfully fetched
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListWorksResponse'
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+      post:
+        summary: Add a new supply to a service order
+        description: Add a new supply to a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to add a supply to.
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddSuppliesToServiceOrderRequest'
+        responses:
+          "204":
+            description: Service successfully added
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
+  /v1/service-order/{id}/supplies/{supplyId}:
+      delete:
+        summary: Delete a supply from a service order
+        description: Delete a supply from a service order by its id
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to delete a supply from.
+          - in: path
+            name: supplyId
+            required: true
+            schema:
+              type: string
+            description: Id of supply to be deleted.
+        responses:
+          "204":
+            description: Supply successfully deleted
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
 components:
   securitySchemes:
     SessionToken:
@@ -1074,6 +1181,7 @@ components:
         - totalPages
         - pageSize
         - page
+
     WorkOrderHistoryEntry:
       type: object
       properties:
@@ -1186,6 +1294,7 @@ components:
         - totalPages
         - pageSize
         - page
+
     SupplyRequest:
       type: object
       required:
@@ -1283,3 +1392,20 @@ components:
           items:
             type: string
             description: ID of the service to add to the service order
+
+    AddSuppliesToServiceOrderRequest:
+          type: object
+          required:
+            - supplies
+          properties:
+            supplies:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ID of the supply to add to the service order
+                  amount:
+                    type: integer
+                    description: Amount of supplies to add

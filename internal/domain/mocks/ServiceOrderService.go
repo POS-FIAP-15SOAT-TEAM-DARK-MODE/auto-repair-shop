@@ -22,6 +22,54 @@ func (_m *ServiceOrderService) EXPECT() *ServiceOrderService_Expecter {
 	return &ServiceOrderService_Expecter{mock: &_m.Mock}
 }
 
+// AddSupplies provides a mock function with given fields: ctx, serviceOrderID, supplies
+func (_m *ServiceOrderService) AddSupplies(ctx context.Context, serviceOrderID string, supplies []domain.AddSupply) error {
+	ret := _m.Called(ctx, serviceOrderID, supplies)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddSupplies")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []domain.AddSupply) error); ok {
+		r0 = rf(ctx, serviceOrderID, supplies)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_AddSupplies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddSupplies'
+type ServiceOrderService_AddSupplies_Call struct {
+	*mock.Call
+}
+
+// AddSupplies is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - supplies []domain.AddSupply
+func (_e *ServiceOrderService_Expecter) AddSupplies(ctx interface{}, serviceOrderID interface{}, supplies interface{}) *ServiceOrderService_AddSupplies_Call {
+	return &ServiceOrderService_AddSupplies_Call{Call: _e.mock.On("AddSupplies", ctx, serviceOrderID, supplies)}
+}
+
+func (_c *ServiceOrderService_AddSupplies_Call) Run(run func(ctx context.Context, serviceOrderID string, supplies []domain.AddSupply)) *ServiceOrderService_AddSupplies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].([]domain.AddSupply))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_AddSupplies_Call) Return(_a0 error) *ServiceOrderService_AddSupplies_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_AddSupplies_Call) RunAndReturn(run func(context.Context, string, []domain.AddSupply) error) *ServiceOrderService_AddSupplies_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AddWorks provides a mock function with given fields: ctx, serviceOrderID, workIDs
 func (_m *ServiceOrderService) AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error {
 	ret := _m.Called(ctx, serviceOrderID, workIDs)
@@ -128,6 +176,65 @@ func (_c *ServiceOrderService_Create_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
+// ListSupplies provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderService) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
+	ret := _m.Called(ctx, serviceOrderID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListSupplies")
+	}
+
+	var r0 []domain.Supply
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.Supply, error)); ok {
+		return rf(ctx, serviceOrderID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.Supply); ok {
+		r0 = rf(ctx, serviceOrderID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.Supply)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, serviceOrderID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderService_ListSupplies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListSupplies'
+type ServiceOrderService_ListSupplies_Call struct {
+	*mock.Call
+}
+
+// ListSupplies is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+func (_e *ServiceOrderService_Expecter) ListSupplies(ctx interface{}, serviceOrderID interface{}) *ServiceOrderService_ListSupplies_Call {
+	return &ServiceOrderService_ListSupplies_Call{Call: _e.mock.On("ListSupplies", ctx, serviceOrderID)}
+}
+
+func (_c *ServiceOrderService_ListSupplies_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderService_ListSupplies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_ListSupplies_Call) Return(_a0 []domain.Supply, _a1 error) *ServiceOrderService_ListSupplies_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderService_ListSupplies_Call) RunAndReturn(run func(context.Context, string) ([]domain.Supply, error)) *ServiceOrderService_ListSupplies_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListWorks provides a mock function with given fields: ctx, serviceOrderID
 func (_m *ServiceOrderService) ListWorks(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
 	ret := _m.Called(ctx, serviceOrderID)
@@ -183,6 +290,54 @@ func (_c *ServiceOrderService_ListWorks_Call) Return(_a0 []domain.Work, _a1 erro
 }
 
 func (_c *ServiceOrderService_ListWorks_Call) RunAndReturn(run func(context.Context, string) ([]domain.Work, error)) *ServiceOrderService_ListWorks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RemoveSupply provides a mock function with given fields: ctx, serviceOrderID, supplyID
+func (_m *ServiceOrderService) RemoveSupply(ctx context.Context, serviceOrderID string, supplyID string) error {
+	ret := _m.Called(ctx, serviceOrderID, supplyID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RemoveSupply")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, serviceOrderID, supplyID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_RemoveSupply_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveSupply'
+type ServiceOrderService_RemoveSupply_Call struct {
+	*mock.Call
+}
+
+// RemoveSupply is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - supplyID string
+func (_e *ServiceOrderService_Expecter) RemoveSupply(ctx interface{}, serviceOrderID interface{}, supplyID interface{}) *ServiceOrderService_RemoveSupply_Call {
+	return &ServiceOrderService_RemoveSupply_Call{Call: _e.mock.On("RemoveSupply", ctx, serviceOrderID, supplyID)}
+}
+
+func (_c *ServiceOrderService_RemoveSupply_Call) Run(run func(ctx context.Context, serviceOrderID string, supplyID string)) *ServiceOrderService_RemoveSupply_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_RemoveSupply_Call) Return(_a0 error) *ServiceOrderService_RemoveSupply_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_RemoveSupply_Call) RunAndReturn(run func(context.Context, string, string) error) *ServiceOrderService_RemoveSupply_Call {
 	_c.Call.Return(run)
 	return _c
 }

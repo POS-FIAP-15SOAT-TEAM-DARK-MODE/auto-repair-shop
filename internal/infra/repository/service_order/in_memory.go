@@ -11,13 +11,15 @@ import (
 type memory_repo struct {
 	data map[string]domain.ServiceOrder
 	// serviceOrderID -> ordered list of works linked to that order (price = snapshot at link time)
-	worksByOrder map[string][]domain.Work
+	worksByOrder    map[string][]domain.Work
+	suppliesByOrder map[string][]domain.Supply
 }
 
 func MemoryRepository() domain.ServiceOrderRepository {
 	return &memory_repo{
-		data:         make(map[string]domain.ServiceOrder),
-		worksByOrder: make(map[string][]domain.Work),
+		data:            make(map[string]domain.ServiceOrder),
+		worksByOrder:    make(map[string][]domain.Work),
+		suppliesByOrder: make(map[string][]domain.Supply),
 	}
 }
 
@@ -65,5 +67,42 @@ func (r *memory_repo) RemoveWorkLink(_ context.Context, serviceOrderID, workID s
 		return domain.ErrServiceOrderWorkNotFound
 	}
 	r.worksByOrder[serviceOrderID] = slices.Delete(list, idx, idx+1)
+	return nil
+}
+
+func (r *memory_repo) AddSupplyLink(_ context.Context, serviceOrderID string, supplyID string, amount int, unitPrice decimal.Decimal) error {
+	for _, w := range r.worksByOrder[serviceOrderID] {
+		if w.ID == supplyID {
+			return nil
+		}
+	}
+	s := domain.Supply{
+		ID:            supplyID,
+		UnitPrice:     unitPrice,
+		StockQuantity: amount,
+		Name:          "",
+		Description:   "",
+	}
+	r.suppliesByOrder[serviceOrderID] = append(r.suppliesByOrder[serviceOrderID], s)
+	return nil
+}
+
+func (r *memory_repo) ListSuppliesByServiceOrderID(_ context.Context, serviceOrderID string) ([]domain.Supply, error) {
+	supplies := r.suppliesByOrder[serviceOrderID]
+	if supplies == nil {
+		return []domain.Supply{}, nil
+	}
+	out := make([]domain.Supply, len(supplies))
+	copy(out, supplies)
+	return out, nil
+}
+
+func (r *memory_repo) RemoveSupplyLink(_ context.Context, serviceOrderID string, supplyID string) error {
+	list := r.suppliesByOrder[serviceOrderID]
+	idx := slices.IndexFunc(list, func(w domain.Supply) bool { return w.ID == supplyID })
+	if idx < 0 {
+		return domain.ErrServiceOrderSupplyNotFound
+	}
+	r.suppliesByOrder[serviceOrderID] = slices.Delete(list, idx, idx+1)
 	return nil
 }

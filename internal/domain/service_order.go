@@ -23,15 +23,22 @@ func (s SERVICE_ORDER_STATUS) String() string {
 	return string(s)
 }
 
-type ServiceOrder struct {
-	ID          string
-	Status      SERVICE_ORDER_STATUS
-	Customer    *Customer
-	Vehicle     *Vehicle
-	Services    []Work
-	Supplies    []Supply
-	TotalAmount decimal.Decimal
-}
+type (
+	ServiceOrder struct {
+		ID          string
+		Status      SERVICE_ORDER_STATUS
+		Customer    *Customer
+		Vehicle     *Vehicle
+		Services    []Work
+		Supplies    []Supply
+		TotalAmount decimal.Decimal
+	}
+
+	AddSupply struct {
+		ID     string
+		Amount int
+	}
+)
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderRepository --with-expecter
@@ -41,6 +48,9 @@ type (
 		ListWorks(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error
 		RemoveWork(ctx context.Context, serviceOrderID, workID string) error
+		ListSupplies(ctx context.Context, serviceOrderID string) ([]Supply, error)
+		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
+		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
 	}
 
 	ServiceOrderRepository interface {
@@ -49,6 +59,9 @@ type (
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
+		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Supply, error)
+		AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error
+		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) error
 	}
 )
 

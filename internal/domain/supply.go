@@ -27,6 +27,7 @@ type SupplyService interface {
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
 type SupplyRepository interface {
 	Create(ctx context.Context, c *Supply) error
+	FindById(ctx context.Context, id string) (Supply, error)
 }
 
 func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantity, version int) *Supply {
