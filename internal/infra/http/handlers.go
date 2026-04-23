@@ -51,9 +51,12 @@ type (
 
 	ServiceOrderHandler interface {
 		Create(*gin.Context)
-		Get(*gin.Context)
+		GetWorks(*gin.Context)
 		AddWork(*gin.Context)
 		DeleteWork(*gin.Context)
+		GetSupplies(*gin.Context)
+		AddSupplies(*gin.Context)
+		DeleteSupply(*gin.Context)
 	}
 
 	ServiceOrderHistoryHandler interface {

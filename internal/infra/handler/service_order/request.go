@@ -1,6 +1,9 @@
 package service_order
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/gin-gonic/gin"
+)
 
 type initServiceOrderDTO struct {
 	ClientID  string `json:"client"`
@@ -26,4 +29,28 @@ func mapAddWorksBody(c *gin.Context) (*addWorksToServiceOrderDTO, error) {
 		return nil, err
 	}
 	return req, nil
+}
+
+type addSuppliesToServiceOrderDTO struct {
+	Supplies []struct {
+		ID     string `json:"id"`
+		Amount int    `json:"amount"`
+	} `json:"supplies"`
+}
+
+func mapAddSuppliesBody(c *gin.Context) ([]domain.AddSupply, error) {
+	req := new(addSuppliesToServiceOrderDTO)
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, err
+	}
+
+	sups := make([]domain.AddSupply, 0, len(req.Supplies))
+	for _, r := range req.Supplies {
+		sups = append(sups, domain.AddSupply{
+			ID:     r.ID,
+			Amount: r.Amount,
+		})
+	}
+
+	return sups, nil
 }

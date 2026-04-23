@@ -24,4 +24,23 @@ ON CONFLICT (service_order_id, work_id) DO NOTHING
 DELETE FROM service_order_work
 WHERE service_order_id = $1 AND work_id = $2
 `
+
+	listSuppliesByServiceOrderQuery = `
+SELECT s.id, s.name, s.description, sos.unit_price, sos.quantity, s.version
+FROM service_order_supply sos
+JOIN supply s ON s.id = sos.supply_id
+WHERE sos.service_order_id = $1
+ORDER BY sos.id ASC
+`
+
+	insertServiceOrderSuppliesQuery = `
+INSERT INTO service_order_supply (id, service_order_id, supply_id, quantity, unit_price)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (service_order_id, supply_id) DO NOTHING
+`
+
+	deleteServiceOrderSuppliesQuery = `
+DELETE FROM service_order_supply
+WHERE service_order_id = $1 AND supply_id = $2
+`
 )
