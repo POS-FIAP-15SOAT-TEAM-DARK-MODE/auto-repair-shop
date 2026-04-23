@@ -179,8 +179,8 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 			return domain.ErrServiceOrderNotFound
 		}
 
-		if status != domain.SERVICE_ORDER_STATUS_NEW {
-			return domain.ErrServiceOrderNotNew
+		if status != domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS {
+			return domain.ErrServiceOrderNotInDiagnosis
 		}
 
 		for _, sup := range supplies {
@@ -226,8 +226,8 @@ func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string)
 		if !ok {
 			return domain.ErrServiceOrderNotFound
 		}
-		if status != domain.SERVICE_ORDER_STATUS_NEW {
-			return domain.ErrServiceOrderNotNew
+		if status != domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS {
+			return domain.ErrServiceOrderNotInDiagnosis
 		}
 		return s.repo.RemoveSupplyLink(ctx, serviceOrderID, supplyID)
 	})

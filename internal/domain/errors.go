@@ -51,6 +51,7 @@ var (
 	ErrInvalidServiceOrderId      = errors.New("invalid service order id")
 	ErrServiceOrderNotFound       = errors.New("service order not found")
 	ErrServiceOrderNotNew         = errors.New("service order isn't at NEW state")
+	ErrServiceOrderNotInDiagnosis = errors.New("service order isn't at IN_DIAGNOSIS state")
 	ErrServiceOrderWorkNotFound   = errors.New("work is not linked to this service order")
 	ErrServiceOrderSupplyNotFound = errors.New("supply is not linked to this service order")
 	ErrEmptyServicesList          = errors.New("services list cannot be empty")
