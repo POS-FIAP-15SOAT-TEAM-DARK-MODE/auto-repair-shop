@@ -14,4 +14,14 @@ const (
 `
 	countSuppliesQuery = `SELECT COUNT(s.id) FROM "supply" s`
 	searchQuery        = `SELECT s.id, s.name, s.description, s.unit_price, s.stock_quantity, s.version FROM "supply" s`
+	updateQuery        = `
+    UPDATE "supply"
+    SET
+        name           = $2,
+        description    = $3,
+        unit_price     = $4,
+        stock_quantity = $5,
+        updated_at     = NOW()
+    WHERE id = $1
+`
 )

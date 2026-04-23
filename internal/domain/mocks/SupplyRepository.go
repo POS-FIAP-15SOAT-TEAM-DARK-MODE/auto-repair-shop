@@ -22,6 +22,53 @@ func (_m *SupplyRepository) EXPECT() *SupplyRepository_Expecter {
 	return &SupplyRepository_Expecter{mock: &_m.Mock}
 }
 
+// Change provides a mock function with given fields: _a0, _a1
+func (_m *SupplyRepository) Change(_a0 context.Context, _a1 *domain.Supply) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Change")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.Supply) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyRepository_Change_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Change'
+type SupplyRepository_Change_Call struct {
+	*mock.Call
+}
+
+// Change is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *domain.Supply
+func (_e *SupplyRepository_Expecter) Change(_a0 interface{}, _a1 interface{}) *SupplyRepository_Change_Call {
+	return &SupplyRepository_Change_Call{Call: _e.mock.On("Change", _a0, _a1)}
+}
+
+func (_c *SupplyRepository_Change_Call) Run(run func(_a0 context.Context, _a1 *domain.Supply)) *SupplyRepository_Change_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.Supply))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_Change_Call) Return(_a0 error) *SupplyRepository_Change_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyRepository_Change_Call) RunAndReturn(run func(context.Context, *domain.Supply) error) *SupplyRepository_Change_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Count provides a mock function with given fields: _a0, _a1
 func (_m *SupplyRepository) Count(_a0 context.Context, _a1 *domain.ListSupplyParams) (int64, error) {
 	ret := _m.Called(_a0, _a1)

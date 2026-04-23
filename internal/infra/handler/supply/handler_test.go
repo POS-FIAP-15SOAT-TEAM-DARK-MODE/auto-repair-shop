@@ -45,10 +45,10 @@ func validSupplyDomain() *domain.Supply {
 
 func validSupplyPayload() map[string]any {
 	return map[string]any{
-		"name":           "Brake Pad",
-		"description":    "High performance brake pad",
-		"unit_price":     "49.99",
-		"stock_quantity": 10,
+		"name":          "Brake Pad",
+		"description":   "High performance brake pad",
+		"unitPrice":     "49.99",
+		"stockQuantity": 10,
 	}
 }
 
@@ -74,11 +74,9 @@ func TestCreate(t *testing.T) {
 			name:    "success_creates_supply",
 			payload: validSupplyPayload(),
 			mockSetup: func(svc *domainmocks.SupplyService) {
-				// Called twice due to bug in handler
 				svc.EXPECT().
 					Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).
-					Return(nil).
-					Times(2)
+					Return(nil)
 			},
 			expectedStatus: http.StatusCreated,
 		},
@@ -118,11 +116,9 @@ func TestCreate(t *testing.T) {
 
 func TestCreate_ResponseBody(t *testing.T) {
 	svc := domainmocks.NewSupplyService(t)
-	// Called twice due to bug in handler
 	svc.EXPECT().
 		Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).
-		Return(nil).
-		Times(2)
+		Return(nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/supplies", toJSON(t, validSupplyPayload()))
 	req.Header.Set("Content-Type", "application/json")

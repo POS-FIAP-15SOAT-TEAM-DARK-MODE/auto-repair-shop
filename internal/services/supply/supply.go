@@ -43,6 +43,15 @@ func (s *service) saveRepositoryStep(supply *domain.Supply) func(context.Context
 	}
 }
 
+func (s *service) updateRepositoryStep(supply *domain.Supply) func(context.Context) error {
+	return func(ctx context.Context) error {
+		if err := s.repo.Change(ctx, supply); err != nil {
+			return fmt.Errorf("repository.Change failed: %w", err)
+		}
+		return nil
+	}
+}
+
 func (s *service) List(c context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
 	var response *domain.PaginatorResponse[domain.Supply]
 	if err := s.uow.Execute(c, func(ctx context.Context) error {
@@ -98,12 +107,27 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSuppl
 
 func (s *service) Update(ctx context.Context, supply *domain.Supply) error {
 	if err := supply.Validate(); err != nil {
-		err = fmt.Errorf("supply validation failed: %w", err)
+		err := fmt.Errorf("supply validation failed: %w", err)
 		logger.Of(ctx).Error(err)
 		return err
 	}
 
-	if err := s.uow.Execute(ctx, s.saveRepositoryStep(supply)); err != nil {
+	if err := s.uow.Execute(ctx, s.updateRepositoryStep(supply)); err != nil {
+		logger.Of(ctx).Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) Change(ctx context.Context, supply *domain.Supply) error {
+	if err := supply.Validate(); err != nil {
+		err := fmt.Errorf("supply validation failed: %w", err)
+		logger.Of(ctx).Error(err)
+		return err
+	}
+
+	if err := s.uow.Execute(ctx, s.updateRepositoryStep(supply)); err != nil {
 		logger.Of(ctx).Error(err)
 		return err
 	}

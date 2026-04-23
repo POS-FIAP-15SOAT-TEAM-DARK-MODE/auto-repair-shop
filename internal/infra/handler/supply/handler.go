@@ -25,6 +25,7 @@ func (h *handler) Create(c *gin.Context) {
 	ctx := c.Request.Context()
 	req, err := mapBodyToRequestDTO(c)
 	if err != nil {
+		err = json.CheckJsonError(err)
 		status, response := web.Error(err)
 		logger.Of(ctx).Debug("Failed to bind supply creation payload",
 			zap.String("operation", "create_supply"),
@@ -37,18 +38,6 @@ func (h *handler) Create(c *gin.Context) {
 
 	body := req.MapToDomain()
 	logger.Of(ctx).Debug("create request", zap.Any("service", body))
-	if err := h.svc.Create(ctx, body); err != nil {
-		status, response := web.Error(err)
-		logger.Of(ctx).Error(err)
-		logger.Of(ctx).Debug("Supply creation failed in service layer",
-			zap.String("operation", "create_supply"),
-			zap.Error(err),
-			zap.String("entity", "supply"),
-		)
-		c.JSON(status, response)
-		return
-	}
-
 	if err := h.svc.Create(ctx, body); err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
@@ -90,9 +79,21 @@ func (h *handler) List(c *gin.Context) {
 
 func (h *handler) Update(c *gin.Context) {
 	ctx := c.Request.Context()
-	dto, err := mapBodyToRequestDTO(c)
+	id := c.Param(idPathParamKey)
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidWorkId)
+		logger.Of(ctx).Debug("Supply invalid supply id",
+			zap.String("operation", "update_supply"),
+			zap.Error(domain.ErrInvalidWorkId),
+			zap.String("entity", "supply"),
+			zap.String("entity.id", id),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	dto, err := mapBodyToUpdateSupplyRequest(c)
 	if err != nil {
-		err = json.CheckJsonError(err)
 		status, response := web.Error(err)
 		logger.Of(ctx).Debug("Failed to bind supply update payload",
 			zap.String("operation", "update_supply"),
@@ -103,35 +104,21 @@ func (h *handler) Update(c *gin.Context) {
 		return
 	}
 
-	body := dto.MapToDomain()
-	id := c.Param(idPathParamKey)
-	if id == "" {
-		status, response := web.Error(domain.ErrInvalidWorkId)
-		logger.Of(ctx).Debug("Work invalid work id",
-			zap.String("operation", "update_work"),
-			zap.Error(domain.ErrInvalidWorkId),
-			zap.String("entity", "work"),
-			zap.String("entity.id", id),
-		)
-		c.JSON(status, response)
-		return
-	}
-
-	body.ID = id
+	body := mapUpdateSupplyRequestDTOToDomain(id, dto)
 	logger.Of(ctx).Debug("update request", zap.Any("service", body))
 	if err := h.svc.Update(ctx, body); err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
-		logger.Of(ctx).Debug("Work update failed in service layer",
-			zap.String("operation", "update_work"),
+		logger.Of(ctx).Debug("Supply update failed in service layer",
+			zap.String("operation", "update_supply"),
 			zap.Error(err),
-			zap.String("entity", "work"),
+			zap.String("entity", "supply"),
 		)
 		c.JSON(status, response)
 		return
 	}
 
 	logger.Of(ctx).Debug("update response", zap.Any("service", body))
-	c.JSON(http.StatusOK, mapResponseDTOFromDomain(body))
+	c.JSON(http.StatusOK, mapSupplyToResponseDTO(body))
 
 }

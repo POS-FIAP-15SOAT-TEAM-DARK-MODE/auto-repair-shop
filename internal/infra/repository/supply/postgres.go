@@ -89,10 +89,6 @@ func (r *repo) Search(ctx context.Context, params *domain.ListSupplyParams) ([]d
 
 	supplies := make([]domain.Supply, 0, params.PageSize)
 	for rows.Next() {
-		if err = rows.Err(); err != nil {
-			return nil, pgPkg.Error(ctx, err)
-		}
-
 		var supply domain.Supply
 		if err = rows.Scan(
 			&supply.ID,
@@ -108,5 +104,31 @@ func (r *repo) Search(ctx context.Context, params *domain.ListSupplyParams) ([]d
 		supplies = append(supplies, supply)
 	}
 
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
 	return supplies, nil
+}
+
+func (r *repo) Change(ctx context.Context, w *domain.Supply) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	logger.Of(ctx).Debug("Executing query", zap.String("query", updateQuery), zap.Any("params", w))
+	if _, err = tx.ExecContext(
+		ctx,
+		updateQuery,
+		w.ID,
+		w.Name,
+		w.Description,
+		w.UnitPrice,
+		w.StockQuantity,
+	); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
 }

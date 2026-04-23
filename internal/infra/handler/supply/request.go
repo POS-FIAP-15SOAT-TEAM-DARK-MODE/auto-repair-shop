@@ -40,8 +40,8 @@ func mapBodyToUpdateSupplyRequest(body *gin.Context) (*updateSupplyRequest, erro
 	return &req, nil
 }
 
-func mapUpdateSupplyRequestDTOToDomain(id string, req *updateSupplyRequest) *domain.UpdateSupply {
-	return &domain.UpdateSupply{
+func mapUpdateSupplyRequestDTOToDomain(id string, req *updateSupplyRequest) *domain.Supply {
+	return &domain.Supply{
 		ID:            id,
 		Name:          req.Name,
 		Description:   req.Description,
