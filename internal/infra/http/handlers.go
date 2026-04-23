@@ -11,6 +11,7 @@ import (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=VehicleHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHandler --with-expecter
+//go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryHandler --with-expecter
 type (
 	PingHandler interface {
 		Ping(*gin.Context)
@@ -43,6 +44,7 @@ type (
 		Update(*gin.Context)
 		Delete(*gin.Context)
 	}
+
 	SupplyHandler interface {
 		Create(*gin.Context)
 		List(*gin.Context)
@@ -51,18 +53,26 @@ type (
 
 	ServiceOrderHandler interface {
 		Create(*gin.Context)
-		Get(*gin.Context)
+		GetWorks(*gin.Context)
 		AddWork(*gin.Context)
 		DeleteWork(*gin.Context)
+		GetSupplies(*gin.Context)
+		AddSupplies(*gin.Context)
+		DeleteSupply(*gin.Context)
+	}
+
+	ServiceOrderHistoryHandler interface {
+		GetHistoryByID(*gin.Context)
 	}
 )
 
 type HandlersWrapper struct {
-	PingHandler         PingHandler
-	UserHandler         UserHandler
-	CustomerHandler     CustomerHandler
-	WorkHandler         WorkHandler
-	VehicleHandler      VehicleHandler
-	SupplyHandler       SupplyHandler
-	ServiceOrderHandler ServiceOrderHandler
+	PingHandler                PingHandler
+	UserHandler                UserHandler
+	CustomerHandler            CustomerHandler
+	WorkHandler                WorkHandler
+	VehicleHandler             VehicleHandler
+	SupplyHandler              SupplyHandler
+	ServiceOrderHandler        ServiceOrderHandler
+	ServiceOrderHistoryHandler ServiceOrderHistoryHandler
 }

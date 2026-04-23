@@ -22,15 +22,24 @@ type workItemResponse struct {
 	Status      string `json:"status"`
 }
 
-type listWorksResponse struct {
-	Items      []workItemResponse `json:"items"`
-	TotalItems int64              `json:"totalItems"`
-	TotalPages int64              `json:"totalPages"`
-	PageSize   int64              `json:"pageSize"`
-	Page       int64              `json:"page"`
+type supplyItemResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Price       string `json:"price"`
+	Version     int    `json:"version"`
+	Amount      int    `json:"amount"`
 }
 
-func mapWorksListToResponse(works []domain.Work) listWorksResponse {
+type listResponse[T any] struct {
+	Items      []T   `json:"items"`
+	TotalItems int64 `json:"totalItems"`
+	TotalPages int64 `json:"totalPages"`
+	PageSize   int64 `json:"pageSize"`
+	Page       int64 `json:"page"`
+}
+
+func mapWorksListToResponse(works []domain.Work) listResponse[workItemResponse] {
 	items := make([]workItemResponse, 0, len(works))
 	for _, w := range works {
 		items = append(items, workItemResponse{
@@ -42,7 +51,29 @@ func mapWorksListToResponse(works []domain.Work) listWorksResponse {
 		})
 	}
 	n := int64(len(items))
-	return listWorksResponse{
+	return listResponse[workItemResponse]{
+		Items:      items,
+		TotalItems: n,
+		TotalPages: 1,
+		PageSize:   n,
+		Page:       1,
+	}
+}
+
+func mapSuppliesListToResponse(supplies []domain.Supply) listResponse[supplyItemResponse] {
+	items := make([]supplyItemResponse, 0, len(supplies))
+	for _, w := range supplies {
+		items = append(items, supplyItemResponse{
+			ID:          w.ID,
+			Name:        w.Name,
+			Description: w.Description,
+			Price:       w.UnitPrice.String(),
+			Version:     w.Version,
+			Amount:      w.StockQuantity,
+		})
+	}
+	n := int64(len(items))
+	return listResponse[supplyItemResponse]{
 		Items:      items,
 		TotalItems: n,
 		TotalPages: 1,

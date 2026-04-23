@@ -34,6 +34,7 @@ type (
 		Search(context.Context, *ListSupplyParams) ([]Supply, error)
 		Count(context.Context, *ListSupplyParams) (int64, error)
 		Change(context.Context, *Supply) error
+		FindById(ctx context.Context, id string) (Supply, error)
 	}
 )
 
