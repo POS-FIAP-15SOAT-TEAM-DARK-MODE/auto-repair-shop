@@ -23,6 +23,10 @@ func (s SERVICE_ORDER_STATUS) String() string {
 	return string(s)
 }
 
+func StringToServiceOrderStatus(val string) SERVICE_ORDER_STATUS {
+	return SERVICE_ORDER_STATUS(val)
+}
+
 type (
 	ServiceOrder struct {
 		ID          string
@@ -51,11 +55,13 @@ type (
 		ListSupplies(ctx context.Context, serviceOrderID string) ([]Supply, error)
 		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
 		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
+		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
 	}
 
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
 		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
+		FindByID(ctx context.Context, id string) (ServiceOrder, error)
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error

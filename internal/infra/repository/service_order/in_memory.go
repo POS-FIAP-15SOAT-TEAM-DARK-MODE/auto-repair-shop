@@ -106,3 +106,12 @@ func (r *memory_repo) RemoveSupplyLink(_ context.Context, serviceOrderID string,
 	r.suppliesByOrder[serviceOrderID] = slices.Delete(list, idx, idx+1)
 	return nil
 }
+
+func (r *memory_repo) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
+	so, ok := r.data[id]
+	if !ok {
+		return so, domain.ErrServiceOrderNotFound
+	}
+
+	return so, nil
+}

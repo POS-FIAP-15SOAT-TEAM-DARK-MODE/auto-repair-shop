@@ -232,3 +232,27 @@ func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string)
 		return s.repo.RemoveSupplyLink(ctx, serviceOrderID, supplyID)
 	})
 }
+
+func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS {
+			return domain.ErrServiceOrderNotInDiagnosis
+		}
+
+		so.Status = domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL
+
+		// TODO: SEND CUSTOMER NOTIFICATION (EMAIL / SMS / ETC)
+
+		return s.repo.Save(ctx, &so)
+	})
+}

@@ -1,10 +1,30 @@
 package service_order
 
 const (
-	insertServiceOrderQuery = `INSERT INTO service_order (id, customer_id, vehicle_id, status, total_amount)
-VALUES ($1, $2, $3, $4, $5)`
+	insertServiceOrderQuery = `
+	INSERT INTO service_order (id, customer_id, vehicle_id, status, total_amount)
+	VALUES ($1, $2, $3, $4, $5)
+	ON CONFLICT (id) DO UPDATE
+	SET
+		status        = EXCLUDED.status,
+		total_amount = EXCLUDED.total_amount,
+		updated_at  = NOW();
+	`
 
 	serviceOrderExistsQuery = `SELECT so.status FROM service_order so WHERE id = $1`
+
+	serviceOrderFindByIDQuery = `
+	SELECT
+		so.id,
+		so.status,
+		so.total_amount,
+		c.id as cId,
+		v.id as vId
+	FROM service_order so
+	JOIN customer c ON c.id = so.customer_id
+	JOIN vehicle v ON v.id = so.vehicle_id
+	WHERE so.id = $1
+	`
 
 	listWorksByServiceOrderQuery = `
 SELECT w.id, w.name, w.description, sow.unit_price, w.status

@@ -2,6 +2,8 @@ package service_order
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -176,4 +178,34 @@ func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string
 		return domain.ErrServiceOrderSupplyNotFound
 	}
 	return nil
+}
+
+func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return domain.ServiceOrder{}, err
+	}
+
+	var so domain.ServiceOrder
+	var ct domain.Customer
+	var vh domain.Vehicle
+	var status string
+	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
+		&so.ID,
+		&status,
+		&so.TotalAmount,
+		&ct.ID,
+		&vh.ID,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ServiceOrder{}, domain.ErrServiceOrderNotFound
+		}
+		return domain.ServiceOrder{}, pgPkg.Error(ctx, err)
+	}
+
+	so.Status = domain.StringToServiceOrderStatus(status)
+	so.Customer = &ct
+	so.Vehicle = &vh
+
+	return so, nil
 }

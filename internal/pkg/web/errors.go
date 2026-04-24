@@ -134,7 +134,9 @@ func isInternalServerError(err error) bool {
 func isConflictError(err error) bool {
 	return errors.Is(err, domain.ErrDataConflict) ||
 		errors.Is(err, domain.ErrInfraConflict) ||
-		errors.Is(err, domain.ErrCustomerHasServiceOrders)
+		errors.Is(err, domain.ErrCustomerHasServiceOrders) ||
+		errors.Is(err, domain.ErrServiceOrderNotNew) ||
+		errors.Is(err, domain.ErrServiceOrderNotInDiagnosis)
 }
 
 func isUnprocessableEntityError(err error) bool {

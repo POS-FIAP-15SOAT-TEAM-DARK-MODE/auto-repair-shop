@@ -57,6 +57,7 @@ type (
 		GetSupplies(*gin.Context)
 		AddSupplies(*gin.Context)
 		DeleteSupply(*gin.Context)
+		SendToCustomerApproval(*gin.Context)
 	}
 
 	ServiceOrderHistoryHandler interface {
