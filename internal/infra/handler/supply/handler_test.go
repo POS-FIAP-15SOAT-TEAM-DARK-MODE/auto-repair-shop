@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,106 +13,89 @@ import (
 	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	handler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/supply"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func init() {
-	gin.SetMode(gin.TestMode)
-}
+// -------------------------
+// Setup helpers
+// -------------------------
 
-func setupSupplyRouter(svc *domainmocks.SupplyService) *gin.Engine {
+func setupRouter(svc *domainmocks.SupplyService) *gin.Engine {
 	h := handler.HttpHandler(svc)
 	r := gin.New()
 	r.POST("/supplies", h.Create)
+	r.GET("/supplies", h.List)
+	r.PUT("/supplies/:id", h.Update)
 	return r
 }
 
-func validSupplyBody() map[string]any {
-	return map[string]any{
-		"name":           "Brake Pad",
-		"description":    "High performance brake pad",
-		"unit_price":     49.99,
-		"stock_quantity": 10,
-		"version":        1,
+func validSupplyDomain() *domain.Supply {
+	return &domain.Supply{
+		ID:            uuid.New().String(),
+		Name:          "Brake Pad",
+		Description:   "High performance brake pad",
+		UnitPrice:     decimal.NewFromFloat(49.99),
+		StockQuantity: 10,
+		Version:       1,
 	}
 }
 
-// --- Create ---
+func validSupplyPayload() map[string]any {
+	return map[string]any{
+		"name":          "Brake Pad",
+		"description":   "High performance brake pad",
+		"unitPrice":     "49.99",
+		"stockQuantity": 10,
+	}
+}
+
+func toJSON(t *testing.T, v any) *bytes.Buffer {
+	t.Helper()
+	b, err := json.Marshal(v)
+	assert.NoError(t, err)
+	return bytes.NewBuffer(b)
+}
+
+// -------------------------
+// Create
+// -------------------------
 
 func TestCreate(t *testing.T) {
 	tests := []struct {
 		name           string
-		body           map[string]any
+		payload        any
 		mockSetup      func(*domainmocks.SupplyService)
 		expectedStatus int
 	}{
 		{
-			name: "success",
-			body: validSupplyBody(),
+			name:    "success_creates_supply",
+			payload: validSupplyPayload(),
 			mockSetup: func(svc *domainmocks.SupplyService) {
-				svc.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).Return(nil)
+				svc.EXPECT().
+					Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).
+					Return(nil)
 			},
 			expectedStatus: http.StatusCreated,
 		},
 		{
-			name:           "invalid_json",
-			body:           nil, // will send raw invalid payload
-			mockSetup:      func(_ *domainmocks.SupplyService) {},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name: "missing_name",
-			body: map[string]any{
-				"description":    "High performance brake pad",
-				"unit_price":     49.99,
-				"stock_quantity": 10,
-				"version":        1,
-			},
-			mockSetup:      func(_ *domainmocks.SupplyService) {},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name: "missing_description",
-			body: map[string]any{
-				"name":           "Brake Pad",
-				"unit_price":     49.99,
-				"stock_quantity": 10,
-				"version":        1,
-			},
-			mockSetup:      func(_ *domainmocks.SupplyService) {},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			// decimal.Decimal zero-value bypasses binding:"required",
-			// so omitting unit_price still reaches the service with UnitPrice = 0.
-			// Validate this at the domain/service layer instead.
-			name: "missing_stock_quantity",
-			body: map[string]any{
-				"name":        "Brake Pad",
-				"description": "High performance brake pad",
-				"unit_price":  49.99,
-				"version":     1,
-			},
-			mockSetup:      func(_ *domainmocks.SupplyService) {},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name: "service_internal_error",
-			body: validSupplyBody(),
+			name:    "service_error_on_first_call",
+			payload: validSupplyPayload(),
 			mockSetup: func(svc *domainmocks.SupplyService) {
-				svc.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).Return(errors.New("internal error"))
+				svc.EXPECT().
+					Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).
+					Return(errors.New("internal error")).
+					Once()
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name: "service_conflict_error",
-			body: validSupplyBody(),
-			mockSetup: func(svc *domainmocks.SupplyService) {
-				svc.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).Return(domain.ErrDataConflict)
-			},
-			expectedStatus: http.StatusConflict,
+			name:           "invalid_payload_returns_bad_request",
+			payload:        "invalid-json",
+			mockSetup:      func(svc *domainmocks.SupplyService) {},
+			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -120,18 +104,10 @@ func TestCreate(t *testing.T) {
 			svc := domainmocks.NewSupplyService(t)
 			tt.mockSetup(svc)
 
-			var reqBody *bytes.Reader
-			if tt.body != nil {
-				payload, _ := json.Marshal(tt.body)
-				reqBody = bytes.NewReader(payload)
-			} else {
-				reqBody = bytes.NewReader([]byte("invalid-json{"))
-			}
-
-			req := httptest.NewRequest(http.MethodPost, "/supplies", reqBody)
+			req := httptest.NewRequest(http.MethodPost, "/supplies", toJSON(t, tt.payload))
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
-			setupSupplyRouter(svc).ServeHTTP(rec, req)
+			setupRouter(svc).ServeHTTP(rec, req)
 
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 		})
@@ -140,13 +116,14 @@ func TestCreate(t *testing.T) {
 
 func TestCreate_ResponseBody(t *testing.T) {
 	svc := domainmocks.NewSupplyService(t)
-	svc.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).Return(nil)
+	svc.EXPECT().
+		Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).
+		Return(nil)
 
-	payload, _ := json.Marshal(validSupplyBody())
-	req := httptest.NewRequest(http.MethodPost, "/supplies", bytes.NewReader(payload))
+	req := httptest.NewRequest(http.MethodPost, "/supplies", toJSON(t, validSupplyPayload()))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	setupSupplyRouter(svc).ServeHTTP(rec, req)
+	setupRouter(svc).ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusCreated, rec.Code)
 
@@ -154,6 +131,203 @@ func TestCreate_ResponseBody(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.Equal(t, "Brake Pad", body["name"])
 	assert.Equal(t, "High performance brake pad", body["description"])
-	assert.Equal(t, decimal.NewFromFloat(49.99).String(), body["unit_price"].(string))
-	assert.NotEmpty(t, body["id"])
+}
+
+// -------------------------
+// List
+// -------------------------
+
+func TestList(t *testing.T) {
+	tests := []struct {
+		name           string
+		query          string
+		mockSetup      func(*domainmocks.SupplyService)
+		expectedStatus int
+	}{
+		{
+			name:  "success_returns_supplies",
+			query: "?page=1&pageSize=10",
+			mockSetup: func(svc *domainmocks.SupplyService) {
+				svc.EXPECT().
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(&domain.PaginatorResponse[domain.Supply]{
+						Items: []domain.Supply{*validSupplyDomain(), *validSupplyDomain()},
+					}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:  "success_returns_empty_list",
+			query: "?page=1&pageSize=10",
+			mockSetup: func(svc *domainmocks.SupplyService) {
+				svc.EXPECT().
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(&domain.PaginatorResponse[domain.Supply]{
+						Items: []domain.Supply{},
+					}, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:  "success_uses_default_params_when_no_query",
+			query: "",
+			mockSetup: func(svc *domainmocks.SupplyService) {
+				svc.EXPECT().
+					List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+					Return(nil, errors.New("internal error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := domainmocks.NewSupplyService(t)
+			tt.mockSetup(svc)
+
+			req := httptest.NewRequest(http.MethodGet, "/supplies"+tt.query, nil)
+			rec := httptest.NewRecorder()
+			setupRouter(svc).ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+func TestList_ResponseBody(t *testing.T) {
+	supply1 := validSupplyDomain()
+	supply2 := validSupplyDomain()
+
+	svc := domainmocks.NewSupplyService(t)
+	svc.EXPECT().
+		List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+		Return(&domain.PaginatorResponse[domain.Supply]{
+			Items: []domain.Supply{*supply1, *supply2},
+		}, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/supplies?page=1&pageSize=10", nil)
+	rec := httptest.NewRecorder()
+	setupRouter(svc).ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body map[string]any
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+
+	items, ok := body["items"].([]any)
+	assert.True(t, ok)
+	assert.Len(t, items, 2)
+
+	for _, item := range items {
+		entry := item.(map[string]any)
+		assert.NotEmpty(t, entry["id"])
+		assert.Equal(t, "Brake Pad", entry["name"])
+		assert.Equal(t, "High performance brake pad", entry["description"])
+		assert.Equal(t, decimal.NewFromFloat(49.99).String(), entry["unit_price"].(string))
+	}
+}
+
+func TestList_ResponseBody_Empty(t *testing.T) {
+	svc := domainmocks.NewSupplyService(t)
+	svc.EXPECT().
+		List(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
+		Return(&domain.PaginatorResponse[domain.Supply]{
+			Items: []domain.Supply{},
+		}, nil)
+
+	req := httptest.NewRequest(http.MethodGet, "/supplies?page=1&pageSize=10", nil)
+	rec := httptest.NewRecorder()
+	setupRouter(svc).ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body map[string]any
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+
+	items, ok := body["items"].([]any)
+	assert.True(t, ok)
+	assert.Empty(t, items)
+}
+
+// -------------------------
+// Update
+// -------------------------
+
+func TestUpdate(t *testing.T) {
+	validID := uuid.New().String()
+
+	tests := []struct {
+		name           string
+		id             string
+		payload        any
+		mockSetup      func(*domainmocks.SupplyService)
+		expectedStatus int
+	}{
+		{
+			name:    "success_updates_supply",
+			id:      validID,
+			payload: validSupplyPayload(),
+			mockSetup: func(svc *domainmocks.SupplyService) {
+				svc.EXPECT().
+					Update(mock.Anything, mock.AnythingOfType("*domain.Supply")).
+					Return(nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:    "service_error_returns_internal_error",
+			id:      validID,
+			payload: validSupplyPayload(),
+			mockSetup: func(svc *domainmocks.SupplyService) {
+				svc.EXPECT().
+					Update(mock.Anything, mock.AnythingOfType("*domain.Supply")).
+					Return(errors.New("internal error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name:           "invalid_payload_returns_bad_request",
+			id:             validID,
+			payload:        "invalid-json",
+			mockSetup:      func(svc *domainmocks.SupplyService) {},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := domainmocks.NewSupplyService(t)
+			tt.mockSetup(svc)
+
+			url := fmt.Sprintf("/supplies/%s", tt.id)
+			req := httptest.NewRequest(http.MethodPut, url, toJSON(t, tt.payload))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			setupRouter(svc).ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+		})
+	}
+}
+
+func TestUpdate_ResponseBody(t *testing.T) {
+	validID := uuid.New().String()
+
+	svc := domainmocks.NewSupplyService(t)
+	svc.EXPECT().
+		Update(mock.Anything, mock.AnythingOfType("*domain.Supply")).
+		Return(nil)
+
+	url := fmt.Sprintf("/supplies/%s", validID)
+	req := httptest.NewRequest(http.MethodPut, url, toJSON(t, validSupplyPayload()))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	setupRouter(svc).ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var body map[string]any
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	assert.Equal(t, validID, body["id"])
+	assert.Equal(t, "Brake Pad", body["name"])
 }

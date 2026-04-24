@@ -1,11 +1,10 @@
-package supply_test
+package supply
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
@@ -13,90 +12,465 @@ import (
 	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	uowmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow/mocks"
-	svc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/supply"
+	"github.com/shopspring/decimal"
 )
 
-// runAllSteps executes all UoW steps with the provided context — simulates a real transaction.
-func runAllSteps() func(context.Context, ...uow.Step) error {
-	return func(ctx context.Context, steps ...uow.Step) error {
-		for _, step := range steps {
-			if err := step(ctx); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-}
+// -------------------------
+// Create
+// -------------------------
 
-func validSupply() *domain.Supply {
-	return &domain.Supply{
-		ID:            uuid.New().String(),
+func TestService_Create_Success(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{
 		Name:          "Brake Pad",
-		Description:   "High-performance brake pads for daily driving",
+		Description:   "High performance brake pad",
 		UnitPrice:     decimal.NewFromFloat(49.99),
 		StockQuantity: 10,
-		Version:       1,
+	}
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			if err := steps[0](ctx); err != nil {
+				t.Fatalf("step returned error: %v", err)
+			}
+			return nil
+		})
+
+	repo.
+		EXPECT().
+		Save(ctx, supply).
+		Return(nil)
+
+	appService := Service(exec, repo)
+
+	err := appService.Create(ctx, supply)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
 	}
 }
 
-// --- Create ---
+func TestService_Create_ValidationError(t *testing.T) {
+	ctx := context.Background()
 
-func TestService_Create(t *testing.T) {
-	tests := []struct {
-		name      string
-		input     *domain.Supply
-		mockSetup func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository)
-		wantErr   error
-	}{
-		{
-			name:  "success",
-			input: validSupply(),
-			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
-				repo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).Return(nil)
-				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
-			},
-		},
-		{
-			name:  "validation_error",
-			input: &domain.Supply{}, // deliberately empty / invalid
-			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
-				// neither the UoW nor the repository should be called
-			},
-			wantErr: domain.ErrInvalidSupplyName, // adjust to whatever your Validate() returns
-		},
-		{
-			name:  "repository_conflict_returns_error",
-			input: validSupply(),
-			mockSetup: func(executor *uowmocks.Executor, repo *domainmocks.SupplyRepository) {
-				repo.EXPECT().Create(mock.Anything, mock.AnythingOfType("*domain.Supply")).Return(domain.ErrDataConflict)
-				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
-			},
-			wantErr: domain.ErrDataConflict,
-		},
-		{
-			name:  "transaction_failure_returns_error",
-			input: validSupply(),
-			mockSetup: func(executor *uowmocks.Executor, _ *domainmocks.SupplyRepository) {
-				executor.EXPECT().Execute(mock.Anything, mock.Anything).Return(assert.AnError)
-			},
-			wantErr: assert.AnError,
-		},
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{
+		Name: "", // invalid
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			executor := uowmocks.NewExecutor(t)
-			repo := domainmocks.NewSupplyRepository(t)
+	appService := Service(exec, repo)
 
-			tt.mockSetup(executor, repo)
+	err := appService.Create(ctx, supply)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "supply validation failed")
 
-			err := svc.Service(executor, repo).Create(context.Background(), tt.input)
+	exec.AssertNotCalled(t, "Execute", mock.Anything, mock.Anything)
+	repo.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
+}
 
-			if tt.wantErr != nil {
-				assert.ErrorIs(t, err, tt.wantErr)
-			} else {
-				assert.NoError(t, err)
+func TestService_Create_UnitOfWorkError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{
+		Name:          "Brake Pad",
+		Description:   "High performance brake pad",
+		UnitPrice:     decimal.NewFromFloat(49.99),
+		StockQuantity: 10,
+	}
+
+	expectedErr := errors.New("uow execute failed")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	appService := Service(exec, repo)
+
+	err := appService.Create(ctx, supply)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+}
+
+func TestService_Create_RepositoryErrorViaExecutor(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{
+		Name:          "Brake Pad",
+		Description:   "High performance brake pad",
+		UnitPrice:     decimal.NewFromFloat(49.99),
+		StockQuantity: 10,
+	}
+
+	expectedRepoErr := errors.New("db error")
+
+	repo.
+		EXPECT().
+		Save(ctx, supply).
+		Return(expectedRepoErr)
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
 			}
+			return steps[0](ctx)
 		})
+
+	appService := Service(exec, repo)
+
+	err := appService.Create(ctx, supply)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
 	}
+
+	if !errors.Is(err, expectedRepoErr) {
+		t.Fatalf("expected error to wrap repo error %v, got %v", expectedRepoErr, err)
+	}
+}
+
+func TestService_SaveRepositoryStep_RepositoryError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{
+		Name:          "Brake Pad",
+		Description:   "High performance brake pad",
+		UnitPrice:     decimal.NewFromFloat(49.99),
+		StockQuantity: 10,
+	}
+
+	appSvcConcrete := &service{
+		uow:  exec,
+		repo: repo,
+	}
+
+	expectedRepoErr := errors.New("db error")
+
+	repo.
+		EXPECT().
+		Save(ctx, supply).
+		Return(expectedRepoErr)
+
+	step := appSvcConcrete.saveRepositoryStep(supply)
+
+	err := step(ctx)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedRepoErr) {
+		t.Fatalf("expected error to wrap repo error %v, got %v", expectedRepoErr, err)
+	}
+}
+
+// -------------------------
+// List
+// -------------------------
+
+func TestService_List_Success(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	params := &domain.ListSupplyParams{
+		Page:     1,
+		PageSize: 10,
+	}
+
+	expectedItems := []domain.Supply{
+		{ID: "1", Name: "Brake Pad", Description: "High performance brake pad", UnitPrice: decimal.NewFromFloat(49.99), StockQuantity: 10},
+	}
+	var expectedTotal int64 = 1
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return(expectedTotal, nil)
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return(expectedItems, nil)
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(exec, repo)
+
+	got, err := appService.List(ctx, params)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if got == nil {
+		t.Fatalf("expected non-nil response")
+	}
+
+	if got.TotalItems != expectedTotal {
+		t.Fatalf("expected total %d, got %d", expectedTotal, got.TotalItems)
+	}
+
+	if len(got.Items) != len(expectedItems) {
+		t.Fatalf("expected %d items, got %d", len(expectedItems), len(got.Items))
+	}
+
+	if got.Page != params.Page {
+		t.Fatalf("expected page %d, got %d", params.Page, got.Page)
+	}
+
+	if got.PageSize != params.PageSize {
+		t.Fatalf("expected page size %d, got %d", params.PageSize, got.PageSize)
+	}
+
+	if got.TotalPages != 1 {
+		t.Fatalf("expected 1 total page, got %d", got.TotalPages)
+	}
+}
+
+func TestService_List_UoWError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
+	expectedErr := errors.New("uow execute failed")
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	appService := Service(exec, repo)
+
+	got, err := appService.List(ctx, params)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	if got != nil {
+		t.Fatalf("expected nil response on error")
+	}
+}
+
+func TestService_List_CountError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
+	expectedErr := errors.New("count db error")
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return(int64(0), expectedErr).Maybe()
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return([]domain.Supply{}, nil).Maybe()
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(exec, repo)
+
+	got, err := appService.List(ctx, params)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to wrap %v, got %v", expectedErr, err)
+	}
+
+	if got != nil {
+		t.Fatalf("expected nil response on error")
+	}
+}
+
+func TestService_List_SearchError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
+	expectedErr := errors.New("search db error")
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return(int64(0), nil).Maybe()
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return(nil, expectedErr).Maybe()
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(exec, repo)
+
+	got, err := appService.List(ctx, params)
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error to wrap %v, got %v", expectedErr, err)
+	}
+
+	if got != nil {
+		t.Fatalf("expected nil response on error")
+	}
+}
+
+func TestService_List_EmptyResult(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
+
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return(int64(0), nil)
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Return([]domain.Supply{}, nil)
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	appService := Service(exec, repo)
+
+	got, err := appService.List(ctx, params)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if got == nil {
+		t.Fatalf("expected non-nil response")
+	}
+
+	if got.TotalItems != 0 {
+		t.Fatalf("expected total 0, got %d", got.TotalItems)
+	}
+
+	if len(got.Items) != 0 {
+		t.Fatalf("expected 0 items, got %d", len(got.Items))
+	}
+
+	if got.TotalPages != 0 {
+		t.Fatalf("expected 0 total pages, got %d", got.TotalPages)
+	}
+}
+
+// -------------------------
+// Update
+// -------------------------
+
+func TestService_Update_Success(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{
+		Name:          "Brake Pad",
+		Description:   "High performance brake pad",
+		UnitPrice:     decimal.NewFromFloat(49.99),
+		StockQuantity: 10,
+	}
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	repo.EXPECT().Save(ctx, supply).Return(nil)
+
+	appService := Service(exec, repo)
+	err := appService.Update(ctx, supply)
+
+	assert.NoError(t, err)
+}
+
+func TestService_Update_ValidationError(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{Name: ""} // invalid
+
+	appService := Service(exec, repo)
+	err := appService.Update(ctx, supply)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "supply validation failed")
+}
+
+func TestService_Update_UnitOfWorkError(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	supply := &domain.Supply{
+		Name:          "Brake Pad",
+		Description:   "High performance brake pad",
+		UnitPrice:     decimal.NewFromFloat(49.99),
+		StockQuantity: 10,
+	}
+	expectedErr := errors.New("uow execute failed")
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	appService := Service(exec, repo)
+	err := appService.Update(ctx, supply)
+
+	assert.ErrorIs(t, err, expectedErr)
 }

@@ -60,6 +60,8 @@ func TestSetupRouter(t *testing.T) {
 
 	// Supply
 	mockSupply.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
+	mockSupply.EXPECT().List(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockSupply.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 
 	// Service Order
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -135,6 +137,8 @@ func TestSetupRouter(t *testing.T) {
 
 		// Supply
 		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated, ""},
+		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK, ""},
+		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
 
 		// Service Order
 		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},
