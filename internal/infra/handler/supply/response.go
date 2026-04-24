@@ -14,17 +14,6 @@ type supplyResponseDTO struct {
 	Version       int             `json:"version"`
 }
 
-func mapResponseDTOFromDomain(supply *domain.Supply) supplyResponseDTO {
-	return supplyResponseDTO{
-		ID:            supply.ID,
-		Name:          supply.Name,
-		Description:   supply.Description,
-		UnitPrice:     supply.UnitPrice,
-		StockQuantity: supply.StockQuantity,
-		Version:       supply.Version,
-	}
-}
-
 func mapSupplyToResponseDTO(supply *domain.Supply) supplyResponseDTO {
 	return supplyResponseDTO{
 		ID:            supply.ID,

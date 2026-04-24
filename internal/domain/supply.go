@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -23,18 +24,16 @@ func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantit
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
 type (
 	SupplyService interface {
-		Create(ctx context.Context, c *Supply) error
-		List(context.Context, *ListSupplyParams) (*PaginatorResponse[Supply], error)
+		Create(context.Context, *Supply) error
 		Update(context.Context, *Supply) error
-		Change(context.Context, *Supply) error
+		List(context.Context, *ListSupplyParams) (*PaginatorResponse[Supply], error)
 	}
 
 	SupplyRepository interface {
 		Save(context.Context, *Supply) error
 		Search(context.Context, *ListSupplyParams) ([]Supply, error)
 		Count(context.Context, *ListSupplyParams) (int64, error)
-		Change(context.Context, *Supply) error
-		FindById(ctx context.Context, id string) (Supply, error)
+		FindById(context.Context, string) (Supply, error)
 	}
 )
 
@@ -50,29 +49,21 @@ type (
 	ListSupplyParams struct {
 		PageSize int64
 		Page     int64
-		Status   string
-	}
-	UpdateSupply struct {
-		ID            string
-		Name          string
-		Description   string
-		UnitPrice     decimal.Decimal
-		StockQuantity int
+		Version  string
 	}
 )
 
-func (l ListSupplyParams) Offset() int64 {
-	return (l.Page - 1) * l.PageSize
+func (l ListSupplyParams) Validate() error {
+	if l.Version != "" {
+		if _, err := strconv.Atoi(l.Version); err != nil {
+			return ErrInvalidSupplyVersion
+		}
+	}
+	return nil
 }
 
-func UpdateSupplyConstructor(id string, name string, description string, unitPrice decimal.Decimal, stockQuantity int) *UpdateSupply {
-	return &UpdateSupply{
-		ID:            id,
-		Name:          name,
-		Description:   description,
-		UnitPrice:     unitPrice,
-		StockQuantity: stockQuantity,
-	}
+func (l ListSupplyParams) Offset() int64 {
+	return (l.Page - 1) * l.PageSize
 }
 
 func (s *Supply) IsValidName() error {
@@ -132,25 +123,5 @@ func (s *Supply) Validate() error {
 		return errors.Join(errs...)
 	}
 
-	return nil
-}
-
-func (s *UpdateSupply) Validate() error {
-	var errs []error
-	if s.Name != "" && len(s.Name) < 3 {
-		errs = append(errs, ErrInvalidSupplyName)
-	}
-	if s.Description != "" && len(s.Description) < 10 {
-		errs = append(errs, ErrInvalidSupplyDescription)
-	}
-	if s.UnitPrice != (decimal.Decimal{}) && s.UnitPrice.LessThanOrEqual(decimal.Zero) {
-		errs = append(errs, ErrInvalidSupplyUnitPrice)
-	}
-	if s.StockQuantity != 0 && s.StockQuantity < 0 {
-		errs = append(errs, ErrInvalidSupplyStockQuantity)
-	}
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
 	return nil
 }

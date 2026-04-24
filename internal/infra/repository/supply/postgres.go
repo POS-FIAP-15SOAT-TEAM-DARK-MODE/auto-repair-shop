@@ -35,22 +35,11 @@ func (r *repo) Save(ctx context.Context, w *domain.Supply) error {
 		w.Description,
 		w.UnitPrice,
 		w.StockQuantity,
+		w.Version,
 	); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
 
-	return nil
-}
-
-func (u *repo) Create(ctx context.Context, supply *domain.Supply) error {
-	tx, err := postgres.GetTransaction(ctx)
-	if err != nil {
-		return err
-	}
-	logger.Of(ctx).Debug("Executing query", zap.String("query", upsertQuery), zap.Any("params", supply))
-	if _, err = tx.ExecContext(ctx, upsertQuery, supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity); err != nil {
-		return pgPkg.Error(ctx, err)
-	}
 	return nil
 }
 
@@ -61,16 +50,19 @@ func (r *repo) Count(ctx context.Context, params *domain.ListSupplyParams) (int6
 	}
 
 	queryBuilder := db.QueryBuilder(countSuppliesQuery)
-
+	if params.Version != "" {
+		queryBuilder.Add("s.version = ", params.Version)
+	}
 	query, args := queryBuilder.Build()
 
 	var total int64
-	if err := tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+	if err = tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
 		return 0, pgPkg.Error(ctx, err)
 	}
 
 	return total, nil
 }
+
 func (r *repo) Search(ctx context.Context, params *domain.ListSupplyParams) ([]domain.Supply, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
@@ -80,7 +72,9 @@ func (r *repo) Search(ctx context.Context, params *domain.ListSupplyParams) ([]d
 	queryBuilder := db.QueryBuilder(searchQuery).
 		OrderBy("s.created_at", db.ASC).
 		AddPagination(params.PageSize, params.Offset())
-
+	if params.Version != "" {
+		queryBuilder.Add("s.version = ", params.Version)
+	}
 	query, args := queryBuilder.Build()
 
 	logger.Of(ctx).Debug("Executing query", zap.String("query", query), zap.Any("params", args))
@@ -88,6 +82,7 @@ func (r *repo) Search(ctx context.Context, params *domain.ListSupplyParams) ([]d
 	if err != nil {
 		return nil, pgPkg.Error(ctx, err)
 	}
+	defer func() { _ = rows.Close() }()
 
 	supplies := make([]domain.Supply, 0, params.PageSize)
 	for rows.Next() {
@@ -113,29 +108,7 @@ func (r *repo) Search(ctx context.Context, params *domain.ListSupplyParams) ([]d
 	return supplies, nil
 }
 
-func (r *repo) Change(ctx context.Context, w *domain.Supply) error {
-	tx, err := postgres.GetTransaction(ctx)
-	if err != nil {
-		return err
-	}
-
-	logger.Of(ctx).Debug("Executing query", zap.String("query", updateQuery), zap.Any("params", w))
-	if _, err = tx.ExecContext(
-		ctx,
-		updateQuery,
-		w.ID,
-		w.Name,
-		w.Description,
-		w.UnitPrice,
-		w.StockQuantity,
-	); err != nil {
-		return pgPkg.Error(ctx, err)
-	}
-
-	return nil
-}
-
-func (u *repo) FindById(ctx context.Context, id string) (domain.Supply, error) {
+func (r *repo) FindById(ctx context.Context, id string) (domain.Supply, error) {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
 		return domain.Supply{}, err
@@ -150,10 +123,11 @@ func (u *repo) FindById(ctx context.Context, id string) (domain.Supply, error) {
 		&sup.StockQuantity,
 		&sup.Version,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
-		return domain.Supply{}, domain.ErrSupplyNotFound
-	}
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Supply{}, domain.ErrSupplyNotFound
+		}
+
 		return domain.Supply{}, pgPkg.Error(ctx, err)
 	}
 

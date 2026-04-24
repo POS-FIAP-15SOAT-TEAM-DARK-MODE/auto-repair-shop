@@ -9,77 +9,46 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-type createSupplyRequestDTO struct {
+type writeSupplyRequestDTO struct {
 	Name          string          `json:"name" binding:"required"`
 	Description   string          `json:"description" binding:"required"`
 	UnitPrice     decimal.Decimal `json:"unitPrice" binding:"required"`
 	StockQuantity int             `json:"stockQuantity" binding:"required"`
 }
-type updateSupplyRequest struct {
-	Name          string          `json:"name"`
-	Description   string          `json:"description"`
-	UnitPrice     decimal.Decimal `json:"unitPrice"`
-	StockQuantity int             `json:"stockQuantity"`
-}
 
-func mapBodyToRequestDTO(body *gin.Context) (*createSupplyRequestDTO, error) {
-	req := new(createSupplyRequestDTO)
+func mapBodyToRequestDTO(body *gin.Context) (*writeSupplyRequestDTO, error) {
+	req := new(writeSupplyRequestDTO)
 
 	if err := body.ShouldBindJSON(req); err != nil {
-		return nil, err
+		return nil, json.CheckJsonError(err)
 	}
 
 	return req, nil
 }
 
-func mapBodyToUpdateSupplyRequest(body *gin.Context) (*updateSupplyRequest, error) {
-	var req updateSupplyRequest
-	if err := body.ShouldBindJSON(&req); err != nil {
-		return nil, json.CheckJsonError(err)
-	}
-	return &req, nil
-}
-
-func mapUpdateSupplyRequestDTOToDomain(id string, req *updateSupplyRequest) *domain.Supply {
-	return &domain.Supply{
-		ID:            id,
-		Name:          req.Name,
-		Description:   req.Description,
-		UnitPrice:     req.UnitPrice,
-		StockQuantity: req.StockQuantity,
-	}
-}
-
-func (c *createSupplyRequestDTO) MapToDomain() *domain.Supply {
+func (c *writeSupplyRequestDTO) MapToDomain() *domain.Supply {
 	supply := domain.NewSupply(c.Name, c.Description, c.UnitPrice, c.StockQuantity, 0)
 	return supply
 }
 
 func mapListParamsToDomain(c *gin.Context) *domain.ListSupplyParams {
-	page := int64(1)
-	pageSize := int64(10)
-	var status string
+	var page, pageSize int64 = 1, 10
 
 	if p := c.Query("page"); p != "" {
-		if v, err := strconv.Atoi(p); err == nil && v > 0 {
-			page = int64(v)
+		if v, err := strconv.ParseInt(p, 10, 64); err == nil && v > 0 {
+			page = v
 		}
 	}
 
 	if ps := c.Query("pageSize"); ps != "" {
-		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
-			pageSize = int64(v)
+		if v, err := strconv.ParseInt(ps, 10, 64); err == nil && v > 0 {
+			pageSize = v
 		}
-	}
-
-	status = c.Query("status")
-	if err := domain.ValidWorkStatusStringValue(status); status != "" && err != nil {
-		status = ""
 	}
 
 	return &domain.ListSupplyParams{
 		Page:     page,
 		PageSize: pageSize,
-		Status:   status,
+		Version:  c.Query("version"),
 	}
 }
