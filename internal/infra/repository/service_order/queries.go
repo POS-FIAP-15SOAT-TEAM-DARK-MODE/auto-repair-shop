@@ -42,5 +42,6 @@ ON CONFLICT (service_order_id, supply_id) DO NOTHING
 	deleteServiceOrderSuppliesQuery = `
 DELETE FROM service_order_supply
 WHERE service_order_id = $1 AND supply_id = $2
+RETURNING quantity
 `
 )

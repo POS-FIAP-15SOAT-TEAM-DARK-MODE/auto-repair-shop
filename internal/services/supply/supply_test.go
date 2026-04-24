@@ -210,18 +210,12 @@ func TestService_List_Success(t *testing.T) {
 	var expectedTotal int64 = 1
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return(expectedTotal, nil)
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return(expectedItems, nil)
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 
@@ -255,35 +249,6 @@ func TestService_List_Success(t *testing.T) {
 	}
 }
 
-func TestService_List_UoWError(t *testing.T) {
-	ctx := context.Background()
-
-	exec := uowmocks.NewExecutor(t)
-	repo := domainmocks.NewSupplyRepository(t)
-
-	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
-	expectedErr := errors.New("uow execute failed")
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		Return(expectedErr)
-
-	appService := Service(exec, repo)
-
-	got, err := appService.List(ctx, params)
-	if err == nil {
-		t.Fatalf("expected error, got nil")
-	}
-
-	if !errors.Is(err, expectedErr) {
-		t.Fatalf("expected error %v, got %v", expectedErr, err)
-	}
-
-	if got != nil {
-		t.Fatalf("expected nil response on error")
-	}
-}
-
 func TestService_List_CountError(t *testing.T) {
 	ctx := context.Background()
 
@@ -294,18 +259,12 @@ func TestService_List_CountError(t *testing.T) {
 	expectedErr := errors.New("count db error")
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return(int64(0), expectedErr).Maybe()
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return([]domain.Supply{}, nil).Maybe()
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 
@@ -333,18 +292,12 @@ func TestService_List_SearchError(t *testing.T) {
 	expectedErr := errors.New("search db error")
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return(int64(0), nil).Maybe()
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return(nil, expectedErr).Maybe()
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 
@@ -371,18 +324,12 @@ func TestService_List_EmptyResult(t *testing.T) {
 	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return(int64(0), nil)
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.AnythingOfType("*domain.ListSupplyParams")).
 		Return([]domain.Supply{}, nil)
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 

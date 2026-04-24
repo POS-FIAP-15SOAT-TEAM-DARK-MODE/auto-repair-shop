@@ -305,21 +305,31 @@ func (_c *ServiceOrderRepository_ListWorksByServiceOrderID_Call) RunAndReturn(ru
 }
 
 // RemoveSupplyLink provides a mock function with given fields: ctx, serviceOrderID, supplyID
-func (_m *ServiceOrderRepository) RemoveSupplyLink(ctx context.Context, serviceOrderID string, supplyID string) error {
+func (_m *ServiceOrderRepository) RemoveSupplyLink(ctx context.Context, serviceOrderID string, supplyID string) (int, error) {
 	ret := _m.Called(ctx, serviceOrderID, supplyID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RemoveSupplyLink")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (int, error)); ok {
+		return rf(ctx, serviceOrderID, supplyID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) int); ok {
 		r0 = rf(ctx, serviceOrderID, supplyID)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(int)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, serviceOrderID, supplyID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // ServiceOrderRepository_RemoveSupplyLink_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveSupplyLink'
@@ -342,12 +352,12 @@ func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) Run(run func(ctx context
 	return _c
 }
 
-func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) Return(_a0 error) *ServiceOrderRepository_RemoveSupplyLink_Call {
-	_c.Call.Return(_a0)
+func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) Return(_a0 int, _a1 error) *ServiceOrderRepository_RemoveSupplyLink_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) RunAndReturn(run func(context.Context, string, string) error) *ServiceOrderRepository_RemoveSupplyLink_Call {
+func (_c *ServiceOrderRepository_RemoveSupplyLink_Call) RunAndReturn(run func(context.Context, string, string) (int, error)) *ServiceOrderRepository_RemoveSupplyLink_Call {
 	_c.Call.Return(run)
 	return _c
 }

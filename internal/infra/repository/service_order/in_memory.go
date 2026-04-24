@@ -97,12 +97,13 @@ func (r *memory_repo) ListSuppliesByServiceOrderID(_ context.Context, serviceOrd
 	return out, nil
 }
 
-func (r *memory_repo) RemoveSupplyLink(_ context.Context, serviceOrderID string, supplyID string) error {
+func (r *memory_repo) RemoveSupplyLink(_ context.Context, serviceOrderID string, supplyID string) (int, error) {
 	list := r.suppliesByOrder[serviceOrderID]
 	idx := slices.IndexFunc(list, func(w domain.Supply) bool { return w.ID == supplyID })
 	if idx < 0 {
-		return domain.ErrServiceOrderSupplyNotFound
+		return 0, domain.ErrServiceOrderSupplyNotFound
 	}
+	qty := list[idx].StockQuantity
 	r.suppliesByOrder[serviceOrderID] = slices.Delete(list, idx, idx+1)
-	return nil
+	return qty, nil
 }

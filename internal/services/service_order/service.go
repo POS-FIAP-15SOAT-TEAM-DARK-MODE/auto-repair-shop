@@ -189,17 +189,24 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 				return domain.ErrInvalidSupplyID
 			}
 
+			if sup.Amount <= 0 {
+				return domain.ErrInvalidSupplyAmount
+			}
+
 			supply, err := s.supplyRepo.FindById(ctx, supplyId)
 			if err != nil {
 				return err
 			}
 
-			amount := sup.Amount
-			if amount > supply.StockQuantity {
-				amount = supply.StockQuantity
+			if supply.StockQuantity < sup.Amount {
+				return domain.ErrSupplyOutOfStock
 			}
 
-			if err = s.repo.AddSupplyLink(ctx, serviceOrderID, sup.ID, amount, supply.UnitPrice); err != nil {
+			if err = s.repo.AddSupplyLink(ctx, serviceOrderID, sup.ID, sup.Amount, supply.UnitPrice); err != nil {
+				return err
+			}
+
+			if err = s.supplyRepo.DecrementStock(ctx, supply.ID, sup.Amount); err != nil {
 				return err
 			}
 		}
@@ -229,6 +236,10 @@ func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string)
 		if status != domain.SERVICE_ORDER_STATUS_NEW {
 			return domain.ErrServiceOrderNotNew
 		}
-		return s.repo.RemoveSupplyLink(ctx, serviceOrderID, supplyID)
+		qty, err := s.repo.RemoveSupplyLink(ctx, serviceOrderID, supplyID)
+		if err != nil {
+			return err
+		}
+		return s.supplyRepo.RestoreStock(ctx, supplyID, qty)
 	})
 }

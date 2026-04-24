@@ -67,7 +67,7 @@ var (
 	ErrCNPJLength               = errors.New("CNPJ must have 14 characters")
 	ErrCustomerNotFound         = errors.New("customer not found")
 	ErrCustomerHasServiceOrders = errors.New("customer has associated service orders")
-	ErrInvalidDocumentFormat    = ValidationError{Message: "document must be a valid CPF (11 digits) or CNPJ (14 characters)"}
+	ErrInvalidDocumentFormat    = errors.New("document must be a valid CPF (11 digits) or CNPJ (14 characters)")
 	ErrInvalidCustomerId        = errors.New("invalid customer id")
 )
 
@@ -90,7 +90,9 @@ var (
 	ErrInvalidSupplyUnitPrice     = errors.New("supply unit price must be greater than 0")
 	ErrInvalidSupplyStockQuantity = errors.New("supply stock quantity must be greater than or equal to 0")
 	ErrInvalidSupplyVersion       = errors.New("supply version must be greater than or equal to 0")
+	ErrInvalidSupplyAmount        = errors.New("supply amount must be greater than 0")
 	ErrSupplyNotFound             = errors.New("supply not found")
+	ErrSupplyOutOfStock           = errors.New("supply out of stock or requested quantity exceeds available stock")
 )
 
 // Service Order errors

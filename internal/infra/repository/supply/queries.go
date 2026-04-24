@@ -20,4 +20,19 @@ const (
 	FROM "supply" s
 	WHERE s.id = $1
 	`
+	// decrementStockQuery atomically decrements stock only when enough quantity is available,
+	// preventing race conditions without a separate SELECT FOR UPDATE.
+	decrementStockQuery = `
+	UPDATE supply
+	SET stock_quantity = stock_quantity - $2,
+	    updated_at     = NOW()
+	WHERE id = $1
+	  AND stock_quantity >= $2
+	`
+	restoreStockQuery = `
+	UPDATE supply
+	SET stock_quantity = stock_quantity + $2,
+	    updated_at     = NOW()
+	WHERE id = $1
+	`
 )
