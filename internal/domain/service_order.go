@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"sync"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/shopspring/decimal"
@@ -36,6 +37,7 @@ type (
 		Services    []Work
 		Supplies    []Supply
 		TotalAmount decimal.Decimal
+		sumLocker   sync.Locker
 	}
 
 	AddSupply struct {
@@ -43,6 +45,32 @@ type (
 		Amount int
 	}
 )
+
+func (so *ServiceOrder) PrepareForSum() {
+	sync.OnceFunc(func() {
+		if so.sumLocker == nil {
+			so.sumLocker = &sync.Mutex{}
+		}
+	})()
+}
+
+func (so *ServiceOrder) SumWorkValue(work Work) {
+	so.PrepareForSum()
+
+	so.sumLocker.Lock()
+	so.TotalAmount = so.TotalAmount.Add(work.Price)
+	so.sumLocker.Unlock()
+}
+
+func (so *ServiceOrder) SumSupplyValue(supply Supply) {
+	so.PrepareForSum()
+
+	supplyAmount := decimal.NewFromInt(int64(supply.StockQuantity))
+	supplyPrice := supply.UnitPrice.Mul(supplyAmount)
+	so.sumLocker.Lock()
+	so.TotalAmount = so.TotalAmount.Add(supplyPrice)
+	so.sumLocker.Unlock()
+}
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderRepository --with-expecter

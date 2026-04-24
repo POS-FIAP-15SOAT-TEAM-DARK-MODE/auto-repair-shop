@@ -80,7 +80,7 @@ func (r *pg_repo) Count(ctx context.Context, params *domain.SearchWorkParams) (i
 	query, args := queryBuilder.Build()
 
 	var total int64
-	if err := tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+	if err = tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
 		return 0, pgPkg.Error(ctx, err)
 	}
 
@@ -108,6 +108,7 @@ func (r *pg_repo) Search(ctx context.Context, params *domain.SearchWorkParams) (
 	if err != nil {
 		return nil, pgPkg.Error(ctx, err)
 	}
+	defer func() { _ = rows.Close() }()
 
 	works := make([]domain.Work, 0, params.Limit)
 	for rows.Next() {

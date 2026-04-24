@@ -52,7 +52,7 @@ func (r *repository) ExistsByID(ctx context.Context, id string) (bool, domain.SE
 }
 
 func (r *repository) ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (r *repository) RemoveWorkLink(ctx context.Context, serviceOrderID, workID 
 }
 
 func (r *repository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
