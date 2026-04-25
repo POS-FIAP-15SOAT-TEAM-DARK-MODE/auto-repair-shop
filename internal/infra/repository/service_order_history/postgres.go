@@ -23,8 +23,7 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 	}
 
 	qb := db.QueryBuilder(selectServiceOrderHistory).
-		OrderBy("soh.created_at", db.ASC).
-		AddPagination(params.PageSize, params.Page)
+		OrderBy("soh.created_at", db.ASC)
 
 	if params.ID != "" {
 		qb.Add("soh.service_order_id = ", params.ID)
@@ -48,16 +47,14 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 		var (
 			history        domain.ServiceOrderHistory
 			previousStatus sql.NullString
-			newStatus      sql.NullString
-			createdAt      sql.NullTime
 		)
 
 		if err = rows.Scan(
 			&history.ID,
 			&history.ServiceOrderID,
 			&previousStatus,
-			&newStatus,
-			&createdAt,
+			&history.NewStatus,
+			&history.CreatedAt,
 		); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
@@ -66,97 +63,59 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 			history.PreviousStatus = domain.SERVICE_ORDER_STATUS(previousStatus.String)
 		}
 
-		if newStatus.Valid {
-			history.NewStatus = domain.SERVICE_ORDER_STATUS(newStatus.String)
-		}
-
-		if createdAt.Valid {
-			history.CreatedAt = createdAt.Time
-		}
-
 		histories = append(histories, history)
 	}
 
 	return histories, nil
 }
 
-func (r *repository) Count(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) (int64, error) {
-	tx, err := postgres.GetOneTimeTransaction(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	qb := db.QueryBuilder(countServiceOrderHistory)
-
-	if params.ID != "" {
-		qb.Add("soh.service_order_id = ", params.ID)
-	}
-
-	query, args := qb.Build()
-
-	var total int64
-	if err := tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
-		return 0, pgPkg.Error(ctx, err)
-	}
-
-	return total, nil
-}
-
-func (r *repository) WorkTimelineByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.WorkStatusTimeline, error) {
+func (r *repository) SearchWorkTransitions(ctx context.Context, serviceOrderID string) ([]domain.WorkServiceOrderHistory, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := tx.QueryContext(ctx, selectWorkTimelineByServiceOrderID, serviceOrderID)
+	qb := db.QueryBuilder(selectWorkServiceOrderHistory).
+		OrderBy("wsosh.created_at", db.ASC).
+		Add("wsosh.service_order_id = ", serviceOrderID)
+
+	query, args := qb.Build()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, pgPkg.Error(ctx, err)
 	}
+
 	defer func() { _ = rows.Close() }()
 
-	timelines := []domain.WorkStatusTimeline{}
-	indexByWorkID := map[string]int{}
-
+	transitions := []domain.WorkServiceOrderHistory{}
 	for rows.Next() {
 		if err = rows.Err(); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
 
 		var (
-			workID         string
+			transition     domain.WorkServiceOrderHistory
 			previousStatus sql.NullString
-			newStatus      sql.NullString
-			createdAt      sql.NullTime
 		)
 
-		if err = rows.Scan(&workID, &previousStatus, &newStatus, &createdAt); err != nil {
+		if err = rows.Scan(
+			&transition.ID,
+			&transition.WorkID,
+			&transition.ServiceOrderID,
+			&previousStatus,
+			&transition.NewStatus,
+			&transition.CreatedAt,
+		); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
 
-		idx, ok := indexByWorkID[workID]
-		if !ok {
-			timelines = append(timelines, domain.WorkStatusTimeline{
-				WorkID:  workID,
-				History: []domain.WorkStatusHistoryEntry{},
-			})
-			idx = len(timelines) - 1
-			indexByWorkID[workID] = idx
-		}
-
-		if !newStatus.Valid {
-			continue
-		}
-
-		entry := domain.WorkStatusHistoryEntry{
-			NewStatus: domain.SERVICE_ORDER_STATUS(newStatus.String),
-			CreatedAt: createdAt.Time,
-		}
 		if previousStatus.Valid {
-			entry.PreviousStatus = domain.SERVICE_ORDER_STATUS(previousStatus.String)
+			transition.PreviousStatus = domain.SERVICE_ORDER_STATUS(previousStatus.String)
 		}
 
-		timelines[idx].History = append(timelines[idx].History, entry)
+		transitions = append(transitions, transition)
 	}
 
-	return timelines, nil
+	return transitions, nil
 }

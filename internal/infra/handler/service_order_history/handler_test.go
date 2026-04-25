@@ -19,45 +19,50 @@ import (
 func TestGetHistoryByID_Handler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	expHistory := domain.ServiceOrderHistory{
+	inProgressHistory := domain.ServiceOrderHistory{
 		ID:             "history-id-1",
-		PreviousStatus: domain.SERVICE_ORDER_STATUS_RECEIVED,
-		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS,
+		PreviousStatus: domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL,
+		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
-	}
-
-	expWorks := []domain.WorkStatusTimeline{
-		{
-			WorkID: "wrk-1",
-			History: []domain.WorkStatusHistoryEntry{
-				{
-					PreviousStatus: domain.SERVICE_ORDER_STATUS_RECEIVED,
-					NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
-					CreatedAt:      time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC),
+		WorkTransitions: []domain.WorkTransitionGroup{
+			{
+				WorkID: "work-1",
+				Status: []domain.WorkServiceOrderHistory{
+					{
+						ID:             "work-tx-1",
+						WorkID:         "work-1",
+						ServiceOrderID: "so-1",
+						PreviousStatus: "",
+						NewStatus:      domain.SERVICE_ORDER_STATUS_NEW,
+						CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
+					},
+					{
+						ID:             "work-tx-2",
+						WorkID:         "work-1",
+						ServiceOrderID: "so-1",
+						PreviousStatus: domain.SERVICE_ORDER_STATUS_NEW,
+						NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
+						CreatedAt:      time.Date(2026, 4, 5, 13, 0, 0, 0, time.UTC),
+					},
 				},
 			},
-		},
-		{
-			WorkID:  "wrk-2",
-			History: []domain.WorkStatusHistoryEntry{},
 		},
 	}
 
 	tests := []struct {
-		name           string
-		setupMock      func(m *domainmocks.ServiceOrderHistoryService)
-		route          string
-		expectedCode   int
-		expectedItems  int
-		expectedWorks  int
-		expectedErr    string
-		assertWorksDTO bool
+		name         string
+		setupMock    func(m *domainmocks.ServiceOrderHistoryService)
+		route        string
+		expectedCode int
+		expectedLen  int
+		expectedErr  string
 	}{
 		{
 			name:         "missing id -> bad request",
 			setupMock:    nil,
 			route:        "/v1/service-order//history",
 			expectedCode: http.StatusBadRequest,
+			expectedLen:  0,
 			expectedErr:  domain.ErrServiceOrderIDRequired.Error(),
 		},
 		{
@@ -69,29 +74,19 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 			},
 			route:        "/v1/service-order/so-2/history",
 			expectedCode: http.StatusConflict,
+			expectedLen:  0,
 			expectedErr:  domain.ErrDataConflict.Error(),
 		},
 		{
-			name: "success",
+			name: "success with work transitions grouped under IN_PROGRESS",
 			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
 				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.SearchServiceOrderHistoryParams) bool {
 					return p != nil && p.ID == "so-1"
-				})).Return(&domain.ServiceOrderHistoryResponse{
-					Page: domain.PaginatorResponse[domain.ServiceOrderHistory]{
-						Items:      []domain.ServiceOrderHistory{expHistory},
-						TotalItems: 1,
-						TotalPages: 1,
-						PageSize:   10,
-						Page:       1,
-					},
-					Works: expWorks,
-				}, nil)
+				})).Return([]domain.ServiceOrderHistory{inProgressHistory}, nil)
 			},
-			route:          "/v1/service-order/so-1/history",
-			expectedCode:   http.StatusOK,
-			expectedItems:  1,
-			expectedWorks:  2,
-			assertWorksDTO: true,
+			route:        "/v1/service-order/so-1/history",
+			expectedCode: http.StatusOK,
+			expectedLen:  1,
 		},
 	}
 
@@ -118,46 +113,42 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 				t.Fatalf("failed to unmarshal response: %v", err)
 			}
 
-			if tt.expectedItems > 0 {
+			if tt.expectedLen > 0 {
 				items, ok := resp["items"].([]interface{})
 				if !ok {
 					t.Fatalf("expected items array in response")
 				}
-				assert.Len(t, items, tt.expectedItems)
-			}
+				assert.Len(t, items, tt.expectedLen)
 
-			if tt.assertWorksDTO {
-				works, ok := resp["works"].([]interface{})
+				first, ok := items[0].(map[string]interface{})
 				if !ok {
-					t.Fatalf("expected works array in response, got: %v", resp["works"])
+					t.Fatalf("expected first item to be an object")
 				}
-				assert.Len(t, works, tt.expectedWorks)
+				workTransitions, ok := first["work_transitions"].([]interface{})
+				if !ok {
+					t.Fatalf("expected work_transitions array, got: %T", first["work_transitions"])
+				}
+				assert.Len(t, workTransitions, 1)
 
-				first, ok := works[0].(map[string]any)
+				group, ok := workTransitions[0].(map[string]interface{})
 				if !ok {
-					t.Fatalf("expected works[0] to be an object")
+					t.Fatalf("expected work_transitions[0] to be an object")
 				}
-				assert.Equal(t, "wrk-1", first["work_id"])
-				assert.NotContains(t, first, "name")
-				assert.NotContains(t, first, "current_status")
-				history, ok := first["history"].([]interface{})
-				if !ok {
-					t.Fatalf("expected history array in works[0]")
-				}
-				assert.Len(t, history, 1)
+				assert.Equal(t, "work-1", group["work_id"])
 
-				second, ok := works[1].(map[string]any)
+				statuses, ok := group["status"].([]interface{})
 				if !ok {
-					t.Fatalf("expected works[1] to be an object")
+					t.Fatalf("expected status array, got: %T", group["status"])
 				}
-				assert.Equal(t, "wrk-2", second["work_id"])
-				assert.NotContains(t, second, "name")
-				assert.NotContains(t, second, "current_status")
-				history2, ok := second["history"].([]interface{})
-				if !ok {
-					t.Fatalf("expected history array in works[1]")
-				}
-				assert.Empty(t, history2)
+				assert.Len(t, statuses, 2)
+
+				s0, _ := statuses[0].(map[string]interface{})
+				assert.Equal(t, "work-tx-1", s0["id"])
+				assert.Equal(t, "NEW", s0["new_status"])
+
+				s1, _ := statuses[1].(map[string]interface{})
+				assert.Equal(t, "work-tx-2", s1["id"])
+				assert.Equal(t, "IN_PROGRESS", s1["new_status"])
 			}
 
 			if tt.expectedErr != "" {

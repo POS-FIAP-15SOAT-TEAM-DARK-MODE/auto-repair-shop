@@ -23,23 +23,23 @@ func (_m *ServiceOrderHistoryService) EXPECT() *ServiceOrderHistoryService_Expec
 }
 
 // GetHistoryByID provides a mock function with given fields: ctx, params
-func (_m *ServiceOrderHistoryService) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) (*domain.ServiceOrderHistoryResponse, error) {
+func (_m *ServiceOrderHistoryService) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
 	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetHistoryByID")
 	}
 
-	var r0 *domain.ServiceOrderHistoryResponse
+	var r0 []domain.ServiceOrderHistory
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) (*domain.ServiceOrderHistoryResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error)); ok {
 		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) *domain.ServiceOrderHistoryResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) []domain.ServiceOrderHistory); ok {
 		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.ServiceOrderHistoryResponse)
+			r0 = ret.Get(0).([]domain.ServiceOrderHistory)
 		}
 	}
 
@@ -71,12 +71,12 @@ func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) Run(run func(ctx conte
 	return _c
 }
 
-func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) Return(_a0 *domain.ServiceOrderHistoryResponse, _a1 error) *ServiceOrderHistoryService_GetHistoryByID_Call {
+func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) Return(_a0 []domain.ServiceOrderHistory, _a1 error) *ServiceOrderHistoryService_GetHistoryByID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) RunAndReturn(run func(context.Context, *domain.SearchServiceOrderHistoryParams) (*domain.ServiceOrderHistoryResponse, error)) *ServiceOrderHistoryService_GetHistoryByID_Call {
+func (_c *ServiceOrderHistoryService_GetHistoryByID_Call) RunAndReturn(run func(context.Context, *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error)) *ServiceOrderHistoryService_GetHistoryByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

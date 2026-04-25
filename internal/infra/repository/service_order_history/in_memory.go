@@ -20,10 +20,6 @@ func (r *memory_repo) Search(_ context.Context, params *domain.SearchServiceOrde
 	return []domain.ServiceOrderHistory{}, nil
 }
 
-func (r *memory_repo) Count(_ context.Context, params *domain.SearchServiceOrderHistoryParams) (int64, error) {
-	return 0, nil
-}
-
-func (r *memory_repo) WorkTimelineByServiceOrderID(_ context.Context, _ string) ([]domain.WorkStatusTimeline, error) {
-	return []domain.WorkStatusTimeline{}, nil
+func (r *memory_repo) SearchWorkTransitions(_ context.Context, _ string) ([]domain.WorkServiceOrderHistory, error) {
+	return []domain.WorkServiceOrderHistory{}, nil
 }

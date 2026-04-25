@@ -9,7 +9,22 @@ import (
 
 type (
 	ServiceOrderHistory struct {
+		ID              string
+		ServiceOrderID  string
+		PreviousStatus  SERVICE_ORDER_STATUS
+		NewStatus       SERVICE_ORDER_STATUS
+		CreatedAt       time.Time
+		WorkTransitions []WorkTransitionGroup
+	}
+
+	WorkTransitionGroup struct {
+		WorkID string
+		Status []WorkServiceOrderHistory
+	}
+
+	WorkServiceOrderHistory struct {
 		ID             string
+		WorkID         string
 		ServiceOrderID string
 		PreviousStatus SERVICE_ORDER_STATUS
 		NewStatus      SERVICE_ORDER_STATUS
@@ -17,25 +32,7 @@ type (
 	}
 
 	SearchServiceOrderHistoryParams struct {
-		ID       string
-		Page     int64
-		PageSize int64
-	}
-
-	WorkStatusHistoryEntry struct {
-		PreviousStatus SERVICE_ORDER_STATUS
-		NewStatus      SERVICE_ORDER_STATUS
-		CreatedAt      time.Time
-	}
-
-	WorkStatusTimeline struct {
-		WorkID  string
-		History []WorkStatusHistoryEntry
-	}
-
-	ServiceOrderHistoryResponse struct {
-		Page  PaginatorResponse[ServiceOrderHistory]
-		Works []WorkStatusTimeline
+		ID string
 	}
 )
 
@@ -43,13 +40,17 @@ type (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryRepository --with-expecter
 type (
 	ServiceOrderHistoryService interface {
-		GetHistoryByID(ctx context.Context, params *SearchServiceOrderHistoryParams) (*ServiceOrderHistoryResponse, error)
+		GetHistoryByID(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
 	}
 
 	ServiceOrderHistoryRepository interface {
+		// Search returns all SO status transitions for the given service order,
+		// ordered by created_at ASC. The endpoint is non-paginated by design
+		// because a service order's lifecycle is bounded (~8 transitions).
 		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
-		Count(ctx context.Context, params *SearchServiceOrderHistoryParams) (int64, error)
-		WorkTimelineByServiceOrderID(ctx context.Context, serviceOrderID string) ([]WorkStatusTimeline, error)
+		// SearchWorkTransitions returns all work-status transitions for the given
+		// service order, ordered by created_at ASC.
+		SearchWorkTransitions(ctx context.Context, serviceOrderID string) ([]WorkServiceOrderHistory, error)
 	}
 )
 
