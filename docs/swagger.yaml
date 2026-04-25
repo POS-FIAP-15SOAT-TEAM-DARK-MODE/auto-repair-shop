@@ -817,6 +817,33 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/status:
+    get:
+      summary: Get service order status
+      description: Returns the status of the service order informed without auth
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          required: true
+          name: id
+          schema:
+            type: string
+          description: Id of service order.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceOrderStatusResponse"
+        "500":
+          description: Internal Server Error
+        "400":
+          description: Invalid Body Content
+
   /v1/service-order/{id}/history:
     get:
       summary: Get service order history
@@ -1673,6 +1700,20 @@ components:
           format: float
           description: Total budget amount for this service order
         created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+
+    ServiceOrderStatusResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the service order
+        status:
+          type: string
+          description: Service order status (e.g. RECEIVED, IN_DIAGNOSIS, etc)
+        updated_at:
           type: string
           format: date-time
           description: Creation timestamp
