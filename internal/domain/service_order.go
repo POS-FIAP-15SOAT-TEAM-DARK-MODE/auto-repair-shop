@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"sync"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/shopspring/decimal"
@@ -23,6 +24,10 @@ func (s SERVICE_ORDER_STATUS) String() string {
 	return string(s)
 }
 
+func StringToServiceOrderStatus(val string) SERVICE_ORDER_STATUS {
+	return SERVICE_ORDER_STATUS(val)
+}
+
 type (
 	ServiceOrder struct {
 		ID          string
@@ -32,6 +37,7 @@ type (
 		Services    []Work
 		Supplies    []Supply
 		TotalAmount decimal.Decimal
+		sumLocker   sync.Locker
 	}
 
 	AddSupply struct {
@@ -39,6 +45,32 @@ type (
 		Amount int
 	}
 )
+
+func (so *ServiceOrder) PrepareForSum() {
+	sync.OnceFunc(func() {
+		if so.sumLocker == nil {
+			so.sumLocker = &sync.Mutex{}
+		}
+	})()
+}
+
+func (so *ServiceOrder) SumWorkValue(work Work) {
+	so.PrepareForSum()
+
+	so.sumLocker.Lock()
+	so.TotalAmount = so.TotalAmount.Add(work.Price)
+	so.sumLocker.Unlock()
+}
+
+func (so *ServiceOrder) SumSupplyValue(supply Supply) {
+	so.PrepareForSum()
+
+	supplyAmount := decimal.NewFromInt(int64(supply.StockQuantity))
+	supplyPrice := supply.UnitPrice.Mul(supplyAmount)
+	so.sumLocker.Lock()
+	so.TotalAmount = so.TotalAmount.Add(supplyPrice)
+	so.sumLocker.Unlock()
+}
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderRepository --with-expecter
@@ -51,11 +83,13 @@ type (
 		ListSupplies(ctx context.Context, serviceOrderID string) ([]Supply, error)
 		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
 		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
+		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
 	}
 
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
 		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
+		FindByID(ctx context.Context, id string) (ServiceOrder, error)
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
