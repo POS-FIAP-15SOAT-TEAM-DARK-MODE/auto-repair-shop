@@ -820,7 +820,7 @@ paths:
   /v1/service-order/{id}/history:
     get:
       summary: Get service order history
-      description: Returns the history of status changes for the specified service order.
+      description: Returns the full history of status transitions for the specified service order.
       tags:
         - ServiceOrder
       security:
@@ -832,22 +832,6 @@ paths:
           schema:
             type: string
           description: Service order UUID
-        - in: query
-          name: page
-          schema:
-            type: integer
-            format: int64
-            default: 1
-            minimum: 1
-          description: Page number (1-based)
-        - in: query
-          name: pageSize
-          schema:
-            type: integer
-            format: int64
-            default: 10
-            minimum: 1
-          description: Number of items per page
       responses:
         "200":
           description: History retrieved successfully
@@ -857,20 +841,29 @@ paths:
                 $ref: "#/components/schemas/WorkOrderHistoryResponse"
               example:
                 items:
+                  - id: 01HZ8X2TJ8M2YV5N1QX9G2KX4R
+                    previous_status: ""
+                    new_status: RECEIVED
+                    created_at: "2026-04-13T14:34:37.026Z"
                   - id: 01HZ8X2TJ8M2YV5N1QX9G2KX5R
                     previous_status: AWAITING_APPROVAL
                     new_status: IN_PROGRESS
-                    created_at: "2026-04-05T12:00:00Z"
-                works:
-                  - work_id: 272e933f-273e-4ef7-a38d-2ab1dd8c234c
-                    history:
-                      - previous_status: PENDING
-                        new_status: IN_PROGRESS
-                        created_at: "2026-04-05T12:00:01Z"
-                total_items: 1
-                total_pages: 1
-                page: 1
-                page_size: 10
+                    created_at: "2026-04-16T14:34:37.026Z"
+                    work_transitions:
+                      - work_id: eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
+                        status:
+                          - id: "1"
+                            previous_status: ""
+                            new_status: NEW
+                            created_at: "2026-04-15T14:34:37.026Z"
+                          - id: "2"
+                            previous_status: NEW
+                            new_status: IN_PROGRESS
+                            created_at: "2026-04-16T14:34:37.026Z"
+                  - id: 01HZ8X2TJ8M2YV5N1QX9G2KX6R
+                    previous_status: IN_PROGRESS
+                    new_status: COMPLETED
+                    created_at: "2026-04-17T14:34:37.026Z"
         "400":
           description: Invalid request
           content:
@@ -1385,6 +1378,47 @@ components:
         - pageSize
         - page
 
+    WorkStatusEntry:
+      type: object
+      description: A single status transition for one work.
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4e2c1b9a-7d8f-4a3b-9c1e-2f3a4b5c6d7e
+        previous_status:
+          type: string
+          example: NEW
+        new_status:
+          type: string
+          example: IN_PROGRESS
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-16T14:34:37.026Z"
+      required:
+        - id
+        - previous_status
+        - new_status
+        - created_at
+
+    WorkTransitionGroup:
+      type: object
+      description: Full status history for a single work, grouped by work_id.
+      properties:
+        work_id:
+          type: string
+          format: uuid
+          example: eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
+        status:
+          type: array
+          description: All status transitions for this work, ordered by created_at ascending.
+          items:
+            $ref: "#/components/schemas/WorkStatusEntry"
+      required:
+        - work_id
+        - status
+
     WorkOrderHistoryEntry:
       type: object
       properties:
@@ -1402,84 +1436,27 @@ components:
           type: string
           format: date-time
           example: "2026-04-05T12:34:56Z"
+        work_transitions:
+          type: array
+          description: Present only when `new_status` is `IN_PROGRESS`. Contains the full status history for each work attached to the service order, grouped by `work_id`.
+          items:
+            $ref: "#/components/schemas/WorkTransitionGroup"
       required:
         - id
         - previous_status
         - new_status
         - created_at
 
-    WorkStatusTimelineEntry:
-      type: object
-      description: A single status transition for a work attached to a service order.
-      properties:
-        previous_status:
-          type: string
-          example: PENDING
-        new_status:
-          type: string
-          example: IN_PROGRESS
-        created_at:
-          type: string
-          format: date-time
-          example: "2026-04-05T12:34:57Z"
-      required:
-        - previous_status
-        - new_status
-        - created_at
-
-    WorkStatusTimeline:
-      type: object
-      description: Status timeline of a single work attached to a service order.
-      properties:
-        work_id:
-          type: string
-          format: uuid
-          example: 272e933f-273e-4ef7-a38d-2ab1dd8c234c
-        history:
-          type: array
-          description: Ordered (ascending by created_at) list of status transitions for this work on this service order. Empty when the work has no recorded transitions yet.
-          items:
-            $ref: "#/components/schemas/WorkStatusTimelineEntry"
-      required:
-        - work_id
-        - history
-
     WorkOrderHistoryResponse:
       type: object
-      description: Paginated service-order status history plus a non-paginated per-work status timeline.
+      description: Full service-order status history (non-paginated). The entry whose `new_status` is `IN_PROGRESS` carries `work_transitions` with per-work status histories.
       properties:
         items:
           type: array
           items:
             $ref: "#/components/schemas/WorkOrderHistoryEntry"
-        works:
-          type: array
-          description: Works attached to the service order with their per-work status history. Not paginated.
-          items:
-            $ref: "#/components/schemas/WorkStatusTimeline"
-        total_items:
-          type: integer
-          format: int64
-          example: 5
-        total_pages:
-          type: integer
-          format: int64
-          example: 1
-        page:
-          type: integer
-          format: int64
-          example: 1
-        page_size:
-          type: integer
-          format: int64
-          example: 10
       required:
         - items
-        - works
-        - total_items
-        - total_pages
-        - page
-        - page_size
 
     VehicleRequest:
       type: object
