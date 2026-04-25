@@ -428,12 +428,13 @@ func (s *svc) Accept(ctx context.Context, serviceOrderID, userID string) error {
 
 	so.Status = domain.SERVICE_ORDER_STATUS_IN_PROGRESS
 
-	// TODO: NOTIFY MECHANICAL TO START SERVICE
+	// TODO: NOTIFY MECHANICAL TO START SERVICE (SMS / EMAIL / WPP)
 
 	return s.uow.Execute(ctx, func(c context.Context) error {
 		return s.repo.Save(c, &so)
 	})
 }
+
 func (s *svc) Reject(ctx context.Context, serviceOrderID, userID string) error {
 	eg := errgroup.Group{}
 
@@ -446,6 +447,12 @@ func (s *svc) Reject(ctx context.Context, serviceOrderID, userID string) error {
 	var cust domain.Customer
 	eg.Go(func() (err error) {
 		cust, err = s.customerService.GetByUserID(ctx, userID)
+		return
+	})
+
+	var supplies []domain.Supply
+	eg.Go(func() (err error) {
+		supplies, err = s.ListSupplies(ctx, serviceOrderID)
 		return
 	})
 
@@ -463,9 +470,13 @@ func (s *svc) Reject(ctx context.Context, serviceOrderID, userID string) error {
 
 	so.Status = domain.SERVICE_ORDER_STATUS_REJECTED
 
-	// TODO: RELEASE STOCK
-
 	return s.uow.Execute(ctx, func(c context.Context) error {
+		for _, sup := range supplies {
+			if err := s.supplyRepo.RestoreStock(c, sup.ID, sup.StockQuantity); err != nil {
+				return err
+			}
+		}
+
 		return s.repo.Save(c, &so)
 	})
 }
