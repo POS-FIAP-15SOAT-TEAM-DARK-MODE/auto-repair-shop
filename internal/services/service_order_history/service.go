@@ -64,6 +64,7 @@ func attachWorkTransitions(items []domain.ServiceOrderHistory, transitions []dom
 	for i := range items {
 		if items[i].NewStatus == domain.SERVICE_ORDER_STATUS_IN_PROGRESS {
 			items[i].WorkTransitions = grouped
+			break
 		}
 	}
 }
