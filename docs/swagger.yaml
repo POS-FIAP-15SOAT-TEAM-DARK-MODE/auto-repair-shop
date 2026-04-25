@@ -831,39 +831,40 @@ paths:
           required: true
           schema:
             type: string
-          description: Service order UUID
+          description: Service order id
       responses:
         "200":
           description: History retrieved successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WorkOrderHistoryResponse"
-              example:
+                type: array
                 items:
-                  - id: 01HZ8X2TJ8M2YV5N1QX9G2KX4R
-                    previous_status: ""
-                    new_status: RECEIVED
-                    created_at: "2026-04-13T14:34:37.026Z"
-                  - id: 01HZ8X2TJ8M2YV5N1QX9G2KX5R
-                    previous_status: AWAITING_APPROVAL
-                    new_status: IN_PROGRESS
-                    created_at: "2026-04-16T14:34:37.026Z"
-                    work_transitions:
-                      - work_id: eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
-                        status:
-                          - id: "1"
-                            previous_status: ""
-                            new_status: NEW
-                            created_at: "2026-04-15T14:34:37.026Z"
-                          - id: "2"
-                            previous_status: NEW
-                            new_status: IN_PROGRESS
-                            created_at: "2026-04-16T14:34:37.026Z"
-                  - id: 01HZ8X2TJ8M2YV5N1QX9G2KX6R
-                    previous_status: IN_PROGRESS
-                    new_status: COMPLETED
-                    created_at: "2026-04-17T14:34:37.026Z"
+                  $ref: "#/components/schemas/WorkOrderHistoryEntry"
+              example:
+                - id: 01HZ8X2TJ8M2YV5N1QX9G2KX4R
+                  previous_status: ""
+                  new_status: RECEIVED
+                  created_at: "2026-04-13T14:34:37.026Z"
+                - id: 01HZ8X2TJ8M2YV5N1QX9G2KX5R
+                  previous_status: AWAITING_APPROVAL
+                  new_status: IN_PROGRESS
+                  created_at: "2026-04-16T14:34:37.026Z"
+                  work_transitions:
+                    - work_id: eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
+                      status:
+                        - id: "1"
+                          previous_status: ""
+                          new_status: NEW
+                          created_at: "2026-04-15T14:34:37.026Z"
+                        - id: "2"
+                          previous_status: NEW
+                          new_status: IN_PROGRESS
+                          created_at: "2026-04-16T14:34:37.026Z"
+                - id: 01HZ8X2TJ8M2YV5N1QX9G2KX6R
+                  previous_status: IN_PROGRESS
+                  new_status: COMPLETED
+                  created_at: "2026-04-17T14:34:37.026Z"
         "400":
           description: Invalid request
           content:
@@ -1424,8 +1425,8 @@ components:
       properties:
         id:
           type: string
-          format: uuid
-          example: 8b6f1c2e-3c4a-4f8c-9a2b-1d2e3f4a5b6c
+          format: ulid
+          example: 01HZ8X2TJ8M2YV5N1QX9G2KX5R
         previous_status:
           type: string
           example: RECEIVED
@@ -1446,17 +1447,6 @@ components:
         - previous_status
         - new_status
         - created_at
-
-    WorkOrderHistoryResponse:
-      type: object
-      description: Full service-order status history (non-paginated). The entry whose `new_status` is `IN_PROGRESS` carries `work_transitions` with per-work status histories.
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/WorkOrderHistoryEntry"
-      required:
-        - items
 
     VehicleRequest:
       type: object
