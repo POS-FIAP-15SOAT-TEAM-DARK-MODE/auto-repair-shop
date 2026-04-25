@@ -97,6 +97,103 @@ func TestPostgresRepository_Search(t *testing.T) {
 	}
 }
 
+func TestPostgresRepository_WorkTimelineByServiceOrderID(t *testing.T) {
+	t.Run("success grouping multiple history rows under the same work", func(t *testing.T) {
+		repo := sohrepo.Repository()
+
+		now := time.Now()
+		later := now.Add(time.Minute)
+
+		rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"}).
+			AddRow("wrk-1", string(domain.SERVICE_ORDER_STATUS_RECEIVED), string(domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS), now).
+			AddRow("wrk-1", string(domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS), string(domain.SERVICE_ORDER_STATUS_IN_PROGRESS), later).
+			AddRow("wrk-2", string(domain.SERVICE_ORDER_STATUS_RECEIVED), string(domain.SERVICE_ORDER_STATUS_IN_PROGRESS), now)
+
+		testMock.ExpectQuery(`SELECT\s+sow\.work_id`).
+			WithArgs("so-1").
+			WillReturnRows(rows)
+
+		timelines, err := repo.WorkTimelineByServiceOrderID(context.Background(), "so-1")
+
+		assert.NoError(t, err)
+		assert.Len(t, timelines, 2)
+
+		assert.Equal(t, "wrk-1", timelines[0].WorkID)
+		assert.Len(t, timelines[0].History, 2)
+		assert.Equal(t, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, timelines[0].History[1].NewStatus)
+
+		assert.Equal(t, "wrk-2", timelines[1].WorkID)
+		assert.Len(t, timelines[1].History, 1)
+		assert.Equal(t, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, timelines[1].History[0].NewStatus)
+	})
+
+	t.Run("work without transitions returns empty history", func(t *testing.T) {
+		repo := sohrepo.Repository()
+
+		rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"}).
+			AddRow("wrk-3", nil, nil, nil)
+
+		testMock.ExpectQuery(`SELECT\s+sow\.work_id`).
+			WithArgs("so-2").
+			WillReturnRows(rows)
+
+		timelines, err := repo.WorkTimelineByServiceOrderID(context.Background(), "so-2")
+
+		assert.NoError(t, err)
+		assert.Len(t, timelines, 1)
+		assert.Equal(t, "wrk-3", timelines[0].WorkID)
+		assert.Empty(t, timelines[0].History)
+	})
+
+	t.Run("first transition with null previous_status leaves entry without previous status", func(t *testing.T) {
+		repo := sohrepo.Repository()
+
+		rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"}).
+			AddRow("wrk-5", nil, string(domain.SERVICE_ORDER_STATUS_RECEIVED), time.Now())
+
+		testMock.ExpectQuery(`SELECT\s+sow\.work_id`).
+			WithArgs("so-5").
+			WillReturnRows(rows)
+
+		timelines, err := repo.WorkTimelineByServiceOrderID(context.Background(), "so-5")
+
+		assert.NoError(t, err)
+		assert.Len(t, timelines, 1)
+		assert.Equal(t, "wrk-5", timelines[0].WorkID)
+		assert.Len(t, timelines[0].History, 1)
+		assert.Equal(t, domain.SERVICE_ORDER_STATUS(""), timelines[0].History[0].PreviousStatus)
+		assert.Equal(t, domain.SERVICE_ORDER_STATUS_RECEIVED, timelines[0].History[0].NewStatus)
+	})
+
+	t.Run("query error", func(t *testing.T) {
+		repo := sohrepo.Repository()
+
+		testMock.ExpectQuery(`SELECT\s+sow\.work_id`).
+			WithArgs("so-3").
+			WillReturnError(errors.New("query failed"))
+
+		timelines, err := repo.WorkTimelineByServiceOrderID(context.Background(), "so-3")
+
+		assert.Error(t, err)
+		assert.Nil(t, timelines)
+	})
+
+	t.Run("empty result", func(t *testing.T) {
+		repo := sohrepo.Repository()
+
+		rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"})
+
+		testMock.ExpectQuery(`SELECT\s+sow\.work_id`).
+			WithArgs("so-4").
+			WillReturnRows(rows)
+
+		timelines, err := repo.WorkTimelineByServiceOrderID(context.Background(), "so-4")
+
+		assert.NoError(t, err)
+		assert.Empty(t, timelines)
+	})
+}
+
 func TestPostgresRepository_Count(t *testing.T) {
 	tests := []struct {
 		name        string

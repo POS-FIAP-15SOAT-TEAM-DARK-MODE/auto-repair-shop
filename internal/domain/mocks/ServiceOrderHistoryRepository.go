@@ -138,6 +138,65 @@ func (_c *ServiceOrderHistoryRepository_Search_Call) RunAndReturn(run func(conte
 	return _c
 }
 
+// WorkTimelineByServiceOrderID provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderHistoryRepository) WorkTimelineByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.WorkStatusTimeline, error) {
+	ret := _m.Called(ctx, serviceOrderID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WorkTimelineByServiceOrderID")
+	}
+
+	var r0 []domain.WorkStatusTimeline
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.WorkStatusTimeline, error)); ok {
+		return rf(ctx, serviceOrderID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.WorkStatusTimeline); ok {
+		r0 = rf(ctx, serviceOrderID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.WorkStatusTimeline)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, serviceOrderID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WorkTimelineByServiceOrderID'
+type ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call struct {
+	*mock.Call
+}
+
+// WorkTimelineByServiceOrderID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+func (_e *ServiceOrderHistoryRepository_Expecter) WorkTimelineByServiceOrderID(ctx interface{}, serviceOrderID interface{}) *ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call {
+	return &ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call{Call: _e.mock.On("WorkTimelineByServiceOrderID", ctx, serviceOrderID)}
+}
+
+func (_c *ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call) Return(_a0 []domain.WorkStatusTimeline, _a1 error) *ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call) RunAndReturn(run func(context.Context, string) ([]domain.WorkStatusTimeline, error)) *ServiceOrderHistoryRepository_WorkTimelineByServiceOrderID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewServiceOrderHistoryRepository creates a new instance of ServiceOrderHistoryRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewServiceOrderHistoryRepository(t interface {

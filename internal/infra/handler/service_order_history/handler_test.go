@@ -26,20 +26,38 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 		CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
 	}
 
+	expWorks := []domain.WorkStatusTimeline{
+		{
+			WorkID: "wrk-1",
+			History: []domain.WorkStatusHistoryEntry{
+				{
+					PreviousStatus: domain.SERVICE_ORDER_STATUS_RECEIVED,
+					NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
+					CreatedAt:      time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC),
+				},
+			},
+		},
+		{
+			WorkID:  "wrk-2",
+			History: []domain.WorkStatusHistoryEntry{},
+		},
+	}
+
 	tests := []struct {
-		name         string
-		setupMock    func(m *domainmocks.ServiceOrderHistoryService)
-		route        string
-		expectedCode int
-		expectedLen  int
-		expectedErr  string
+		name           string
+		setupMock      func(m *domainmocks.ServiceOrderHistoryService)
+		route          string
+		expectedCode   int
+		expectedItems  int
+		expectedWorks  int
+		expectedErr    string
+		assertWorksDTO bool
 	}{
 		{
 			name:         "missing id -> bad request",
 			setupMock:    nil,
 			route:        "/v1/service-order//history",
 			expectedCode: http.StatusBadRequest,
-			expectedLen:  0,
 			expectedErr:  domain.ErrServiceOrderIDRequired.Error(),
 		},
 		{
@@ -51,7 +69,6 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 			},
 			route:        "/v1/service-order/so-2/history",
 			expectedCode: http.StatusConflict,
-			expectedLen:  0,
 			expectedErr:  domain.ErrDataConflict.Error(),
 		},
 		{
@@ -59,17 +76,22 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
 				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.SearchServiceOrderHistoryParams) bool {
 					return p != nil && p.ID == "so-1"
-				})).Return(&domain.PaginatorResponse[domain.ServiceOrderHistory]{
-					Items:      []domain.ServiceOrderHistory{expHistory},
-					TotalItems: 1,
-					TotalPages: 1,
-					PageSize:   10,
-					Page:       1,
+				})).Return(&domain.ServiceOrderHistoryResponse{
+					Page: domain.PaginatorResponse[domain.ServiceOrderHistory]{
+						Items:      []domain.ServiceOrderHistory{expHistory},
+						TotalItems: 1,
+						TotalPages: 1,
+						PageSize:   10,
+						Page:       1,
+					},
+					Works: expWorks,
 				}, nil)
 			},
-			route:        "/v1/service-order/so-1/history",
-			expectedCode: http.StatusOK,
-			expectedLen:  1,
+			route:          "/v1/service-order/so-1/history",
+			expectedCode:   http.StatusOK,
+			expectedItems:  1,
+			expectedWorks:  2,
+			assertWorksDTO: true,
 		},
 	}
 
@@ -96,16 +118,49 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 				t.Fatalf("failed to unmarshal response: %v", err)
 			}
 
-			if tt.expectedLen > 0 {
+			if tt.expectedItems > 0 {
 				items, ok := resp["items"].([]interface{})
 				if !ok {
 					t.Fatalf("expected items array in response")
 				}
-				assert.Len(t, items, tt.expectedLen)
+				assert.Len(t, items, tt.expectedItems)
+			}
+
+			if tt.assertWorksDTO {
+				works, ok := resp["works"].([]interface{})
+				if !ok {
+					t.Fatalf("expected works array in response, got: %v", resp["works"])
+				}
+				assert.Len(t, works, tt.expectedWorks)
+
+				first, ok := works[0].(map[string]any)
+				if !ok {
+					t.Fatalf("expected works[0] to be an object")
+				}
+				assert.Equal(t, "wrk-1", first["work_id"])
+				assert.NotContains(t, first, "name")
+				assert.NotContains(t, first, "current_status")
+				history, ok := first["history"].([]interface{})
+				if !ok {
+					t.Fatalf("expected history array in works[0]")
+				}
+				assert.Len(t, history, 1)
+
+				second, ok := works[1].(map[string]any)
+				if !ok {
+					t.Fatalf("expected works[1] to be an object")
+				}
+				assert.Equal(t, "wrk-2", second["work_id"])
+				assert.NotContains(t, second, "name")
+				assert.NotContains(t, second, "current_status")
+				history2, ok := second["history"].([]interface{})
+				if !ok {
+					t.Fatalf("expected history array in works[1]")
+				}
+				assert.Empty(t, history2)
 			}
 
 			if tt.expectedErr != "" {
-				// errors may be in "errors" array or "error" string depending on status code
 				if errs, ok := resp["errors"].([]interface{}); ok && len(errs) > 0 {
 					assert.Contains(t, errs[0], tt.expectedErr)
 				} else if errStr, ok := resp["error"].(string); ok {

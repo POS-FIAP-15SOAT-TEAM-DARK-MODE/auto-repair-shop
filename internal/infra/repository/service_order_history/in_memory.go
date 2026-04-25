@@ -23,3 +23,7 @@ func (r *memory_repo) Search(_ context.Context, params *domain.SearchServiceOrde
 func (r *memory_repo) Count(_ context.Context, params *domain.SearchServiceOrderHistoryParams) (int64, error) {
 	return 0, nil
 }
+
+func (r *memory_repo) WorkTimelineByServiceOrderID(_ context.Context, _ string) ([]domain.WorkStatusTimeline, error) {
+	return []domain.WorkStatusTimeline{}, nil
+}
