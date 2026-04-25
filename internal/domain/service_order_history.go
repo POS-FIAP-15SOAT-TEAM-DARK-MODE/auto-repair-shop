@@ -29,6 +29,8 @@ type (
 		CreatedAt      time.Time
 	}
 
+	WorkServiceOrderHistoryList []WorkServiceOrderHistory
+
 	SearchServiceOrderHistoryParams struct {
 		ID string
 	}
@@ -52,6 +54,27 @@ func (p *SearchServiceOrderHistoryParams) Validate() error {
 		return ErrServiceOrderIDRequired
 	}
 	return nil
+}
+
+func (list WorkServiceOrderHistoryList) ToWorkTransitionGroup() []WorkTransitionGroup {
+	if len(list) == 0 {
+		return nil
+	}
+
+	orderMap := make(map[string]int, len(list))
+	groups := make([]WorkTransitionGroup, 0, len(list))
+
+	for _, t := range list {
+		idx, exists := orderMap[t.WorkID]
+		if !exists {
+			idx = len(groups)
+			orderMap[t.WorkID] = idx
+			groups = append(groups, WorkTransitionGroup{WorkID: t.WorkID})
+		}
+		groups[idx].Status = append(groups[idx].Status, t)
+	}
+
+	return groups
 }
 
 func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistory {

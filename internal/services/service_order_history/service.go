@@ -59,33 +59,12 @@ func hasInProgressTransition(items []domain.ServiceOrderHistory) bool {
 	return false
 }
 
-func attachWorkTransitions(items []domain.ServiceOrderHistory, transitions []domain.WorkServiceOrderHistory) {
-	grouped := groupByWorkID(transitions)
+func attachWorkTransitions(items []domain.ServiceOrderHistory, transitions domain.WorkServiceOrderHistoryList) {
+	workTransitionList := transitions.ToWorkTransitionGroup()
 	for i := range items {
 		if items[i].NewStatus == domain.SERVICE_ORDER_STATUS_IN_PROGRESS {
-			items[i].WorkTransitions = grouped
+			items[i].WorkTransitions = workTransitionList
 			break
 		}
 	}
-}
-
-func groupByWorkID(transitions []domain.WorkServiceOrderHistory) []domain.WorkTransitionGroup {
-	if len(transitions) == 0 {
-		return nil
-	}
-
-	orderMap := make(map[string]int, len(transitions))
-	groups := make([]domain.WorkTransitionGroup, 0, len(transitions))
-
-	for _, t := range transitions {
-		idx, exists := orderMap[t.WorkID]
-		if !exists {
-			idx = len(groups)
-			orderMap[t.WorkID] = idx
-			groups = append(groups, domain.WorkTransitionGroup{WorkID: t.WorkID})
-		}
-		groups[idx].Status = append(groups[idx].Status, t)
-	}
-
-	return groups
 }

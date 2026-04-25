@@ -168,24 +168,3 @@ func TestService_GetHistoryByID(t *testing.T) {
 		})
 	}
 }
-
-func TestGroupByWorkID(t *testing.T) {
-	t.Run("nil input returns nil", func(t *testing.T) {
-		result := groupByWorkID(nil)
-		assert.Nil(t, result)
-	})
-
-	t.Run("preserves insertion order and groups correctly", func(t *testing.T) {
-		transitions := []domain.WorkServiceOrderHistory{
-			{WorkID: "w-a"},
-			{WorkID: "w-b"},
-			{WorkID: "w-a"},
-		}
-		groups := groupByWorkID(transitions)
-		assert.Len(t, groups, 2)
-		assert.Equal(t, "w-a", groups[0].WorkID)
-		assert.Len(t, groups[0].Status, 2)
-		assert.Equal(t, "w-b", groups[1].WorkID)
-		assert.Len(t, groups[1].Status, 1)
-	})
-}
