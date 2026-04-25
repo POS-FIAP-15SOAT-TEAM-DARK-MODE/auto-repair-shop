@@ -1,4 +1,6 @@
 -- Drop all tables in reverse order of creation
+DROP TABLE IF EXISTS work_service_order_status_history CASCADE;
+
 DROP TABLE IF EXISTS service_order_status_history CASCADE;
 
 DROP TABLE IF EXISTS service_order_supply CASCADE;
@@ -36,6 +38,8 @@ DROP INDEX IF EXISTS idx_service_order_work_service_order_id;
 DROP INDEX IF EXISTS idx_service_order_supply_service_order_id;
 
 DROP INDEX IF EXISTS idx_status_history_service_order_id;
+
+DROP INDEX IF EXISTS idx_status_history_work_service_order_id;
 
 DROP INDEX IF EXISTS idx_user_role_user_id;
 
