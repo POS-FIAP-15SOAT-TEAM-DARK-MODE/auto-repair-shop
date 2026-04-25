@@ -46,7 +46,7 @@ func TestSetupRouter(t *testing.T) {
 	mockCustomer.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockCustomer.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
-	// Work (Service Order)
+	// Work
 	mockWork.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockWork.EXPECT().List(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockWork.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
@@ -60,12 +60,22 @@ func TestSetupRouter(t *testing.T) {
 
 	// Supply
 	mockSupply.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
+	mockSupply.EXPECT().List(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockSupply.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockSupply.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Service Order
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
-	mockSO.EXPECT().Get(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+
+	// Service Order Works
+	mockSO.EXPECT().GetWorks(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockSO.EXPECT().AddWork(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().DeleteWork(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+
+	// Service Order Supplies
+	mockSO.EXPECT().GetSupplies(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockSO.EXPECT().AddSupplies(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockSO.EXPECT().DeleteSupply(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Service Order History
 	mockSOHistory.EXPECT().GetHistoryByID(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
@@ -128,12 +138,24 @@ func TestSetupRouter(t *testing.T) {
 
 		// Supply
 		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated, ""},
+		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK, ""},
+		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
+		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK, ""},
+		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
+		{goHttp.MethodDelete, "/v1/supplies/:id", goHttp.StatusNoContent, ""},
 
 		// Service Order
 		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},
+
+		// Service Order Works
 		{goHttp.MethodGet, "/v1/service-order/:id/services", goHttp.StatusOK, ""},
 		{goHttp.MethodPost, "/v1/service-order/:id/services", goHttp.StatusNoContent, `{"services":["work-id-1"]}`},
 		{goHttp.MethodDelete, "/v1/service-order/:id/services/:serviceId", goHttp.StatusNoContent, ""},
+
+		// Service Order Supplies
+		{goHttp.MethodGet, "/v1/service-order/:id/supplies", goHttp.StatusOK, ""},
+		{goHttp.MethodPost, "/v1/service-order/:id/supplies", goHttp.StatusNoContent, `{"supplies":["supply-id-1"]}`},
+		{goHttp.MethodDelete, "/v1/service-order/:id/supplies/:serviceId", goHttp.StatusNoContent, ""},
 
 		// Service Order History
 		{goHttp.MethodGet, "/v1/service-order/:id/history", goHttp.StatusOK, ""},

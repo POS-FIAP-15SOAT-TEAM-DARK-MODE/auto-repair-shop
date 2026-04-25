@@ -2,6 +2,8 @@ package service_order
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -111,4 +113,66 @@ func (r *repository) RemoveWorkLink(ctx context.Context, serviceOrderID, workID 
 		return domain.ErrServiceOrderWorkNotFound
 	}
 	return nil
+}
+
+func (r *repository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := tx.QueryContext(ctx, listSuppliesByServiceOrderQuery, serviceOrderID)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var supplies []domain.Supply
+	for rows.Next() {
+		var sup domain.Supply
+		if err = rows.Scan(&sup.ID, &sup.Name, &sup.Description, &sup.UnitPrice, &sup.StockQuantity, &sup.Version); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		supplies = append(supplies, sup)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	return supplies, nil
+}
+
+func (r *repository) AddSupplyLink(ctx context.Context, serviceOrderID string, supplyID string, amount int, unitPrice decimal.Decimal) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, insertServiceOrderSuppliesQuery,
+		uuid.NewString(),
+		serviceOrderID,
+		supplyID,
+		amount,
+		unitPrice,
+	)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	return nil
+}
+
+func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string, supplyID string) (int, error) {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	var qty int
+	err = tx.QueryRowContext(ctx, deleteServiceOrderSuppliesQuery, serviceOrderID, supplyID).Scan(&qty)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, domain.ErrServiceOrderSupplyNotFound
+		}
+		return 0, pgPkg.Error(ctx, err)
+	}
+	return qty, nil
 }

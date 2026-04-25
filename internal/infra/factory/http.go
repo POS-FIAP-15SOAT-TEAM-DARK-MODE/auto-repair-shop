@@ -1,10 +1,12 @@
 package factory
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/seed"
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
@@ -42,6 +44,7 @@ import (
 func HTTPServer() server.Server {
 	middlewares := middlewaresContainer()
 	db := postgres.Connect()
+	seed.Run(context.Background(), db)
 	routes := httpContainer(db)
 	router := routing.SetupRouter(routes, middlewares)
 
@@ -118,13 +121,14 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 
 	repo := soRepo.Repository()
 	workRepository := workRepo.Repository()
+	supplyRepository := supplyRepo.Repository()
 	userRepository := userRepo.Repository()
 	customerRepository := customerRepo.Repository()
 	vehicleRepository := vehicleRepo.NewVehicleRepository()
 
 	vehicle := vehicleSvc.NewService(uow, vehicleRepository)
 	customer := customerSvc.Service(uow, userRepository, customerRepository)
-	svc := soSvc.Service(uow, repo, workRepository, customer, vehicle)
+	svc := soSvc.Service(uow, repo, workRepository, supplyRepository, customer, vehicle)
 
 	return soHandler.HttpHandler(svc)
 }

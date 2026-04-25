@@ -12,6 +12,7 @@ type svc struct {
 	uow             uow.Executor
 	repo            domain.ServiceOrderRepository
 	workRepo        domain.WorkRepository
+	supplyRepo      domain.SupplyRepository
 	customerService domain.CustomerService
 	vehicleService  domain.VehicleService
 }
@@ -20,9 +21,10 @@ func Service(
 	uow uow.Executor,
 	repo domain.ServiceOrderRepository,
 	workRepo domain.WorkRepository,
+	supplyRepo domain.SupplyRepository,
 	customerService domain.CustomerService,
 	vehicleService domain.VehicleService) *svc {
-	return &svc{uow, repo, workRepo, customerService, vehicleService}
+	return &svc{uow, repo, workRepo, supplyRepo, customerService, vehicleService}
 }
 
 func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (domain.ServiceOrder, error) {
@@ -131,5 +133,113 @@ func (s *svc) RemoveWork(ctx context.Context, serviceOrderID, workID string) err
 			return domain.ErrServiceOrderNotNew
 		}
 		return s.repo.RemoveWorkLink(ctx, serviceOrderID, workID)
+	})
+}
+
+func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return nil, domain.ErrInvalidServiceOrderId
+	}
+
+	var supplies []domain.Supply
+	err := s.uow.Execute(ctx, func(ctx context.Context) error {
+		ok, _, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return domain.ErrServiceOrderNotFound
+		}
+		supplies, err = s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return supplies, nil
+}
+
+func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies []domain.AddSupply) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+	if len(supplies) == 0 {
+		return domain.ErrEmptyServicesList
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		ok, status, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			return domain.ErrServiceOrderNotFound
+		}
+
+		if status != domain.SERVICE_ORDER_STATUS_NEW {
+			return domain.ErrServiceOrderNotNew
+		}
+
+		for _, sup := range supplies {
+			supplyId := strings.TrimSpace(sup.ID)
+			if supplyId == "" {
+				return domain.ErrInvalidSupplyID
+			}
+
+			if sup.Amount <= 0 {
+				return domain.ErrInvalidSupplyAmount
+			}
+
+			supply, err := s.supplyRepo.FindById(ctx, supplyId)
+			if err != nil {
+				return err
+			}
+
+			if supply.StockQuantity < sup.Amount {
+				return domain.ErrSupplyOutOfStock
+			}
+
+			if err = s.repo.AddSupplyLink(ctx, serviceOrderID, sup.ID, sup.Amount, supply.UnitPrice); err != nil {
+				return err
+			}
+
+			if err = s.supplyRepo.DecrementStock(ctx, supply.ID, sup.Amount); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	supplyID = strings.TrimSpace(supplyID)
+	if supplyID == "" {
+		return domain.ErrInvalidSupplyID
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		ok, status, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return domain.ErrServiceOrderNotFound
+		}
+		if status != domain.SERVICE_ORDER_STATUS_NEW {
+			return domain.ErrServiceOrderNotNew
+		}
+		qty, err := s.repo.RemoveSupplyLink(ctx, serviceOrderID, supplyID)
+		if err != nil {
+			return err
+		}
+		return s.supplyRepo.RestoreStock(ctx, supplyID, qty)
 	})
 }

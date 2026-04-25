@@ -10,22 +10,22 @@ import (
 	"go.uber.org/zap"
 )
 
+const idPathParamKey = "id"
+
 type handler struct {
-	service domain.SupplyService
+	svc domain.SupplyService
 }
 
-func HttpHandler(service domain.SupplyService) *handler {
-	return &handler{
-		service: service,
-	}
+func HttpHandler(svc domain.SupplyService) *handler {
+	return &handler{svc}
 }
 
 func (h *handler) Create(c *gin.Context) {
-	supplyRequest := c.Request.Context()
-	req, err := mapBodyToCreateSupplyRequest(c)
+	ctx := c.Request.Context()
+	req, err := mapBodyToRequestDTO(c)
 	if err != nil {
 		status, response := web.Error(err)
-		logger.Of(supplyRequest).Debug("Failed to bind supply creation payload",
+		logger.Of(ctx).Debug("Failed to bind supply creation payload",
 			zap.String("operation", "create_supply"),
 			zap.Error(err),
 			zap.String("entity", "supply"),
@@ -34,11 +34,12 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	supply := mapSupplyRequestDTOToDomain(req)
-	if err := h.service.Create(supplyRequest, supply); err != nil {
+	body := req.MapToDomain()
+	logger.Of(ctx).Debug("create request", zap.Any("service", body))
+	if err = h.svc.Create(ctx, body); err != nil {
 		status, response := web.Error(err)
-		logger.Of(supplyRequest).Error(err)
-		logger.Of(supplyRequest).Debug("Supply creation failed in service layer",
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("Supply creation failed in service layer",
 			zap.String("operation", "create_supply"),
 			zap.Error(err),
 			zap.String("entity", "supply"),
@@ -47,6 +48,109 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	logger.Of(supplyRequest).Debug("create response", zap.Any("service", supply))
-	c.JSON(http.StatusCreated, mapSupplyToResponseDTO(supply))
+	logger.Of(ctx).Debug("create response", zap.Any("service", body))
+	c.JSON(http.StatusCreated, mapSupplyToResponseDTO(body))
+}
+
+func (h *handler) Update(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param(idPathParamKey)
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidSupplyID)
+		logger.Of(ctx).Debug("Supply invalid supply id",
+			zap.String("operation", "update_supply"),
+			zap.Error(domain.ErrInvalidSupplyID),
+			zap.String("entity", "supply"),
+			zap.String("entity.id", id),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	dto, err := mapBodyToRequestDTO(c)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("Failed to bind supply update payload",
+			zap.String("operation", "update_supply"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	body := dto.MapToDomain()
+	body.ID = id
+	logger.Of(ctx).Debug("update request", zap.Any("service", body))
+	if err = h.svc.Update(ctx, body); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("Supply update failed in service layer",
+			zap.String("operation", "update_supply"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	logger.Of(ctx).Debug("update response", zap.Any("service", body))
+	c.JSON(http.StatusOK, mapSupplyToResponseDTO(body))
+
+}
+
+func (h *handler) List(c *gin.Context) {
+	params := mapListParamsToDomain(c)
+	ctx := c.Request.Context()
+
+	logger.Of(ctx).Debug("list request", zap.Any("params", params))
+	response, err := h.svc.List(ctx, params)
+	if err != nil {
+		status, errResp := web.Error(err)
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("Failed to list supplies in service layer",
+			zap.String("operation", "list_supplies"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, errResp)
+		return
+	}
+
+	logger.Of(ctx).Debug("list response", zap.Any("service", response))
+	c.JSON(http.StatusOK, mapListResponseDTOFromDomain(response))
+
+}
+
+func (h *handler) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id := c.Param(idPathParamKey)
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidSupplyId)
+		logger.Of(ctx).Debug("Supply invalid supply id",
+			zap.String("operation", "delete_supply"),
+			zap.Error(domain.ErrInvalidSupplyId),
+			zap.String("entity", "supply"),
+			zap.String("entity.id", id),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	logger.Of(ctx).Debug("delete request", zap.Any(idPathParamKey, id))
+	if err := h.svc.Delete(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("Supply deletion failed in service layer",
+			zap.String("operation", "delete_supply"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	logger.Of(ctx).Debug("deletion ok")
+	c.Status(http.StatusNoContent)
 }

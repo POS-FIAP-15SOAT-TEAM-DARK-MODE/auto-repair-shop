@@ -45,13 +45,20 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.GET("/vehicles/:customerId", middleware.Auth(role.AttendantRoles...), c.VehicleHandler.FindByCustomer)
 
 	v1.POST("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Create)
+	v1.GET("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.List)
+	v1.PUT("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Update)
+	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Delete)
 
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
 	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
 
-	v1.GET("/service-order/:id/services", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Get)
+	v1.GET("/service-order/:id/services", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.GetWorks)
 	v1.POST("/service-order/:id/services", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.AddWork)
 	v1.DELETE("/service-order/:id/services/:serviceId", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.DeleteWork)
+
+	v1.GET("/service-order/:id/supplies", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.GetSupplies)
+	v1.POST("/service-order/:id/supplies", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.AddSupplies)
+	v1.DELETE("/service-order/:id/supplies/:supplyId", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.DeleteSupply)
 
 	return router
 }

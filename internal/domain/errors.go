@@ -48,11 +48,12 @@ var (
 
 // Service order errors
 var (
-	ErrInvalidServiceOrderId    = errors.New("invalid service order id")
-	ErrServiceOrderNotFound     = errors.New("service order not found")
-	ErrServiceOrderNotNew       = errors.New("service order isn't at NEW state")
-	ErrServiceOrderWorkNotFound = errors.New("work is not linked to this service order")
-	ErrEmptyServicesList        = errors.New("services list cannot be empty")
+	ErrInvalidServiceOrderId      = errors.New("invalid service order id")
+	ErrServiceOrderNotFound       = errors.New("service order not found")
+	ErrServiceOrderNotNew         = errors.New("service order isn't at NEW state")
+	ErrServiceOrderWorkNotFound   = errors.New("work is not linked to this service order")
+	ErrServiceOrderSupplyNotFound = errors.New("supply is not linked to this service order")
+	ErrEmptyServicesList          = errors.New("services list cannot be empty")
 )
 
 // Customer errors
@@ -66,7 +67,7 @@ var (
 	ErrCNPJLength               = errors.New("CNPJ must have 14 characters")
 	ErrCustomerNotFound         = errors.New("customer not found")
 	ErrCustomerHasServiceOrders = errors.New("customer has associated service orders")
-	ErrInvalidDocumentFormat    = ValidationError{Message: "document must be a valid CPF (11 digits) or CNPJ (14 characters)"}
+	ErrInvalidDocumentFormat    = errors.New("document must be a valid CPF (11 digits) or CNPJ (14 characters)")
 	ErrInvalidCustomerId        = errors.New("invalid customer id")
 )
 
@@ -83,11 +84,16 @@ var (
 
 // Supply errors
 var (
+	ErrInvalidSupplyID            = errors.New("invalid supply id")
 	ErrInvalidSupplyName          = errors.New("supply name must be at least 3 characters long")
 	ErrInvalidSupplyDescription   = errors.New("supply description must be at least 10 characters long")
 	ErrInvalidSupplyUnitPrice     = errors.New("supply unit price must be greater than 0")
 	ErrInvalidSupplyStockQuantity = errors.New("supply stock quantity must be greater than or equal to 0")
 	ErrInvalidSupplyVersion       = errors.New("supply version must be greater than or equal to 0")
+	ErrInvalidSupplyAmount        = errors.New("supply amount must be greater than 0")
+	ErrInvalidSupplyId            = errors.New("invalid supply id")
+	ErrSupplyNotFound             = errors.New("supply not found")
+	ErrSupplyOutOfStock           = errors.New("supply out of stock or requested quantity exceeds available stock")
 )
 
 // Service Order errors

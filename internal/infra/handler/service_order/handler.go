@@ -15,6 +15,7 @@ import (
 const (
 	serviceOrderIDParam = "id"
 	workIDPathParam     = "serviceId"
+	supplyIDPathParam   = "supplyId"
 )
 
 type handler struct {
@@ -58,7 +59,7 @@ func (h *handler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, mapResponseDTOFromDomain(res))
 }
 
-func (h *handler) Get(c *gin.Context) {
+func (h *handler) GetWorks(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
 	if id == "" {
@@ -137,6 +138,96 @@ func (h *handler) DeleteWork(c *gin.Context) {
 		status, response := web.Error(err)
 		logger.Of(ctx).Debug("remove work from service order failed",
 			zap.String("operation", "remove_work_from_service_order"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (h *handler) GetSupplies(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+
+	supplies, err := h.svc.ListSupplies(ctx, id)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("list service order supplies failed",
+			zap.String("operation", "list_service_order_supplies"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.JSON(http.StatusOK, mapSuppliesListToResponse(supplies))
+}
+
+func (h *handler) AddSupplies(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+
+	dto, err := mapAddSuppliesBody(c)
+	if err != nil {
+		err = json.CheckJsonError(err)
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("Failed to bind add supplies payload",
+			zap.String("operation", "add_supplies_to_service_order"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	if err := h.svc.AddSupplies(ctx, id, dto); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("add supplies to service order failed",
+			zap.String("operation", "add_supplies_to_service_order"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (h *handler) DeleteSupply(c *gin.Context) {
+	soID := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if soID == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+
+	ctx := c.Request.Context()
+	supplyID := strings.TrimSpace(c.Param(supplyIDPathParam))
+	if supplyID == "" {
+		status, response := web.Error(domain.ErrInvalidSupplyID)
+		c.JSON(status, response)
+		return
+	}
+
+	if err := h.svc.RemoveSupply(ctx, soID, supplyID); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("remove supply from service order failed",
+			zap.String("operation", "remove_supply_from_service_order"),
 			zap.Error(err),
 			zap.String("entity", "service_order"),
 		)
