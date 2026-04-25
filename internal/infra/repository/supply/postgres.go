@@ -133,6 +133,19 @@ func (r *repo) FindById(ctx context.Context, id string) (domain.Supply, error) {
 
 	return sup, nil
 }
+func (r *repo) Delete(ctx context.Context, id string) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	logger.Of(ctx).Debug("Executing query", zap.String("query", deleteQuery), zap.Any("params", id))
+	if _, err = tx.ExecContext(ctx, deleteQuery, id); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
 
 func (r *repo) DecrementStock(ctx context.Context, id string, amount int) error {
 	tx, err := postgres.GetTransaction(ctx)

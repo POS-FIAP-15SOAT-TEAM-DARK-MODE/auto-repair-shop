@@ -20,6 +20,8 @@ const (
 	FROM "supply" s
 	WHERE s.id = $1
 	`
+	deleteQuery = `DELETE FROM "supply" s where s.id = $1`
+
 	// decrementStockQuery atomically decrements stock only when enough quantity is available,
 	// preventing race conditions without a separate SELECT FOR UPDATE.
 	decrementStockQuery = `

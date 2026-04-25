@@ -47,6 +47,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.POST("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Create)
 	v1.GET("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.List)
 	v1.PUT("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Update)
+	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Delete)
 
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
 	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
