@@ -109,10 +109,10 @@ func TestPostgresRepository_SearchWorkTransitions(t *testing.T) {
 			name:      "success returns all rows for the service order",
 			serviceID: "so-1",
 			mockSetup: func() {
-				rows := sqlmock.NewRows([]string{"id", "work_id", "service_order_id", "previous_status", "new_status", "created_at"}).
-					AddRow("wsh-1", "w-1", "so-1", domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now()).
-					AddRow("wsh-2", "w-2", "so-1", domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now())
-				testMock.ExpectQuery(`SELECT wsosh.id, wsosh.work_id, wsosh.service_order_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
+				rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"}).
+					AddRow("w-1", domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now()).
+					AddRow("w-2", domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now())
+				testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
 					WithArgs("so-1").
 					WillReturnRows(rows)
 			},
@@ -123,7 +123,7 @@ func TestPostgresRepository_SearchWorkTransitions(t *testing.T) {
 			name:      "query error",
 			serviceID: "so-1",
 			mockSetup: func() {
-				testMock.ExpectQuery(`SELECT wsosh.id, wsosh.work_id, wsosh.service_order_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
+				testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
 					WillReturnError(errors.New("query failed"))
 			},
 			expectError: true,

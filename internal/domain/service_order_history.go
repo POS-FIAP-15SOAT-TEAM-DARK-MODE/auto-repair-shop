@@ -23,9 +23,7 @@ type (
 	}
 
 	WorkServiceOrderHistory struct {
-		ID             string
 		WorkID         string
-		ServiceOrderID string
 		PreviousStatus SERVICE_ORDER_STATUS
 		NewStatus      SERVICE_ORDER_STATUS
 		CreatedAt      time.Time

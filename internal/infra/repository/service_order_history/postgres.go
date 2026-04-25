@@ -100,9 +100,7 @@ func (r *repository) SearchWorkTransitions(ctx context.Context, serviceOrderID s
 		)
 
 		if err = rows.Scan(
-			&transition.ID,
 			&transition.WorkID,
-			&transition.ServiceOrderID,
 			&previousStatus,
 			&transition.NewStatus,
 			&transition.CreatedAt,

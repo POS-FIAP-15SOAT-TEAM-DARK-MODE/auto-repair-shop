@@ -29,17 +29,13 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 				WorkID: "work-1",
 				Status: []domain.WorkServiceOrderHistory{
 					{
-						ID:             "work-tx-1",
 						WorkID:         "work-1",
-						ServiceOrderID: "so-1",
 						PreviousStatus: "",
 						NewStatus:      domain.SERVICE_ORDER_STATUS_NEW,
 						CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
 					},
 					{
-						ID:             "work-tx-2",
 						WorkID:         "work-1",
-						ServiceOrderID: "so-1",
 						PreviousStatus: domain.SERVICE_ORDER_STATUS_NEW,
 						NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 						CreatedAt:      time.Date(2026, 4, 5, 13, 0, 0, 0, time.UTC),
