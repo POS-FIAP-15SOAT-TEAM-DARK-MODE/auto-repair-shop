@@ -19,10 +19,18 @@ const (
 	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
 	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
 	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
+	SERVICE_ORDER_STATUS_CANCELLED         SERVICE_ORDER_STATUS = "CANCELLED"
 )
 
 func (s SERVICE_ORDER_STATUS) String() string {
 	return string(s)
+}
+
+func (s SERVICE_ORDER_STATUS) IsCancelable() bool {
+	return s != SERVICE_ORDER_STATUS_REJECTED &&
+		s != SERVICE_ORDER_STATUS_COMPLETED &&
+		s != SERVICE_ORDER_STATUS_DELIVERED &&
+		s != SERVICE_ORDER_STATUS_CANCELLED
 }
 
 func StringToServiceOrderStatus(val string) SERVICE_ORDER_STATUS {
@@ -87,6 +95,7 @@ type (
 		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
 		Accept(ctx context.Context, serviceOrderID, userID string) error
 		Reject(ctx context.Context, serviceOrderID, userID string) error
+		Cancel(ctx context.Context, serviceOrderID string) error
 	}
 
 	ServiceOrderRepository interface {

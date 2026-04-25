@@ -144,6 +144,7 @@ func isConflictError(err error) bool {
 		errors.Is(err, domain.ErrCustomerHasServiceOrders) ||
 		errors.Is(err, domain.ErrServiceOrderNotNew) ||
 		errors.Is(err, domain.ErrServiceOrderNotInDiagnosis) ||
+		errors.Is(err, domain.ErrServiceOrderNotCancelable) ||
 		errors.Is(err, domain.ErrServiceOrderNotAwaitingApproval)
 }
 
@@ -152,7 +153,6 @@ func isUnprocessableEntityError(err error) bool {
 		errors.Is(err, domain.ErrWorkPriceLessThenOrEqualZero) ||
 		errors.Is(err, domain.ErrInvalidWorkPriceValue) ||
 		errors.Is(err, domain.ErrInvalidWorkStatusValue) ||
-		errors.Is(err, domain.ErrServiceOrderNotNew) ||
 		errors.Is(err, domain.ErrSupplyOutOfStock)
 }
 
