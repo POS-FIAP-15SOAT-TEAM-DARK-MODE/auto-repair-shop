@@ -142,6 +142,7 @@ func TestSetupRouter(t *testing.T) {
 		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
 		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK, ""},
 		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
+		{goHttp.MethodDelete, "/v1/supplies/:id", goHttp.StatusNoContent, ""},
 
 		// Service Order
 		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},

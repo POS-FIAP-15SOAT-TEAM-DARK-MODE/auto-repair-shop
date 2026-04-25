@@ -74,7 +74,7 @@ func TestSave_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`INSERT INTO "supply"`).
-		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity, supply.Version).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -97,7 +97,7 @@ func TestSave_ExecError(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`INSERT INTO "supply"`).
-		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity, supply.Version).
 		WillReturnError(errors.New("connection reset"))
 	mock.ExpectRollback()
 
@@ -126,7 +126,7 @@ func TestSave_ZeroValueSupply(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`INSERT INTO "supply"`).
-		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity, supply.Version).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -153,7 +153,7 @@ func TestCreate_Success(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`INSERT INTO "supply"`).
-		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity, supply.Version).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -176,7 +176,7 @@ func TestCreate_ExecError(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`INSERT INTO "supply"`).
-		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity, supply.Version).
 		WillReturnError(errors.New("unique violation"))
 	mock.ExpectRollback()
 

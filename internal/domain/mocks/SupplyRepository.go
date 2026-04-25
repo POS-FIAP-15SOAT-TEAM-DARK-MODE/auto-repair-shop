@@ -126,6 +126,63 @@ func (_c *SupplyRepository_Delete_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
+// FindById provides a mock function with given fields: _a0, _a1
+func (_m *SupplyRepository) FindById(_a0 context.Context, _a1 string) (domain.Supply, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindById")
+	}
+
+	var r0 domain.Supply
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Supply, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Supply); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Get(0).(domain.Supply)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SupplyRepository_FindById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindById'
+type SupplyRepository_FindById_Call struct {
+	*mock.Call
+}
+
+// FindById is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *SupplyRepository_Expecter) FindById(_a0 interface{}, _a1 interface{}) *SupplyRepository_FindById_Call {
+	return &SupplyRepository_FindById_Call{Call: _e.mock.On("FindById", _a0, _a1)}
+}
+
+func (_c *SupplyRepository_FindById_Call) Run(run func(_a0 context.Context, _a1 string)) *SupplyRepository_FindById_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_FindById_Call) Return(_a0 domain.Supply, _a1 error) *SupplyRepository_FindById_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SupplyRepository_FindById_Call) RunAndReturn(run func(context.Context, string) (domain.Supply, error)) *SupplyRepository_FindById_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Save provides a mock function with given fields: _a0, _a1
 func (_m *SupplyRepository) Save(_a0 context.Context, _a1 *domain.Supply) error {
 	ret := _m.Called(_a0, _a1)
