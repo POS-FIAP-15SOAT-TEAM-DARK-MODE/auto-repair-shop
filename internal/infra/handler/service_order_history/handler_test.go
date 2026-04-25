@@ -19,11 +19,27 @@ import (
 func TestGetHistoryByID_Handler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	expHistory := domain.ServiceOrderHistory{
-		ID:             "history-id-1",
-		PreviousStatus: domain.SERVICE_ORDER_STATUS_RECEIVED,
-		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS,
+	inProgressHistory := domain.ServiceOrderHistoryItem{
+		PreviousStatus: domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL,
+		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
+		WorkTransitions: []domain.WorkTransitionGroup{
+			{
+				WorkID: "work-1",
+				Status: []domain.WorkStatusItem{
+					{
+						PreviousStatus: "",
+						NewStatus:      domain.SERVICE_ORDER_STATUS_NEW,
+						CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
+					},
+					{
+						PreviousStatus: domain.SERVICE_ORDER_STATUS_NEW,
+						NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
+						CreatedAt:      time.Date(2026, 4, 5, 13, 0, 0, 0, time.UTC),
+					},
+				},
+			},
+		},
 	}
 
 	tests := []struct {
@@ -55,17 +71,11 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 			expectedErr:  domain.ErrDataConflict.Error(),
 		},
 		{
-			name: "success",
+			name: "success with work transitions grouped under IN_PROGRESS",
 			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
 				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.SearchServiceOrderHistoryParams) bool {
 					return p != nil && p.ID == "so-1"
-				})).Return(&domain.PaginatorResponse[domain.ServiceOrderHistory]{
-					Items:      []domain.ServiceOrderHistory{expHistory},
-					TotalItems: 1,
-					TotalPages: 1,
-					PageSize:   10,
-					Page:       1,
-				}, nil)
+				})).Return([]domain.ServiceOrderHistoryItem{inProgressHistory}, nil)
 			},
 			route:        "/v1/service-order/so-1/history",
 			expectedCode: http.StatusOK,
@@ -91,21 +101,44 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 
 			assert.Equal(t, tt.expectedCode, rec.Code)
 
-			var resp map[string]any
-			if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-				t.Fatalf("failed to unmarshal response: %v", err)
-			}
-
 			if tt.expectedLen > 0 {
-				items, ok := resp["items"].([]interface{})
-				if !ok {
-					t.Fatalf("expected items array in response")
+				var items []map[string]any
+				if err := json.Unmarshal(rec.Body.Bytes(), &items); err != nil {
+					t.Fatalf("expected JSON array response: %v", err)
 				}
 				assert.Len(t, items, tt.expectedLen)
+
+				first := items[0]
+				workTransitions, ok := first["workTransitions"].([]interface{})
+				if !ok {
+					t.Fatalf("expected workTransitions array, got: %T", first["workTransitions"])
+				}
+				assert.Len(t, workTransitions, 1)
+
+				group, ok := workTransitions[0].(map[string]interface{})
+				if !ok {
+					t.Fatalf("expected workTransitions[0] to be an object")
+				}
+				assert.Equal(t, "work-1", group["workId"])
+
+				statuses, ok := group["status"].([]interface{})
+				if !ok {
+					t.Fatalf("expected status array, got: %T", group["status"])
+				}
+				assert.Len(t, statuses, 2)
+
+				s0, _ := statuses[0].(map[string]interface{})
+				assert.Equal(t, "NEW", s0["newStatus"])
+
+				s1, _ := statuses[1].(map[string]interface{})
+				assert.Equal(t, "IN_PROGRESS", s1["newStatus"])
 			}
 
 			if tt.expectedErr != "" {
-				// errors may be in "errors" array or "error" string depending on status code
+				var resp map[string]any
+				if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+					t.Fatalf("failed to unmarshal error response: %v", err)
+				}
 				if errs, ok := resp["errors"].([]interface{}); ok && len(errs) > 0 {
 					assert.Contains(t, errs[0], tt.expectedErr)
 				} else if errStr, ok := resp["error"].(string); ok {
