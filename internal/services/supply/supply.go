@@ -21,6 +21,9 @@ func Service(uow uow.Executor, repo domain.SupplyRepository) domain.SupplyServic
 }
 
 func (s *service) Create(ctx context.Context, supply *domain.Supply) error {
+	if err := supply.Validate(); err != nil {
+		return fmt.Errorf("supply validation failed: %w", err)
+	}
 	if err := s.uow.Execute(ctx, s.saveRepositoryStep(supply)); err != nil {
 		logger.Of(ctx).Error(err)
 		return err
@@ -29,6 +32,9 @@ func (s *service) Create(ctx context.Context, supply *domain.Supply) error {
 }
 
 func (s *service) Update(ctx context.Context, supply *domain.Supply) error {
+	if err := supply.Validate(); err != nil {
+		return fmt.Errorf("supply validation failed: %w", err)
+	}
 	if err := s.uow.Execute(ctx, s.saveRepositoryStep(supply)); err != nil {
 		logger.Of(ctx).Error(err)
 		return err
@@ -38,12 +44,6 @@ func (s *service) Update(ctx context.Context, supply *domain.Supply) error {
 
 func (s *service) saveRepositoryStep(supply *domain.Supply) func(context.Context) error {
 	return func(ctx context.Context) error {
-		if err := supply.Validate(); err != nil {
-			err = fmt.Errorf("supply validation failed: %w", err)
-			logger.Of(ctx).Error(err)
-			return err
-		}
-
 		if err := s.repo.Save(ctx, supply); err != nil {
 			return fmt.Errorf("repository.Save failed: %w", err)
 		}

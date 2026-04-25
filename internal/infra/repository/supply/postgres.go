@@ -146,3 +146,36 @@ func (r *repo) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
+
+func (r *repo) DecrementStock(ctx context.Context, id string, amount int) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	res, err := tx.ExecContext(ctx, decrementStockQuery, id, amount)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	if n == 0 {
+		return domain.ErrSupplyOutOfStock
+	}
+	return nil
+}
+
+func (r *repo) RestoreStock(ctx context.Context, id string, amount int) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, restoreStockQuery, id, amount)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	return nil
+}

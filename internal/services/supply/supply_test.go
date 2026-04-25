@@ -68,16 +68,14 @@ func TestService_Create_ValidationError(t *testing.T) {
 		Name: "", // invalid
 	}
 
-	expectedErr := errors.New("validation error")
-	exec.EXPECT().Execute(ctx, mock.Anything).Return(expectedErr)
 	appService := Service(exec, repo)
 
 	err := appService.Create(ctx, supply)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error")
+	assert.Contains(t, err.Error(), "supply validation failed")
 
-	assert.Error(t, errors.New("validation error"), err.Error())
-
+	exec.AssertNotCalled(t, "Execute", mock.Anything, mock.Anything)
+	repo.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
 }
 
 func TestService_Create_UnitOfWorkError(t *testing.T) {
@@ -429,15 +427,15 @@ func TestService_Update_ValidationError(t *testing.T) {
 
 	supply := &domain.Supply{Name: ""} // invalid
 
-	expectedErr := errors.New("validation error")
-	exec.EXPECT().Execute(ctx, mock.Anything).Return(expectedErr)
-
 	appService := Service(exec, repo)
 
 	err := appService.Update(ctx, supply)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "validation error")
+	assert.Contains(t, err.Error(), "supply validation failed")
+
+	exec.AssertNotCalled(t, "Execute", mock.Anything, mock.Anything)
+	repo.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
 }
 
 func TestService_Update_UnitOfWorkError(t *testing.T) {

@@ -5,16 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Integrated Auto Repair Shop System — Claude Code Rules
 
 ## Project Overview
-Monolithic layered backend for an auto repair shop. Manages service orders, customers, vehicles, parts/stock, and administrative operations. Database: PostgreSQL. Auth: JWT. API: RESTful + Swagger.
+Monolithic layered backend for an auto repair shop. Manages service orders, customers, vehicles, works (billable services), supplies (parts/stock), and administrative operations. Database: PostgreSQL. Auth: JWT. API: RESTful + Swagger.
 
-**Tech stack:** Go 1.26 · Gin · PostgreSQL 15 · `lib/pq` (raw SQL) · `golang-migrate` · JWT (`golang-jwt/jwt/v5`) · Zap logger · Testify · Mockery v2 · `shopspring/decimal` (monetary values)
+**Tech stack:** Go 1.26 · Gin · PostgreSQL 15 · `lib/pq` (raw SQL) · `golang-migrate` · JWT (`golang-jwt/jwt/v5`) · Zap logger · Testify · Mockery v2 · `shopspring/decimal` (monetary values) · `google/uuid` (most IDs) · `oklog/ulid/v2` (ServiceOrder, ServiceOrderHistory IDs)
 
 ## Development Commands
 
 ```bash
 make run              # go run cmd/service/main.go (port 8080)
 make test             # run all tests with race detector (LOG_LEVEL=PANIC suppresses noise)
-make coverage         # generate coverage.out; open with: go tool cover -html=coverage.out
+make coverage         # generate coverage.out and open HTML report
 make docker-up        # docker-compose up --build (app + PostgreSQL)
 make docker-down      # docker-compose down
 make mockgen          # regenerate all mocks via go generate ./...
@@ -30,7 +30,7 @@ go test ./internal/domain/... -run TestCustomer_Validate -v
 go test ./internal/services/customer/... -v --race
 ```
 
-Swagger UI is available at `http://localhost:8080/swagger/index.html` when the app is running.
+Swagger UI: `http://localhost:8080/swagger/index.html` (when running).
 
 ## Code Architecture
 
@@ -42,124 +42,153 @@ HTTP → Handler (infra/handler/*) → Service (internal/services/*) → Reposit
                               Domain (internal/domain/*)
 ```
 
-- **`internal/domain/`** — Framework-free structs with validation methods and interfaces (`CustomerService`, `CustomerRepository`, etc.). Mocks are generated here (`domain/mocks/`).
-- **`internal/services/`** — All business logic, status transitions, budget calculation, stock checks. Services receive repository interfaces and use the Unit of Work pattern (`internal/pkg/uow/`) for transactions.
-- **`internal/infra/repository/`** — All raw SQL queries via `lib/pq`. Repositories implement domain interfaces. Use `SELECT FOR UPDATE` for pessimistic locking on stock.
-- **`internal/infra/handler/`** — Gin handlers that parse/validate input and call services. Zero business logic here.
-- **`internal/infra/container/` + `infra/factory/`** — Dependency injection wiring; handlers get services, services get repositories.
-- **`internal/pkg/`** — Shared utilities: `auth/` (JWT), `uow/` (unit of work/transactions), `logger/` (Zap), `env/` (env vars), `web/` (HTTP response helpers), `json/` (validation).
-- **`migrations/`** — Versioned SQL migration files (`NNNNNN_description.up.sql` / `.down.sql`). All schema changes must go through new migration files.
-- **`cmd/service/main.go`** — Entrypoint: loads env, initialises logger, wires container, starts Gin router.
+- **`internal/domain/`** — Framework-free structs, validation methods, and service/repository interfaces. Mocks generated to `domain/mocks/` via `//go:generate` directives.
+- **`internal/services/`** — All business logic, status transitions, stock checks. Services receive `uow.Executor` and repository interfaces via constructor.
+- **`internal/infra/repository/`** — All raw SQL queries via `lib/pq`. Repositories are stateless (`type repo struct{}`); they extract the DB connection from `context` (see below). Every domain has both `postgres.go` and `in_memory.go` implementations.
+- **`internal/infra/handler/`** — Gin handlers: parse/validate input, call service, return response. Zero business logic.
+- **`internal/infra/http/`** — `HandlersWrapper` struct and `Middlewares` map used by the router.
+- **`internal/infra/factory/http.go`** — Single wiring file: creates DB, repositories, services, and handlers; passes them into `HandlersWrapper`. This is the DI root.
+- **`internal/infra/db/postgres/`** — PostgreSQL client, transactional UoW, and context helpers.
+- **`internal/infra/db/seed/`** — Seeds initial data on every startup.
+- **`internal/pkg/`** — Shared utilities: `auth/` (JWT), `uow/` (Unit of Work interface), `logger/` (Zap), `env/` (env vars), `web/` (HTTP response helpers), `db/` (QueryBuilder for dynamic SQL).
+- **`migrations/`** — Versioned SQL files (`NNNNNN_description.up.sql` / `.down.sql`). All schema changes go through new migration files.
+- **`cmd/service/main.go`** — Entrypoint: calls `factory.HTTPServer()`, wraps in lifecycle manager, starts.
+
+### Repository DB Connection Pattern
+
+Repositories do **not** hold a `*sql.DB`. The connection is injected via context by the UoW:
+
+- **Mutating operations** (inside a transaction): call `postgres.GetTransaction(ctx)` → returns the `*sql.Tx` stored in context by the UoW `OnStart` hook.
+- **Read-only operations** (outside a transaction): call `postgres.GetOneTimeTransaction(ctx)` → opens a fresh `*sql.DB` connection directly.
+
+Services wrap all repository calls in `uow.Execute(ctx, steps...)`. The UoW begins a transaction, injects it into context, runs all steps, then commits or rolls back.
+
+### Dynamic SQL
+
+Use `db.QueryBuilder(baseQuery)` from `internal/pkg/db/` for queries with optional filters. Call `.Add("column =", value)`, `.OrderBy(field, db.ASC)`, `.AddPagination(limit, offset)`, then `.Build()` to get the final query string and args slice.
 
 ## Domain Language (Ubiquitous Language)
-- **Service Order (SO)** — service order, the central aggregate
-- **Customer** — customer, identified by CPF (individual) or CNPJ (company)
-- **Vehicle** — vehicle (license plate, brand, model, year), always linked to a Customer
-- **Service** — a billable service offered by the shop (name, description, unit price)
-- **Part (Peca)** — part or supply with stock quantity and unit price
-- **Budget** — budget, auto-calculated from services and parts on a service order
-- **Stock** — stock/inventory of Parts
-- **User** — system user account; holds name, email, password hash, and roles
-- **Customer** — customer-specific data (CPF/CNPJ, company name, phone), linked 1:1 to a User
+
+| Code name | Business concept |
+|---|---|
+| `Work` | Billable service offered by the shop (name, description, unit price, ACTIVE/INACTIVE) |
+| `Supply` | Part/supply with stock quantity, unit price, and optimistic-lock `Version` |
+| `ServiceOrder` | Central aggregate; links Customer + Vehicle + []Work + []Supply |
+| `ServiceOrderHistory` | Immutable record of every status transition on a ServiceOrder |
+| `Customer` | Identified by CPF (individual) or CNPJ (company); linked 1:1 to a User |
+| `User` | System account: name, email, bcrypt-hashed password, roles |
+| `Vehicle` | License plate + brand/model/year, always linked to a Customer |
+
+Roles: `ADMIN`, `ATTENDANT`, `MECHANIC`, `CUSTOMER` (role constants live in `internal/domain/roles.go`).
 
 ## Service Order Status Lifecycle
-Statuses must only advance in this exact order — never skip, never go back:
+
 ```
-RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
+NEW → (works and supplies added here) → ... (future transitions TBD)
 ```
-- `REJECTED` is a terminal state reached when the customer rejects the budget (from `AWAITING_APPROVAL`)
-- Any attempt to transition out of order must throw a domain error (HTTP 422)
+
+Currently the only enforced lifecycle rule is that `AddWorks`, `RemoveWork`, `AddSupplies`, and `RemoveSupply` all require the service order to be in `NEW` status, returning `ErrServiceOrderNotNew` otherwise.
+
+Full status constants: `NEW`, `RECEIVED`, `IN_DIAGNOSIS`, `AWAITING_APPROVAL`, `IN_PROGRESS`, `COMPLETED`, `DELIVERED`. `REJECTED` is the terminal state for customer-rejected budgets (from `AWAITING_APPROVAL`).
+
+## Stock Decrement Pattern
+
+Stock is decremented **atomically** with a conditional UPDATE:
+```sql
+UPDATE supply SET stock_quantity = stock_quantity - $amount, updated_at = NOW()
+WHERE id = $id AND stock_quantity >= $amount
+```
+If `RowsAffected == 0`, the repository returns `ErrSupplyOutOfStock`. There is no `SELECT FOR UPDATE`; the conditional UPDATE itself prevents overselling. Stock is restored on `RemoveSupply` via a matching `RestoreStock` call, all within the same transaction.
 
 ## Architecture Rules
-- **Controller layer**: parse and validate HTTP input, call service, return response — zero business logic
-- **Service layer**: all business logic, status transitions, budget calculation, stock checks
-- **Repository layer**: all database queries — no raw SQL outside repositories
-- **Domain models**: framework-free plain objects/classes
+
+- **Handler layer**: parse and validate HTTP input, call service, return response — zero business logic.
+- **Service layer**: all business logic, status enforcement, stock checks.
+- **Repository layer**: all SQL — no queries outside repositories.
+- **Domain models**: framework-free; validation logic lives on the struct methods.
 
 ## Critical Business Rules to Always Enforce
 
 ### User & Customer Split
-- When creating a Customer, automatically create a linked User with role `CLIENT`
-- The User entity stores: name, email, password hash, roles
-- The Customer entity stores: CPF/CNPJ, company name, phone, and a FK to User
-- Default password for the auto-created user = CPF (individual) or CNPJ (company), hashed with bcrypt
-- Deleting a Customer must also delete or deactivate the associated User
+- Creating a Customer automatically creates a linked User with role `CUSTOMER`.
+- The User stores: name, email, password hash, roles.
+- The Customer stores: CPF/CNPJ, company name, phone, FK to User.
+- Default password = CPF (individual) or CNPJ (company), bcrypt-hashed (min cost 12).
+- Deleting a Customer must also delete/deactivate the associated User.
 
 ### RBAC — Role-Based Access Control
-Four roles exist: `ADMIN`, `ATTENDANT`, `MECHANIC`, `CLIENT`
-- A user may hold multiple roles simultaneously (many-to-many via `USER_ROLE` table), **except** `ADMIN`, which is exclusive and cannot be combined with other roles
-- **ADMIN**: unrestricted access to all admin endpoints, including user management and role assignment
-- **ATTENDANT**: access to customers, vehicles, service orders, budgets, and reports — no user management
-- **MECHANIC**: read-only service order queries, adding services/parts to service orders, status transitions only
-- **CLIENT**: access only to own service order status tracking and own budget approve/reject, authenticated by email + password, filtered by `customerId` embedded in JWT
-- Only `ADMIN` can create other `ADMIN` users
-- Only `ADMIN` can change any user's roles
-- Out-of-scope access attempts must return HTTP 403
-
-### Stock
-- Decrement stock inside a DB transaction when adding a Part (Peca) to a service order (OS)
-- Check `quantity > 0` before decrementing; throw `OUT_OF_STOCK` domain error if zero
-- Use `SELECT FOR UPDATE` (pessimistic lock) to prevent race conditions
+Roles: `ADMIN`, `ATTENDANT`, `MECHANIC`, `CUSTOMER`
+- `ADMIN` is exclusive — cannot be combined with other roles.
+- `ADMIN`: unrestricted access including user management and role assignment.
+- `ATTENDANT`: customers, vehicles, service orders, works, supplies — no user management.
+- `MECHANIC`: read service orders; add/remove works and supplies; status transitions.
+- `CUSTOMER`: own service order status and budget approve/reject only, filtered by `customerId` in JWT.
+- Role groups are defined in `domain/roles.go`: `AttendantRoles`, `MechanicRoles`, `CustomerRoles`, `AttendantAndMechanicRoles`.
 
 ### Budget
-- `total = Σ service.unit_price + Σ (part.unit_price × quantity)`
-- Auto-recalculate whenever services or parts change on the service order
-- Budget becomes immutable once service order status reaches `IN_PROGRESS`
+- `total = Σ work.unit_price + Σ (supply.unit_price × quantity)`
+- Auto-recalculate whenever works or supplies change on the service order.
+- Budget becomes immutable once status reaches `IN_PROGRESS`.
 
 ### Validations
-- CPF: validate format `###.###.###-##` AND check digit algorithm
-- CNPJ: validate format `##.###.###/####-##` AND check digit algorithm
-- License plate: support old format `ABC-1234` and Mercosul `ABC1D23`
-- Monetary values: stored as `NUMERIC(10,2)` — never `float` or `double`
+- CPF: format `###.###.###-##` AND check digit algorithm.
+- CNPJ: format `##.###.###/####-##` AND check digit algorithm.
+- License plate: old format `ABC-1234` and Mercosul `ABC1D23`.
+- Monetary values: `NUMERIC(10,2)` — never `float` or `double`.
 
 ### Security
-- All admin endpoints require `Authorization: Bearer <JWT>` — return 401 if missing/invalid
-- Public endpoints (no auth required): `POST /auth/login`, `GET /service-orders/:id/status`
-- CLIENT endpoints require JWT with role `CLIENT`; access filtered by `customerId` in JWT payload
-- Passwords hashed with bcrypt (min cost factor 12)
-- Never log or expose CPF, CNPJ, passwords, or JWT tokens in any response or log entry
-- JWT expiry configurable via environment variable
-- JWT payload must include: `roles` (array of all user roles) and `customerId` (when applicable) — authorization middleware must not make extra DB calls
+- All protected endpoints require `Authorization: Bearer <JWT>` — return 401 if missing/invalid.
+- Public endpoints: `POST /v1/auth/login`, and the ping endpoint.
+- JWT payload must include: `roles` and `customerId` (when applicable) — auth middleware must not make extra DB calls.
+- Passwords: bcrypt, min cost factor 12.
+- Never log or expose CPF, CNPJ, passwords, or JWT tokens.
 
-## API Endpoints Reference
+## API Endpoints Reference (all under `/v1/`)
+
 ```
-POST   /auth/login                    — get JWT (public)
-GET    /service-orders/:id/status     — customer service order tracking (public)
-POST   /customers                     — create customer (ADMIN, ATTENDANT)
-GET    /customers                     — list customers (ADMIN, ATTENDANT)
-GET    /customers/:id                 — get customer (ADMIN, ATTENDANT)
-PUT    /customers/:id                 — update customer (ADMIN, ATTENDANT)
-DELETE /customers/:id                 — delete customer (ADMIN)
-(same CRUD for /vehicles, /services, /parts)
-POST   /service-orders                — create service order (ADMIN, ATTENDANT)
-GET    /service-orders                — list service orders (?status=&customer_id=&vehicle_id=) (ADMIN, ATTENDANT, MECHANIC)
-GET    /service-orders/:id            — full service order detail (ADMIN, ATTENDANT, MECHANIC)
-PATCH  /service-orders/:id/status     — advance service order status (ADMIN, ATTENDANT, MECHANIC)
-POST   /service-orders/:id/approve    — approve budget (CLIENT — own service order only)
-POST   /service-orders/:id/reject     — reject budget (CLIENT — own service order only)
-GET    /reports/average-time          — average service execution time (ADMIN, ATTENDANT)
-POST   /users                         — create user (ADMIN only)
-PUT    /users/:id/roles               — update user roles (ADMIN only)
+POST   /auth/register                              — create user (ADMIN)
+POST   /auth/login                                 — get JWT (public)
+POST   /customers                                  — create (ADMIN, ATTENDANT)
+GET    /customers/:id                              — get by ID (ADMIN, ATTENDANT)
+GET    /customers                                  — get by document (ADMIN, ATTENDANT)
+PUT    /customers/:id                              — update (ADMIN, ATTENDANT)
+DELETE /customers/:id                              — delete (ADMIN, ATTENDANT)
+POST   /works                                      — create (ADMIN, ATTENDANT)
+GET    /works                                      — list (ADMIN, ATTENDANT, MECHANIC)
+PUT    /works/:id                                  — update (ADMIN, ATTENDANT, MECHANIC)
+DELETE /works/:id                                  — delete (ADMIN, ATTENDANT, MECHANIC)
+POST   /vehicles                                   — create (ADMIN, ATTENDANT, MECHANIC)
+GET    /vehicles                                   — find by license plate (ADMIN, ATTENDANT, MECHANIC)
+PUT    /vehicles/:id                               — update (ADMIN, ATTENDANT, MECHANIC)
+DELETE /vehicles/:id                               — delete (ADMIN, ATTENDANT, MECHANIC)
+GET    /vehicles/:customerId                       — list by customer (ADMIN, ATTENDANT)
+POST   /supplies                                   — create (ADMIN, ATTENDANT, MECHANIC)
+GET    /supplies                                   — list (ADMIN, ATTENDANT, MECHANIC)
+PUT    /supplies/:id                               — update (ADMIN, ATTENDANT, MECHANIC)
+POST   /service-order                              — create (ADMIN, ATTENDANT)
+GET    /service-order/:id/history                  — status history (ADMIN, ATTENDANT)
+GET    /service-order/:id/services                 — list works (ADMIN, ATTENDANT)
+POST   /service-order/:id/services                 — add works (ADMIN, ATTENDANT)
+DELETE /service-order/:id/services/:serviceId      — remove work (ADMIN, ATTENDANT)
+GET    /service-order/:id/supplies                 — list supplies (ADMIN, ATTENDANT)
+POST   /service-order/:id/supplies                 — add supplies + decrement stock (ADMIN, ATTENDANT)
+DELETE /service-order/:id/supplies/:supplyId       — remove supply + restore stock (ADMIN, ATTENDANT)
 ```
 
 ## Database Conventions
 - All monetary columns: `NUMERIC(10,2)`
-- Service order status: ENUM or CHECK constraint with the 7 valid values
-- Foreign keys required: vehicle→customer, service_order→customer, service_order→vehicle, service_order_service→service_order+service, service_order_part→service_order+part, customer→user
-- Many-to-many: `USER_ROLE` table linking user↔role
-- Indexes required on: `customer.cpf`, `customer.cnpj`, `vehicle.plate`, `service_order.status`, `service_order.customer_id`, `user.email`
-- IDs: UUID
+- ServiceOrder status: CHECK constraint with the 7 valid values
+- IDs: UUID for most entities; ULID for `service_order` and `service_order_history`
 - Timestamps: UTC, ISO 8601
+- Junction tables: `service_order_work` (SO ↔ Work), `service_order_supply` (SO ↔ Supply)
 - Schema changes only via versioned migration files
 
 ## Testing Requirements
 - Critical domains (service orders, stock, budget): minimum **90% coverage**
 - All other domains: minimum **80% coverage**
-- Always write unit tests for: status transitions (valid + invalid), budget calculation, CPF/CNPJ/license plate validation, stock decrement (success + out-of-stock + concurrency), RBAC role checks (403 for out-of-scope)
-- Always write integration tests for: service order creation flow, status progression, budget approve/reject, public status endpoint, auth guard on admin endpoints, CLIENT role filtering by customerId
-- Test pattern: Arrange / Act / Assert
-- Tests must be independent — no shared mutable state
-- Integration tests use a real test DB, rolled back after each test
+- Test pattern: Arrange / Act / Assert; tests must be independent.
+- All repositories have in-memory implementations for unit tests; integration tests use a real test DB rolled back after each test.
+- Use the in-memory UoW (`infra/db/in_memory`) for service-layer unit tests.
 
 ## Error Response Format
 ```json
@@ -168,13 +197,13 @@ PUT    /users/:id/roles               — update user roles (ADMIN only)
 HTTP codes: 400 (validation), 401 (auth), 403 (forbidden), 404 (not found), 409 (conflict), 422 (business rule violation), 500 (unexpected)
 
 ## Logging
-- Structured JSON logs with fields: `timestamp`, `level`, `operation`, `entity_id`
-- Always log: service order creation, every status transition, stock decrement, validation errors
+- Structured JSON via Zap; fields: `timestamp`, `level`, `operation`, `entity_id`
+- Log: service order creation, every status transition, stock decrement, validation errors
 - Never log: CPF, CNPJ, passwords, tokens
-- Levels: INFO (normal ops), WARN (business rule violations), ERROR (unexpected failures)
+- Levels: INFO (normal), WARN (business rule violations), ERROR (unexpected)
+- Read operations: log errors only, not success paths
 
 ## Infrastructure
-- `Dockerfile` for reproducible build
-- `docker-compose.yml` orchestrating app + PostgreSQL
-- Environment variables for: DATABASE_URL, JWT_SECRET, JWT_EXPIRY, BCRYPT_COST
-- App must start cleanly with only Docker — no manual external dependencies
+- `Dockerfile` + `docker-compose.yml` (app + PostgreSQL)
+- Env vars: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `BCRYPT_COST`, `PORT` (default 8080)
+- Makefile reads from `.env` and exports all vars automatically

@@ -36,6 +36,8 @@ type (
 		Count(context.Context, *ListSupplyParams) (int64, error)
 		Delete(context.Context, string) error
 		FindById(context.Context, string) (Supply, error)
+		DecrementStock(ctx context.Context, id string, amount int) error
+		RestoreStock(ctx context.Context, id string, amount int) error
 	}
 )
 

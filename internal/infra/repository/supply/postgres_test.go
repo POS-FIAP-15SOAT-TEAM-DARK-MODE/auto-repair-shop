@@ -198,6 +198,141 @@ func TestCreate_NoTransaction(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// DecrementStock
+// ---------------------------------------------------------------------------
+
+func TestDecrementStock_Success(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	supply := newSupply()
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`UPDATE supply`).
+		WithArgs(supply.ID, 5).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.DecrementStock(ctx, supply.ID, 5)
+	})
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDecrementStock_OutOfStock(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	supply := newSupply()
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`UPDATE supply`).
+		WithArgs(supply.ID, 200).
+		WillReturnResult(sqlmock.NewResult(0, 0)) // 0 rows = condition not met
+	mock.ExpectRollback()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.DecrementStock(ctx, supply.ID, 200)
+	})
+
+	assert.ErrorIs(t, err, domain.ErrSupplyOutOfStock)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDecrementStock_ExecError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	supply := newSupply()
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`UPDATE supply`).
+		WithArgs(supply.ID, 1).
+		WillReturnError(errors.New("db error"))
+	mock.ExpectRollback()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.DecrementStock(ctx, supply.ID, 1)
+	})
+
+	assert.Error(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestDecrementStock_NoTransaction(t *testing.T) {
+	r := supplyRepo.Repository()
+	err := r.DecrementStock(context.Background(), "any-id", 1)
+	assert.ErrorIs(t, err, infraPostgres.ErrMissingPostgresTransaction)
+}
+
+// ---------------------------------------------------------------------------
+// RestoreStock
+// ---------------------------------------------------------------------------
+
+func TestRestoreStock_Success(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	supply := newSupply()
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`UPDATE supply`).
+		WithArgs(supply.ID, 3).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.RestoreStock(ctx, supply.ID, 3)
+	})
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRestoreStock_ExecError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	supply := newSupply()
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`UPDATE supply`).
+		WithArgs(supply.ID, 3).
+		WillReturnError(errors.New("db error"))
+	mock.ExpectRollback()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.RestoreStock(ctx, supply.ID, 3)
+	})
+
+	assert.Error(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRestoreStock_NoTransaction(t *testing.T) {
+	r := supplyRepo.Repository()
+	err := r.RestoreStock(context.Background(), "any-id", 3)
+	assert.ErrorIs(t, err, infraPostgres.ErrMissingPostgresTransaction)
+}
+
+// ---------------------------------------------------------------------------
 // Count
 // GetOneTimeTransaction retorna Connect() diretamente (não usa tx).
 // Basta ter o mock injetado via ConnectWithDB.
