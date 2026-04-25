@@ -74,8 +74,8 @@ func groupByWorkID(transitions []domain.WorkServiceOrderHistory) []domain.WorkTr
 		return nil
 	}
 
-	orderMap := map[string]int{}
-	var groups []domain.WorkTransitionGroup
+	orderMap := make(map[string]int, len(transitions))
+	groups := make([]domain.WorkTransitionGroup, 0, len(transitions))
 
 	for _, t := range transitions {
 		idx, exists := orderMap[t.WorkID]
