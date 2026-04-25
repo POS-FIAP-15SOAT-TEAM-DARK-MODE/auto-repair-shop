@@ -108,22 +108,14 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 
 			assert.Equal(t, tt.expectedCode, rec.Code)
 
-			var resp map[string]any
-			if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
-				t.Fatalf("failed to unmarshal response: %v", err)
-			}
-
 			if tt.expectedLen > 0 {
-				items, ok := resp["items"].([]interface{})
-				if !ok {
-					t.Fatalf("expected items array in response")
+				var items []map[string]any
+				if err := json.Unmarshal(rec.Body.Bytes(), &items); err != nil {
+					t.Fatalf("expected JSON array response: %v", err)
 				}
 				assert.Len(t, items, tt.expectedLen)
 
-				first, ok := items[0].(map[string]interface{})
-				if !ok {
-					t.Fatalf("expected first item to be an object")
-				}
+				first := items[0]
 				workTransitions, ok := first["work_transitions"].([]interface{})
 				if !ok {
 					t.Fatalf("expected work_transitions array, got: %T", first["work_transitions"])
@@ -152,6 +144,10 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 			}
 
 			if tt.expectedErr != "" {
+				var resp map[string]any
+				if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+					t.Fatalf("failed to unmarshal error response: %v", err)
+				}
 				if errs, ok := resp["errors"].([]interface{}); ok && len(errs) > 0 {
 					assert.Contains(t, errs[0], tt.expectedErr)
 				} else if errStr, ok := resp["error"].(string); ok {
