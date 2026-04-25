@@ -104,8 +104,8 @@ func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []str
 			if workID == "" {
 				return domain.ErrInvalidWorkId
 			}
-			w, e := s.workRepo.FindByID(ctx, workID)
 
+			w, e := s.workRepo.FindByID(ctx, workID)
 			if e != nil {
 				return e
 			}
@@ -197,6 +197,7 @@ func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain
 	if err != nil {
 		return nil, err
 	}
+
 	return supplies, nil
 }
 
@@ -205,6 +206,7 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 	if serviceOrderID == "" {
 		return domain.ErrInvalidServiceOrderId
 	}
+
 	if len(supplies) == 0 {
 		return domain.ErrEmptyServicesList
 	}
@@ -296,6 +298,7 @@ func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string)
 		if err != nil {
 			return err
 		}
+
 		return s.supplyRepo.RestoreStock(ctx, supplyID, qty)
 	})
 
