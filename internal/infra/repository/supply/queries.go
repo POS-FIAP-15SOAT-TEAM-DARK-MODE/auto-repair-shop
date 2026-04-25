@@ -20,4 +20,5 @@ const (
 	FROM "supply" s
 	WHERE s.id = $1
 	`
+	deleteQuery = `DELETE FROM "supply" s where s.id = $1`
 )

@@ -331,3 +331,37 @@ func TestUpdate_ResponseBody(t *testing.T) {
 	assert.Equal(t, validID, body["id"])
 	assert.Equal(t, "Brake Pad", body["name"])
 }
+
+func TestDeleteWorkHandler_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := domainmocks.NewSupplyService(t)
+	h := handler.HttpHandler(mockService)
+
+	mockService.EXPECT().Delete(mock.Anything, "supply-id").Return(nil)
+
+	router := gin.New()
+	router.DELETE("/supplies/:id", h.Delete)
+
+	req := httptest.NewRequest(http.MethodDelete, "/supplies/supply-id", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+}
+
+func TestDeleteWorkHandler_ServiceError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	mockService := domainmocks.NewSupplyService(t)
+	h := handler.HttpHandler(mockService)
+
+	mockService.EXPECT().Delete(mock.Anything, "work-id").Return(errors.New("internal error"))
+
+	router := gin.New()
+	router.DELETE("/works/:id", h.Delete)
+
+	req := httptest.NewRequest(http.MethodDelete, "/works/work-id", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+}

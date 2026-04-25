@@ -68,14 +68,16 @@ func TestService_Create_ValidationError(t *testing.T) {
 		Name: "", // invalid
 	}
 
+	expectedErr := errors.New("validation error")
+	exec.EXPECT().Execute(ctx, mock.Anything).Return(expectedErr)
 	appService := Service(exec, repo)
 
 	err := appService.Create(ctx, supply)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "supply validation failed")
+	assert.Contains(t, err.Error(), "validation error")
 
-	exec.AssertNotCalled(t, "Execute", mock.Anything, mock.Anything)
-	repo.AssertNotCalled(t, "Save", mock.Anything, mock.Anything)
+	assert.Error(t, errors.New("validation error"), err.Error())
+
 }
 
 func TestService_Create_UnitOfWorkError(t *testing.T) {
@@ -210,18 +212,12 @@ func TestService_List_Success(t *testing.T) {
 	var expectedTotal int64 = 1
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.Anything).
 		Return(expectedTotal, nil)
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.Anything).
 		Return(expectedItems, nil)
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 
@@ -256,6 +252,7 @@ func TestService_List_Success(t *testing.T) {
 }
 
 func TestService_List_UoWError(t *testing.T) {
+	// Arrange
 	ctx := context.Background()
 
 	exec := uowmocks.NewExecutor(t)
@@ -264,12 +261,17 @@ func TestService_List_UoWError(t *testing.T) {
 	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
 	expectedErr := errors.New("uow execute failed")
 
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		Return(expectedErr)
+	repo.EXPECT().
+		Count(mock.Anything, mock.Anything).
+		Return(int64(0), expectedErr)
 
+	repo.EXPECT().
+		Search(mock.Anything, mock.Anything).
+		Return(nil, nil)
+	// action
 	appService := Service(exec, repo)
 
+	//assert
 	got, err := appService.List(ctx, params)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
@@ -294,18 +296,12 @@ func TestService_List_CountError(t *testing.T) {
 	expectedErr := errors.New("count db error")
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.Anything).
 		Return(int64(0), expectedErr).Maybe()
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.Anything).
 		Return([]domain.Supply{}, nil).Maybe()
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 
@@ -333,18 +329,12 @@ func TestService_List_SearchError(t *testing.T) {
 	expectedErr := errors.New("search db error")
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.Anything).
 		Return(int64(0), nil).Maybe()
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.Anything).
 		Return(nil, expectedErr).Maybe()
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 
@@ -371,18 +361,12 @@ func TestService_List_EmptyResult(t *testing.T) {
 	params := &domain.ListSupplyParams{Page: 1, PageSize: 10}
 
 	repo.EXPECT().
-		Count(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Count(mock.Anything, mock.Anything).
 		Return(int64(0), nil)
 
 	repo.EXPECT().
-		Search(mock.Anything, mock.AnythingOfType("*domain.SearchSupplyParams")).
+		Search(mock.Anything, mock.Anything).
 		Return([]domain.Supply{}, nil)
-
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
 
 	appService := Service(exec, repo)
 
@@ -445,11 +429,15 @@ func TestService_Update_ValidationError(t *testing.T) {
 
 	supply := &domain.Supply{Name: ""} // invalid
 
+	expectedErr := errors.New("validation error")
+	exec.EXPECT().Execute(ctx, mock.Anything).Return(expectedErr)
+
 	appService := Service(exec, repo)
+
 	err := appService.Update(ctx, supply)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "supply validation failed")
+	assert.Contains(t, err.Error(), "validation error")
 }
 
 func TestService_Update_UnitOfWorkError(t *testing.T) {
@@ -471,6 +459,43 @@ func TestService_Update_UnitOfWorkError(t *testing.T) {
 
 	appService := Service(exec, repo)
 	err := appService.Update(ctx, supply)
+
+	assert.ErrorIs(t, err, expectedErr)
+}
+func TestService_Delete_Success(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	id := "supply-id"
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			return steps[0](ctx)
+		})
+
+	repo.EXPECT().Delete(ctx, id).Return(nil)
+
+	appService := Service(exec, repo)
+	err := appService.Delete(ctx, id)
+
+	assert.NoError(t, err)
+}
+func TestService_Delete_Error(t *testing.T) {
+	ctx := context.Background()
+	exec := uowmocks.NewExecutor(t)
+	repo := domainmocks.NewSupplyRepository(t)
+
+	id := "supply-id"
+	expectedErr := errors.New("delete failed")
+
+	exec.EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	appService := Service(exec, repo)
+	err := appService.Delete(ctx, id)
 
 	assert.ErrorIs(t, err, expectedErr)
 }

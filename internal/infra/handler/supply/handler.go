@@ -121,3 +121,36 @@ func (h *handler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, mapListResponseDTOFromDomain(response))
 
 }
+
+func (h *handler) Delete(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	id := c.Param(idPathParamKey)
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidSupplyId)
+		logger.Of(ctx).Debug("Supply invalid supply id",
+			zap.String("operation", "delete_supply"),
+			zap.Error(domain.ErrInvalidSupplyId),
+			zap.String("entity", "supply"),
+			zap.String("entity.id", id),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	logger.Of(ctx).Debug("delete request", zap.Any(idPathParamKey, id))
+	if err := h.svc.Delete(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("Supply deletion failed in service layer",
+			zap.String("operation", "delete_supply"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	logger.Of(ctx).Debug("deletion ok")
+	c.Status(http.StatusNoContent)
+}
