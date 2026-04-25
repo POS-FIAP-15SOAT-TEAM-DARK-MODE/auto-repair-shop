@@ -31,6 +31,8 @@ func getHTTPStatus(err error) int {
 	switch {
 	case isUnauthorizedError(err):
 		return http.StatusUnauthorized
+	case isForbidden(err):
+		return http.StatusForbidden
 	case isBadRequestError(err), IsJoined(err):
 		return http.StatusBadRequest
 	case isNotFoundError(err):
@@ -60,7 +62,7 @@ func IsJoined(err error) bool {
 // buildErrorMessages formats the error messages based on status code.
 func buildErrorMessages(err error, status int) ([]string, string) {
 	switch status {
-	case http.StatusUnauthorized, http.StatusBadRequest:
+	case http.StatusUnauthorized, http.StatusForbidden, http.StatusBadRequest:
 		// For 4XX BadRequest provide stack of errors.
 		return unwrapAll(err), ""
 	case http.StatusNotFound:
@@ -141,7 +143,8 @@ func isConflictError(err error) bool {
 		errors.Is(err, domain.ErrInfraConflict) ||
 		errors.Is(err, domain.ErrCustomerHasServiceOrders) ||
 		errors.Is(err, domain.ErrServiceOrderNotNew) ||
-		errors.Is(err, domain.ErrServiceOrderNotInDiagnosis)
+		errors.Is(err, domain.ErrServiceOrderNotInDiagnosis) ||
+		errors.Is(err, domain.ErrServiceOrderNotAwaitingApproval)
 }
 
 func isUnprocessableEntityError(err error) bool {
@@ -151,6 +154,10 @@ func isUnprocessableEntityError(err error) bool {
 		errors.Is(err, domain.ErrInvalidWorkStatusValue) ||
 		errors.Is(err, domain.ErrServiceOrderNotNew) ||
 		errors.Is(err, domain.ErrSupplyOutOfStock)
+}
+
+func isForbidden(err error) bool {
+	return errors.Is(err, domain.ErrInvalidCustomerProperty)
 }
 
 func unwrapAll(err error) []string {

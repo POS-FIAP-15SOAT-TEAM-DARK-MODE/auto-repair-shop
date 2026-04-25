@@ -72,6 +72,7 @@ var (
 	ErrCustomerHasServiceOrders = errors.New("customer has associated service orders")
 	ErrInvalidDocumentFormat    = errors.New("document must be a valid CPF (11 digits) or CNPJ (14 characters)")
 	ErrInvalidCustomerId        = errors.New("invalid customer id")
+	ErrInvalidCustomerProperty  = errors.New("customer not allowed to execute this operation")
 )
 
 // Vehicle errors
