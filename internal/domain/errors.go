@@ -48,13 +48,15 @@ var (
 
 // Service order errors
 var (
-	ErrInvalidServiceOrderId      = errors.New("invalid service order id")
-	ErrServiceOrderNotFound       = errors.New("service order not found")
-	ErrServiceOrderNotNew         = errors.New("service order isn't at NEW state")
-	ErrServiceOrderNotInDiagnosis = errors.New("service order isn't at IN_DIAGNOSIS state")
-	ErrServiceOrderWorkNotFound   = errors.New("work is not linked to this service order")
-	ErrServiceOrderSupplyNotFound = errors.New("supply is not linked to this service order")
-	ErrEmptyServicesList          = errors.New("services list cannot be empty")
+	ErrInvalidServiceOrderId           = errors.New("invalid service order id")
+	ErrServiceOrderNotFound            = errors.New("service order not found")
+	ErrServiceOrderNotNew              = errors.New("service order isn't at NEW state")
+	ErrServiceOrderNotInDiagnosis      = errors.New("service order isn't at IN_DIAGNOSIS state")
+	ErrServiceOrderNotAwaitingApproval = errors.New("service order isn't at AWAITING_APPROVAL state")
+	ErrServiceOrderWorkNotFound        = errors.New("work is not linked to this service order")
+	ErrServiceOrderSupplyNotFound      = errors.New("supply is not linked to this service order")
+	ErrEmptyServicesList               = errors.New("services list cannot be empty")
+	ErrServiceOrderIDRequired          = errors.New("service order id is required")
 )
 
 // Customer errors
@@ -70,6 +72,7 @@ var (
 	ErrCustomerHasServiceOrders = errors.New("customer has associated service orders")
 	ErrInvalidDocumentFormat    = errors.New("document must be a valid CPF (11 digits) or CNPJ (14 characters)")
 	ErrInvalidCustomerId        = errors.New("invalid customer id")
+	ErrInvalidCustomerProperty  = errors.New("customer not allowed to execute this operation")
 )
 
 // Vehicle errors
@@ -95,9 +98,4 @@ var (
 	ErrInvalidSupplyId            = errors.New("invalid supply id")
 	ErrSupplyNotFound             = errors.New("supply not found")
 	ErrSupplyOutOfStock           = errors.New("supply out of stock or requested quantity exceeds available stock")
-)
-
-// Service Order errors
-var (
-	ErrServiceOrderIDRequired = errors.New("service order id is required")
 )

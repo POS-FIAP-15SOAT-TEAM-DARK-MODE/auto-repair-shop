@@ -21,6 +21,39 @@ func (_m *ServiceOrderHandler) EXPECT() *ServiceOrderHandler_Expecter {
 	return &ServiceOrderHandler_Expecter{mock: &_m.Mock}
 }
 
+// Accept provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) Accept(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_Accept_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Accept'
+type ServiceOrderHandler_Accept_Call struct {
+	*mock.Call
+}
+
+// Accept is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) Accept(_a0 interface{}) *ServiceOrderHandler_Accept_Call {
+	return &ServiceOrderHandler_Accept_Call{Call: _e.mock.On("Accept", _a0)}
+}
+
+func (_c *ServiceOrderHandler_Accept_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Accept_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Accept_Call) Return() *ServiceOrderHandler_Accept_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Accept_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Accept_Call {
+	_c.Run(run)
+	return _c
+}
+
 // AddSupplies provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) AddSupplies(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -248,6 +281,39 @@ func (_c *ServiceOrderHandler_GetWorks_Call) Return() *ServiceOrderHandler_GetWo
 }
 
 func (_c *ServiceOrderHandler_GetWorks_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetWorks_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Reject provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) Reject(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_Reject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reject'
+type ServiceOrderHandler_Reject_Call struct {
+	*mock.Call
+}
+
+// Reject is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) Reject(_a0 interface{}) *ServiceOrderHandler_Reject_Call {
+	return &ServiceOrderHandler_Reject_Call{Call: _e.mock.On("Reject", _a0)}
+}
+
+func (_c *ServiceOrderHandler_Reject_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Reject_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Reject_Call) Return() *ServiceOrderHandler_Reject_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Reject_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Reject_Call {
 	_c.Run(run)
 	return _c
 }

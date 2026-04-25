@@ -438,3 +438,56 @@ func TestService_GetByDocument(t *testing.T) {
 		})
 	}
 }
+
+// --- GetByUserID ---
+
+func TestService_GetByUserID(t *testing.T) {
+	tests := []struct {
+		name         string
+		id           string
+		mockSetup    func(*domainmocks.CustomerRepository)
+		wantCustomer domain.Customer
+		wantErr      error
+	}{
+		{
+			name: "success",
+			id:   "uuid-individual",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByUserID(mock.Anything, "uuid-individual").Return(validIndividualCustomer(), nil)
+			},
+			wantCustomer: validIndividualCustomer(),
+		},
+		{
+			name: "not_found",
+			id:   "unknown-id",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByUserID(mock.Anything, "unknown-id").Return(domain.Customer{}, domain.ErrCustomerNotFound)
+			},
+			wantErr: domain.ErrCustomerNotFound,
+		},
+		{
+			name: "repository_error",
+			id:   "any-id",
+			mockSetup: func(repo *domainmocks.CustomerRepository) {
+				repo.EXPECT().GetByUserID(mock.Anything, "any-id").Return(domain.Customer{}, assert.AnError)
+			},
+			wantErr: assert.AnError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			customerRepo := domainmocks.NewCustomerRepository(t)
+			tt.mockSetup(customerRepo)
+
+			result, err := svc.Service(nil, nil, customerRepo).GetByUserID(context.Background(), tt.id)
+
+			if tt.wantErr != nil {
+				assert.ErrorIs(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.wantCustomer.ID, result.ID)
+			}
+		})
+	}
+}

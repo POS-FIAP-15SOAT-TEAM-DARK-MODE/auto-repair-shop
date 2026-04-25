@@ -22,6 +22,54 @@ func (_m *ServiceOrderService) EXPECT() *ServiceOrderService_Expecter {
 	return &ServiceOrderService_Expecter{mock: &_m.Mock}
 }
 
+// Accept provides a mock function with given fields: ctx, serviceOrderID, userID
+func (_m *ServiceOrderService) Accept(ctx context.Context, serviceOrderID string, userID string) error {
+	ret := _m.Called(ctx, serviceOrderID, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Accept")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, serviceOrderID, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_Accept_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Accept'
+type ServiceOrderService_Accept_Call struct {
+	*mock.Call
+}
+
+// Accept is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - userID string
+func (_e *ServiceOrderService_Expecter) Accept(ctx interface{}, serviceOrderID interface{}, userID interface{}) *ServiceOrderService_Accept_Call {
+	return &ServiceOrderService_Accept_Call{Call: _e.mock.On("Accept", ctx, serviceOrderID, userID)}
+}
+
+func (_c *ServiceOrderService_Accept_Call) Run(run func(ctx context.Context, serviceOrderID string, userID string)) *ServiceOrderService_Accept_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_Accept_Call) Return(_a0 error) *ServiceOrderService_Accept_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_Accept_Call) RunAndReturn(run func(context.Context, string, string) error) *ServiceOrderService_Accept_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AddSupplies provides a mock function with given fields: ctx, serviceOrderID, supplies
 func (_m *ServiceOrderService) AddSupplies(ctx context.Context, serviceOrderID string, supplies []domain.AddSupply) error {
 	ret := _m.Called(ctx, serviceOrderID, supplies)
@@ -290,6 +338,54 @@ func (_c *ServiceOrderService_ListWorks_Call) Return(_a0 []domain.Work, _a1 erro
 }
 
 func (_c *ServiceOrderService_ListWorks_Call) RunAndReturn(run func(context.Context, string) ([]domain.Work, error)) *ServiceOrderService_ListWorks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Reject provides a mock function with given fields: ctx, serviceOrderID, userID
+func (_m *ServiceOrderService) Reject(ctx context.Context, serviceOrderID string, userID string) error {
+	ret := _m.Called(ctx, serviceOrderID, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Reject")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, serviceOrderID, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_Reject_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Reject'
+type ServiceOrderService_Reject_Call struct {
+	*mock.Call
+}
+
+// Reject is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - userID string
+func (_e *ServiceOrderService_Expecter) Reject(ctx interface{}, serviceOrderID interface{}, userID interface{}) *ServiceOrderService_Reject_Call {
+	return &ServiceOrderService_Reject_Call{Call: _e.mock.On("Reject", ctx, serviceOrderID, userID)}
+}
+
+func (_c *ServiceOrderService_Reject_Call) Run(run func(ctx context.Context, serviceOrderID string, userID string)) *ServiceOrderService_Reject_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_Reject_Call) Return(_a0 error) *ServiceOrderService_Reject_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_Reject_Call) RunAndReturn(run func(context.Context, string, string) error) *ServiceOrderService_Reject_Call {
 	_c.Call.Return(run)
 	return _c
 }

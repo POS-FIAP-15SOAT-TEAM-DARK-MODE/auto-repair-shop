@@ -48,7 +48,7 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 }
 
 func (r *repository) ExistsByID(ctx context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return false, "", err
 	}

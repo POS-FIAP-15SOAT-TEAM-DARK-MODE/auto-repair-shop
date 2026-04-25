@@ -24,6 +24,15 @@ JOIN "user" u ON u.id = c.user_id
 WHERE c.cpf = $1 OR c.cnpj = $1
 `
 
+	getCustomerByUserIDQuery = `
+SELECT c.id, c.user_id, c.type,
+       COALESCE(c.cpf, ''), COALESCE(c.cnpj, ''), COALESCE(c.company_name, ''), c.phone,
+       u.name, u.email
+FROM customer c
+JOIN "user" u ON u.id = c.user_id
+WHERE u.id = $1
+`
+
 	updateCustomerQuery = `UPDATE customer SET phone = $1 WHERE id = $2`
 
 	deleteCustomerQuery = `DELETE FROM customer WHERE id = $1`
