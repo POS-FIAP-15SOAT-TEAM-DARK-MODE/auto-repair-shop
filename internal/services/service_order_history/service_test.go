@@ -15,17 +15,17 @@ import (
 
 var (
 	soBaseTime = time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
-	soReceived = domain.ServiceOrderHistory{
+	soReceived = domain.ServiceOrderHistoryItem{
 		PreviousStatus: "",
 		NewStatus:      domain.SERVICE_ORDER_STATUS_RECEIVED,
 		CreatedAt:      soBaseTime,
 	}
-	soInProgress = domain.ServiceOrderHistory{
+	soInProgress = domain.ServiceOrderHistoryItem{
 		PreviousStatus: domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL,
 		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		CreatedAt:      soBaseTime.Add(2 * time.Hour),
 	}
-	soCompleted = domain.ServiceOrderHistory{
+	soCompleted = domain.ServiceOrderHistoryItem{
 		PreviousStatus: domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		NewStatus:      domain.SERVICE_ORDER_STATUS_COMPLETED,
 		CreatedAt:      soBaseTime.Add(4 * time.Hour),
@@ -37,7 +37,7 @@ func TestService_GetHistoryByID(t *testing.T) {
 		name      string
 		params    *domain.SearchServiceOrderHistoryParams
 		setupRepo func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams)
-		assert    func(t *testing.T, items []domain.ServiceOrderHistory, err error)
+		assert    func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error)
 	}{
 		{
 			name:   "search error short-circuits",
@@ -45,7 +45,7 @@ func TestService_GetHistoryByID(t *testing.T) {
 			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
 				repo.EXPECT().Search(mock.Anything, params).Return(nil, errors.New("db search failure"))
 			},
-			assert: func(t *testing.T, items []domain.ServiceOrderHistory, err error) {
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
 				assert.Error(t, err)
 				assert.Nil(t, items)
 			},
@@ -54,9 +54,9 @@ func TestService_GetHistoryByID(t *testing.T) {
 			name:   "empty items returns immediately",
 			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
 			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
-				repo.EXPECT().Search(mock.Anything, params).Return([]domain.ServiceOrderHistory{}, nil)
+				repo.EXPECT().Search(mock.Anything, params).Return([]domain.ServiceOrderHistoryItem{}, nil)
 			},
-			assert: func(t *testing.T, items []domain.ServiceOrderHistory, err error) {
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
 				assert.NoError(t, err)
 				assert.Empty(t, items)
 			},
@@ -65,9 +65,9 @@ func TestService_GetHistoryByID(t *testing.T) {
 			name:   "no IN_PROGRESS entry skips work transition lookup",
 			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
 			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
-				repo.EXPECT().Search(mock.Anything, params).Return([]domain.ServiceOrderHistory{soReceived}, nil)
+				repo.EXPECT().Search(mock.Anything, params).Return([]domain.ServiceOrderHistoryItem{soReceived}, nil)
 			},
-			assert: func(t *testing.T, items []domain.ServiceOrderHistory, err error) {
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
 				assert.NoError(t, err)
 				assert.Len(t, items, 1)
 				assert.Empty(t, items[0].WorkTransitions)
@@ -77,27 +77,27 @@ func TestService_GetHistoryByID(t *testing.T) {
 			name:   "work transitions grouped by work_id and attached to IN_PROGRESS entry only",
 			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
 			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
-				items := []domain.ServiceOrderHistory{soReceived, soInProgress, soCompleted}
-				w1t1 := domain.WorkServiceOrderHistory{
-					WorkID:         "w-1",
-					PreviousStatus: "", NewStatus: domain.SERVICE_ORDER_STATUS_NEW,
-					CreatedAt: soBaseTime.Add(1 * time.Hour),
-				}
-				w1t2 := domain.WorkServiceOrderHistory{
-					WorkID:         "w-1",
-					PreviousStatus: domain.SERVICE_ORDER_STATUS_NEW, NewStatus: domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
-					CreatedAt: soBaseTime.Add(2 * time.Hour),
-				}
-				w2t1 := domain.WorkServiceOrderHistory{
-					WorkID:         "w-2",
-					PreviousStatus: "", NewStatus: domain.SERVICE_ORDER_STATUS_NEW,
-					CreatedAt: soBaseTime.Add(1 * time.Hour),
+				items := []domain.ServiceOrderHistoryItem{soReceived, soInProgress, soCompleted}
+				groups := []domain.WorkTransitionGroup{
+					{
+						WorkID: "w-1",
+						Status: []domain.WorkStatusItem{
+							{NewStatus: domain.SERVICE_ORDER_STATUS_NEW, CreatedAt: soBaseTime.Add(1 * time.Hour)},
+							{PreviousStatus: domain.SERVICE_ORDER_STATUS_NEW, NewStatus: domain.SERVICE_ORDER_STATUS_IN_PROGRESS, CreatedAt: soBaseTime.Add(2 * time.Hour)},
+						},
+					},
+					{
+						WorkID: "w-2",
+						Status: []domain.WorkStatusItem{
+							{NewStatus: domain.SERVICE_ORDER_STATUS_NEW, CreatedAt: soBaseTime.Add(1 * time.Hour)},
+						},
+					},
 				}
 				repo.EXPECT().Search(mock.Anything, params).Return(items, nil)
-				repo.EXPECT().SearchWorkTransitions(mock.Anything, "so-1").
-					Return([]domain.WorkServiceOrderHistory{w1t1, w1t2, w2t1}, nil)
+				repo.EXPECT().SearchWorkTransitionsByServiceOrderID(mock.Anything, "so-1").
+					Return(groups, nil)
 			},
-			assert: func(t *testing.T, items []domain.ServiceOrderHistory, err error) {
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
 				assert.NoError(t, err)
 				assert.Len(t, items, 3)
 
@@ -121,12 +121,12 @@ func TestService_GetHistoryByID(t *testing.T) {
 			name:   "no work transitions yields nil WorkTransitions on IN_PROGRESS entry",
 			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
 			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
-				items := []domain.ServiceOrderHistory{soReceived, soInProgress}
+				items := []domain.ServiceOrderHistoryItem{soReceived, soInProgress}
 				repo.EXPECT().Search(mock.Anything, params).Return(items, nil)
-				repo.EXPECT().SearchWorkTransitions(mock.Anything, "so-1").
-					Return([]domain.WorkServiceOrderHistory{}, nil)
+				repo.EXPECT().SearchWorkTransitionsByServiceOrderID(mock.Anything, "so-1").
+					Return([]domain.WorkTransitionGroup{}, nil)
 			},
-			assert: func(t *testing.T, items []domain.ServiceOrderHistory, err error) {
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
 				assert.NoError(t, err)
 				assert.Len(t, items, 2)
 				assert.Empty(t, items[0].WorkTransitions)
@@ -137,12 +137,12 @@ func TestService_GetHistoryByID(t *testing.T) {
 			name:   "SearchWorkTransitions error propagates",
 			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
 			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
-				items := []domain.ServiceOrderHistory{soInProgress}
+				items := []domain.ServiceOrderHistoryItem{soInProgress}
 				repo.EXPECT().Search(mock.Anything, params).Return(items, nil)
-				repo.EXPECT().SearchWorkTransitions(mock.Anything, "so-1").
+				repo.EXPECT().SearchWorkTransitionsByServiceOrderID(mock.Anything, "so-1").
 					Return(nil, errors.New("work tx lookup failed"))
 			},
-			assert: func(t *testing.T, items []domain.ServiceOrderHistory, err error) {
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
 				assert.Error(t, err)
 				assert.Nil(t, items)
 			},

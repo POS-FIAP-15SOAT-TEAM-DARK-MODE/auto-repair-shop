@@ -19,7 +19,7 @@ func Service(uow uow.Executor, repo domain.ServiceOrderHistoryRepository) *svc {
 	return &svc{uow, repo}
 }
 
-func (s *svc) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
+func (s *svc) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistoryItem, error) {
 	items, err := s.repo.Search(ctx, params)
 	if err != nil {
 		logger.Of(ctx).Error(err)
@@ -35,7 +35,7 @@ func (s *svc) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOr
 		return items, nil
 	}
 
-	transitions, err := s.repo.SearchWorkTransitions(ctx, params.ID)
+	transitions, err := s.repo.SearchWorkTransitionsByServiceOrderID(ctx, params.ID)
 	if err != nil {
 		logger.Of(ctx).Error(err)
 		logger.Of(ctx).Debug("Failed to fetch work transitions for service order history",
@@ -50,7 +50,7 @@ func (s *svc) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOr
 	return items, nil
 }
 
-func hasInProgressTransition(items []domain.ServiceOrderHistory) bool {
+func hasInProgressTransition(items []domain.ServiceOrderHistoryItem) bool {
 	for i := range items {
 		if items[i].NewStatus == domain.SERVICE_ORDER_STATUS_IN_PROGRESS {
 			return true
@@ -59,11 +59,10 @@ func hasInProgressTransition(items []domain.ServiceOrderHistory) bool {
 	return false
 }
 
-func attachWorkTransitions(items []domain.ServiceOrderHistory, transitions domain.WorkServiceOrderHistoryList) {
-	workTransitionList := transitions.ToWorkTransitionGroup()
+func attachWorkTransitions(items []domain.ServiceOrderHistoryItem, groups []domain.WorkTransitionGroup) {
 	for i := range items {
 		if items[i].NewStatus == domain.SERVICE_ORDER_STATUS_IN_PROGRESS {
-			items[i].WorkTransitions = workTransitionList
+			items[i].WorkTransitions = groups
 			break
 		}
 	}

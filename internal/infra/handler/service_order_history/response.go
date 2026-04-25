@@ -24,7 +24,7 @@ type serviceOrderHistoryResponseDTO struct {
 	WorkTransitions []workTransitionGroupDTO `json:"work_transitions,omitempty"`
 }
 
-func mapResponseDTOFromDomain(so *domain.ServiceOrderHistory) serviceOrderHistoryResponseDTO {
+func mapResponseDTOFromDomain(so *domain.ServiceOrderHistoryItem) serviceOrderHistoryResponseDTO {
 	dto := serviceOrderHistoryResponseDTO{
 		PreviousStatus: so.PreviousStatus.String(),
 		NewStatus:      so.NewStatus.String(),
@@ -53,7 +53,7 @@ func mapResponseDTOFromDomain(so *domain.ServiceOrderHistory) serviceOrderHistor
 	return dto
 }
 
-func mapResponseDTOFromDomainList(soHistories []domain.ServiceOrderHistory) []serviceOrderHistoryResponseDTO {
+func mapResponseDTOFromDomainList(soHistories []domain.ServiceOrderHistoryItem) []serviceOrderHistoryResponseDTO {
 	items := make([]serviceOrderHistoryResponseDTO, len(soHistories))
 	for i, h := range soHistories {
 		history := h

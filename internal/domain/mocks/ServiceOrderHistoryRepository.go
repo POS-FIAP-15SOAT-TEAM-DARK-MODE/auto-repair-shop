@@ -23,23 +23,23 @@ func (_m *ServiceOrderHistoryRepository) EXPECT() *ServiceOrderHistoryRepository
 }
 
 // Search provides a mock function with given fields: ctx, params
-func (_m *ServiceOrderHistoryRepository) Search(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
+func (_m *ServiceOrderHistoryRepository) Search(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistoryItem, error) {
 	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Search")
 	}
 
-	var r0 []domain.ServiceOrderHistory
+	var r0 []domain.ServiceOrderHistoryItem
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistoryItem, error)); ok {
 		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) []domain.ServiceOrderHistory); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.SearchServiceOrderHistoryParams) []domain.ServiceOrderHistoryItem); ok {
 		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.ServiceOrderHistory)
+			r0 = ret.Get(0).([]domain.ServiceOrderHistoryItem)
 		}
 	}
 
@@ -71,34 +71,34 @@ func (_c *ServiceOrderHistoryRepository_Search_Call) Run(run func(ctx context.Co
 	return _c
 }
 
-func (_c *ServiceOrderHistoryRepository_Search_Call) Return(_a0 []domain.ServiceOrderHistory, _a1 error) *ServiceOrderHistoryRepository_Search_Call {
+func (_c *ServiceOrderHistoryRepository_Search_Call) Return(_a0 []domain.ServiceOrderHistoryItem, _a1 error) *ServiceOrderHistoryRepository_Search_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ServiceOrderHistoryRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error)) *ServiceOrderHistoryRepository_Search_Call {
+func (_c *ServiceOrderHistoryRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistoryItem, error)) *ServiceOrderHistoryRepository_Search_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// SearchWorkTransitions provides a mock function with given fields: ctx, serviceOrderID
-func (_m *ServiceOrderHistoryRepository) SearchWorkTransitions(ctx context.Context, serviceOrderID string) ([]domain.WorkServiceOrderHistory, error) {
+// SearchWorkTransitionsByServiceOrderID provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderHistoryRepository) SearchWorkTransitionsByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.WorkTransitionGroup, error) {
 	ret := _m.Called(ctx, serviceOrderID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for SearchWorkTransitions")
+		panic("no return value specified for SearchWorkTransitionsByServiceOrderID")
 	}
 
-	var r0 []domain.WorkServiceOrderHistory
+	var r0 []domain.WorkTransitionGroup
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.WorkServiceOrderHistory, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]domain.WorkTransitionGroup, error)); ok {
 		return rf(ctx, serviceOrderID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.WorkServiceOrderHistory); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []domain.WorkTransitionGroup); ok {
 		r0 = rf(ctx, serviceOrderID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]domain.WorkServiceOrderHistory)
+			r0 = ret.Get(0).([]domain.WorkTransitionGroup)
 		}
 	}
 
@@ -111,31 +111,31 @@ func (_m *ServiceOrderHistoryRepository) SearchWorkTransitions(ctx context.Conte
 	return r0, r1
 }
 
-// ServiceOrderHistoryRepository_SearchWorkTransitions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SearchWorkTransitions'
-type ServiceOrderHistoryRepository_SearchWorkTransitions_Call struct {
+// ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SearchWorkTransitionsByServiceOrderID'
+type ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call struct {
 	*mock.Call
 }
 
-// SearchWorkTransitions is a helper method to define mock.On call
+// SearchWorkTransitionsByServiceOrderID is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serviceOrderID string
-func (_e *ServiceOrderHistoryRepository_Expecter) SearchWorkTransitions(ctx interface{}, serviceOrderID interface{}) *ServiceOrderHistoryRepository_SearchWorkTransitions_Call {
-	return &ServiceOrderHistoryRepository_SearchWorkTransitions_Call{Call: _e.mock.On("SearchWorkTransitions", ctx, serviceOrderID)}
+func (_e *ServiceOrderHistoryRepository_Expecter) SearchWorkTransitionsByServiceOrderID(ctx interface{}, serviceOrderID interface{}) *ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call {
+	return &ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call{Call: _e.mock.On("SearchWorkTransitionsByServiceOrderID", ctx, serviceOrderID)}
 }
 
-func (_c *ServiceOrderHistoryRepository_SearchWorkTransitions_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderHistoryRepository_SearchWorkTransitions_Call {
+func (_c *ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *ServiceOrderHistoryRepository_SearchWorkTransitions_Call) Return(_a0 []domain.WorkServiceOrderHistory, _a1 error) *ServiceOrderHistoryRepository_SearchWorkTransitions_Call {
+func (_c *ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call) Return(_a0 []domain.WorkTransitionGroup, _a1 error) *ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ServiceOrderHistoryRepository_SearchWorkTransitions_Call) RunAndReturn(run func(context.Context, string) ([]domain.WorkServiceOrderHistory, error)) *ServiceOrderHistoryRepository_SearchWorkTransitions_Call {
+func (_c *ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call) RunAndReturn(run func(context.Context, string) ([]domain.WorkTransitionGroup, error)) *ServiceOrderHistoryRepository_SearchWorkTransitionsByServiceOrderID_Call {
 	_c.Call.Return(run)
 	return _c
 }

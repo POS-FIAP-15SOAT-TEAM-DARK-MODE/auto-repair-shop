@@ -6,7 +6,7 @@ import (
 )
 
 type (
-	ServiceOrderHistory struct {
+	ServiceOrderHistoryItem struct {
 		PreviousStatus  SERVICE_ORDER_STATUS
 		NewStatus       SERVICE_ORDER_STATUS
 		CreatedAt       time.Time
@@ -15,17 +15,14 @@ type (
 
 	WorkTransitionGroup struct {
 		WorkID string
-		Status []WorkServiceOrderHistory
+		Status []WorkStatusItem
 	}
 
-	WorkServiceOrderHistory struct {
-		WorkID         string
+	WorkStatusItem struct {
 		PreviousStatus SERVICE_ORDER_STATUS
 		NewStatus      SERVICE_ORDER_STATUS
 		CreatedAt      time.Time
 	}
-
-	WorkServiceOrderHistoryList []WorkServiceOrderHistory
 
 	SearchServiceOrderHistoryParams struct {
 		ID string
@@ -36,12 +33,12 @@ type (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryRepository --with-expecter
 type (
 	ServiceOrderHistoryService interface {
-		GetHistoryByID(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
+		GetHistoryByID(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistoryItem, error)
 	}
 
 	ServiceOrderHistoryRepository interface {
-		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
-		SearchWorkTransitions(ctx context.Context, serviceOrderID string) ([]WorkServiceOrderHistory, error)
+		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistoryItem, error)
+		SearchWorkTransitionsByServiceOrderID(ctx context.Context, serviceOrderID string) ([]WorkTransitionGroup, error)
 	}
 )
 
@@ -52,29 +49,8 @@ func (p *SearchServiceOrderHistoryParams) Validate() error {
 	return nil
 }
 
-func (list WorkServiceOrderHistoryList) ToWorkTransitionGroup() []WorkTransitionGroup {
-	if len(list) == 0 {
-		return nil
-	}
-
-	orderMap := make(map[string]int, len(list))
-	groups := make([]WorkTransitionGroup, 0, len(list))
-
-	for _, t := range list {
-		idx, exists := orderMap[t.WorkID]
-		if !exists {
-			idx = len(groups)
-			orderMap[t.WorkID] = idx
-			groups = append(groups, WorkTransitionGroup{WorkID: t.WorkID})
-		}
-		groups[idx].Status = append(groups[idx].Status, t)
-	}
-
-	return groups
-}
-
-func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistory {
-	return &ServiceOrderHistory{
+func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistoryItem {
+	return &ServiceOrderHistoryItem{
 		PreviousStatus: previousStatus,
 		NewStatus:      newStatus,
 		CreatedAt:      createdAt,

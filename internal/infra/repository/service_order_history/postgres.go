@@ -16,7 +16,7 @@ func Repository() domain.ServiceOrderHistoryRepository {
 	return &repository{}
 }
 
-func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
+func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistoryItem, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
@@ -38,14 +38,14 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 
 	defer func() { _ = rows.Close() }()
 
-	histories := []domain.ServiceOrderHistory{}
+	histories := []domain.ServiceOrderHistoryItem{}
 	for rows.Next() {
 		if err = rows.Err(); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
 
 		var (
-			history        domain.ServiceOrderHistory
+			history        domain.ServiceOrderHistoryItem
 			previousStatus sql.NullString
 		)
 
@@ -67,7 +67,7 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 	return histories, nil
 }
 
-func (r *repository) SearchWorkTransitions(ctx context.Context, serviceOrderID string) ([]domain.WorkServiceOrderHistory, error) {
+func (r *repository) SearchWorkTransitionsByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.WorkTransitionGroup, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
@@ -86,32 +86,41 @@ func (r *repository) SearchWorkTransitions(ctx context.Context, serviceOrderID s
 
 	defer func() { _ = rows.Close() }()
 
-	transitions := []domain.WorkServiceOrderHistory{}
+	orderMap := make(map[string]int)
+	var groups []domain.WorkTransitionGroup
+
 	for rows.Next() {
 		if err = rows.Err(); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
 
 		var (
-			transition     domain.WorkServiceOrderHistory
+			workID         string
+			item           domain.WorkStatusItem
 			previousStatus sql.NullString
 		)
 
 		if err = rows.Scan(
-			&transition.WorkID,
+			&workID,
 			&previousStatus,
-			&transition.NewStatus,
-			&transition.CreatedAt,
+			&item.NewStatus,
+			&item.CreatedAt,
 		); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
 
 		if previousStatus.Valid {
-			transition.PreviousStatus = domain.SERVICE_ORDER_STATUS(previousStatus.String)
+			item.PreviousStatus = domain.SERVICE_ORDER_STATUS(previousStatus.String)
 		}
 
-		transitions = append(transitions, transition)
+		idx, exists := orderMap[workID]
+		if !exists {
+			idx = len(groups)
+			orderMap[workID] = idx
+			groups = append(groups, domain.WorkTransitionGroup{WorkID: workID})
+		}
+		groups[idx].Status = append(groups[idx].Status, item)
 	}
 
-	return transitions, nil
+	return groups, nil
 }

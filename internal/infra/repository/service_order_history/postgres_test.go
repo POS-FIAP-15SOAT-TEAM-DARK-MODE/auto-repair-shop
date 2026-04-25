@@ -93,53 +93,49 @@ func TestPostgresRepository_Search(t *testing.T) {
 }
 
 func TestPostgresRepository_SearchWorkTransitions(t *testing.T) {
-	tests := []struct {
-		name        string
-		serviceID   string
-		mockSetup   func()
-		expectError bool
-		expectLen   int
-	}{
-		{
-			name:      "success returns all rows for the service order",
-			serviceID: "so-1",
-			mockSetup: func() {
-				rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"}).
-					AddRow("w-1", domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now()).
-					AddRow("w-2", domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now())
-				testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
-					WithArgs("so-1").
-					WillReturnRows(rows)
-			},
-			expectError: false,
-			expectLen:   2,
-		},
-		{
-			name:      "query error",
-			serviceID: "so-1",
-			mockSetup: func() {
-				testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
-					WillReturnError(errors.New("query failed"))
-			},
-			expectError: true,
-		},
-	}
+	now := time.Now()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			repo := sohrepo.Repository()
+	t.Run("groups rows by work_id preserving insertion order", func(t *testing.T) {
+		repo := sohrepo.Repository()
+		rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"}).
+			AddRow("w-1", nil, domain.SERVICE_ORDER_STATUS_NEW, now).
+			AddRow("w-2", nil, domain.SERVICE_ORDER_STATUS_NEW, now).
+			AddRow("w-1", domain.SERVICE_ORDER_STATUS_NEW, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, now)
+		testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
+			WithArgs("so-1").
+			WillReturnRows(rows)
 
-			if tt.mockSetup != nil {
-				tt.mockSetup()
-			}
+		groups, err := repo.SearchWorkTransitionsByServiceOrderID(context.Background(), "so-1")
+		assert.NoError(t, err)
+		assert.Len(t, groups, 2)
 
-			items, err := repo.SearchWorkTransitions(context.Background(), tt.serviceID)
-			if tt.expectError {
-				assert.Error(t, err)
-				return
-			}
-			assert.NoError(t, err)
-			assert.Len(t, items, tt.expectLen)
-		})
-	}
+		assert.Equal(t, "w-1", groups[0].WorkID)
+		assert.Len(t, groups[0].Status, 2)
+		assert.Equal(t, domain.SERVICE_ORDER_STATUS_NEW, groups[0].Status[0].NewStatus)
+		assert.Equal(t, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, groups[0].Status[1].NewStatus)
+
+		assert.Equal(t, "w-2", groups[1].WorkID)
+		assert.Len(t, groups[1].Status, 1)
+	})
+
+	t.Run("empty result returns nil", func(t *testing.T) {
+		repo := sohrepo.Repository()
+		rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"})
+		testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
+			WithArgs("so-1").
+			WillReturnRows(rows)
+
+		groups, err := repo.SearchWorkTransitionsByServiceOrderID(context.Background(), "so-1")
+		assert.NoError(t, err)
+		assert.Nil(t, groups)
+	})
+
+	t.Run("query error", func(t *testing.T) {
+		repo := sohrepo.Repository()
+		testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
+			WillReturnError(errors.New("query failed"))
+
+		_, err := repo.SearchWorkTransitionsByServiceOrderID(context.Background(), "so-1")
+		assert.Error(t, err)
+	})
 }

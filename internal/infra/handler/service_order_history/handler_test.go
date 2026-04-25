@@ -19,22 +19,20 @@ import (
 func TestGetHistoryByID_Handler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	inProgressHistory := domain.ServiceOrderHistory{
+	inProgressHistory := domain.ServiceOrderHistoryItem{
 		PreviousStatus: domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL,
 		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
 		WorkTransitions: []domain.WorkTransitionGroup{
 			{
 				WorkID: "work-1",
-				Status: []domain.WorkServiceOrderHistory{
+				Status: []domain.WorkStatusItem{
 					{
-						WorkID:         "work-1",
 						PreviousStatus: "",
 						NewStatus:      domain.SERVICE_ORDER_STATUS_NEW,
 						CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
 					},
 					{
-						WorkID:         "work-1",
 						PreviousStatus: domain.SERVICE_ORDER_STATUS_NEW,
 						NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 						CreatedAt:      time.Date(2026, 4, 5, 13, 0, 0, 0, time.UTC),
@@ -77,7 +75,7 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 			setupMock: func(m *domainmocks.ServiceOrderHistoryService) {
 				m.EXPECT().GetHistoryByID(mock.Anything, mock.MatchedBy(func(p *domain.SearchServiceOrderHistoryParams) bool {
 					return p != nil && p.ID == "so-1"
-				})).Return([]domain.ServiceOrderHistory{inProgressHistory}, nil)
+				})).Return([]domain.ServiceOrderHistoryItem{inProgressHistory}, nil)
 			},
 			route:        "/v1/service-order/so-1/history",
 			expectedCode: http.StatusOK,
