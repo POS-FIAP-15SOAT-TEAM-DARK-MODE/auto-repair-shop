@@ -24,16 +24,20 @@ func NewSupply(name, description string, unitPrice decimal.Decimal, stockQuantit
 //go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyRepository --with-expecter
 type (
 	SupplyService interface {
-		Create(context.Context, *Supply) error
-		Update(context.Context, *Supply) error
+		Create(ctx context.Context, c *Supply) error
 		List(context.Context, *ListSupplyParams) (*PaginatorResponse[Supply], error)
+		Update(context.Context, *Supply) error
+		Delete(context.Context, string) error
 	}
 
 	SupplyRepository interface {
 		Save(context.Context, *Supply) error
 		Search(context.Context, *ListSupplyParams) ([]Supply, error)
 		Count(context.Context, *ListSupplyParams) (int64, error)
+		Delete(context.Context, string) error
 		FindById(context.Context, string) (Supply, error)
+		DecrementStock(ctx context.Context, id string, amount int) error
+		RestoreStock(ctx context.Context, id string, amount int) error
 	}
 )
 

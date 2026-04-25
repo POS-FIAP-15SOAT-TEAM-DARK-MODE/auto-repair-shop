@@ -95,7 +95,7 @@ type (
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
 		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Supply, error)
 		AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error
-		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) error
+		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) (int, error)
 	}
 )
 

@@ -52,12 +52,13 @@ func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (
 }
 
 func (s *svc) ListWorks(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
-	if err := s.checkID(serviceOrderID); err != nil {
-		return nil, err
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return nil, domain.ErrInvalidServiceOrderId
 	}
 
 	var works []domain.Work
-	if err := s.uow.Execute(ctx, func(ctx context.Context) error {
+	err := s.uow.Execute(ctx, func(ctx context.Context) error {
 		ok, _, err := s.repo.ExistsByID(ctx, serviceOrderID)
 		if err != nil {
 			return err
@@ -67,15 +68,17 @@ func (s *svc) ListWorks(ctx context.Context, serviceOrderID string) ([]domain.Wo
 		}
 		works, err = s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
 		return err
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 	return works, nil
 }
 
 func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error {
-	if err := s.checkID(serviceOrderID); err != nil {
-		return err
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
 	}
 
 	if len(workIDs) == 0 {
@@ -129,8 +132,9 @@ func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []str
 }
 
 func (s *svc) RemoveWork(ctx context.Context, serviceOrderID, workID string) error {
-	if err := s.checkID(serviceOrderID); err != nil {
-		return err
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
 	}
 
 	workID = strings.TrimSpace(workID)
@@ -173,8 +177,9 @@ func (s *svc) RemoveWork(ctx context.Context, serviceOrderID, workID string) err
 }
 
 func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
-	if err := s.checkID(serviceOrderID); err != nil {
-		return nil, err
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return nil, domain.ErrInvalidServiceOrderId
 	}
 
 	var supplies []domain.Supply
@@ -196,12 +201,12 @@ func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain
 }
 
 func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies []domain.AddSupply) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
 	if len(supplies) == 0 {
 		return domain.ErrEmptyServicesList
-	}
-
-	if err := s.checkID(serviceOrderID); err != nil {
-		return err
 	}
 
 	err := s.uow.Execute(ctx, func(ctx context.Context) error {
@@ -224,17 +229,24 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 				return domain.ErrInvalidSupplyID
 			}
 
+			if sup.Amount <= 0 {
+				return domain.ErrInvalidSupplyAmount
+			}
+
 			supply, e := s.supplyRepo.FindById(ctx, supplyId)
 			if e != nil {
 				return e
 			}
 
-			amount := sup.Amount
-			if amount > supply.StockQuantity {
-				amount = supply.StockQuantity
+			if supply.StockQuantity < sup.Amount {
+				return domain.ErrSupplyOutOfStock
 			}
 
-			if err = s.repo.AddSupplyLink(ctx, serviceOrderID, sup.ID, amount, supply.UnitPrice); err != nil {
+			if err = s.repo.AddSupplyLink(ctx, serviceOrderID, sup.ID, sup.Amount, supply.UnitPrice); err != nil {
+				return err
+			}
+
+			if err = s.supplyRepo.DecrementStock(ctx, supply.ID, sup.Amount); err != nil {
 				return err
 			}
 		}
@@ -256,8 +268,9 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 }
 
 func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error {
-	if err := s.checkID(serviceOrderID); err != nil {
-		return err
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
 	}
 
 	supplyID = strings.TrimSpace(supplyID)
@@ -279,11 +292,11 @@ func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string)
 			return domain.ErrServiceOrderNotInDiagnosis
 		}
 
-		if err = s.repo.RemoveSupplyLink(ctx, serviceOrderID, supplyID); err != nil {
+		qty, err := s.repo.RemoveSupplyLink(ctx, serviceOrderID, supplyID)
+		if err != nil {
 			return err
 		}
-
-		return nil
+		return s.supplyRepo.RestoreStock(ctx, supplyID, qty)
 	})
 
 	if err != nil {

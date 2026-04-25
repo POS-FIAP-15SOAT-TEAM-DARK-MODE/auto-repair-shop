@@ -110,15 +110,20 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrInvalidVehicleId) ||
 		errors.Is(err, domain.ErrPhoneRequired) ||
 		errors.Is(err, domain.ErrServiceOrderIDRequired) ||
-		errors.Is(err, domain.ErrInvalidCustomerId)
+		errors.Is(err, domain.ErrInvalidCustomerId) ||
+		errors.Is(err, domain.ErrInvalidSupplyID) ||
+		errors.Is(err, domain.ErrInvalidSupplyAmount) ||
+		errors.Is(err, domain.ErrInvalidDocumentFormat)
 }
 
 func isNotFoundError(err error) bool {
 	return errors.Is(err, domain.ErrCustomerNotFound) ||
 		errors.Is(err, domain.ErrVehicleNotFound) ||
 		errors.Is(err, domain.ErrWorkNotFound) ||
+		errors.Is(err, domain.ErrSupplyNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderNotFound) ||
-		errors.Is(err, domain.ErrServiceOrderWorkNotFound)
+		errors.Is(err, domain.ErrServiceOrderWorkNotFound) ||
+		errors.Is(err, domain.ErrServiceOrderSupplyNotFound)
 }
 
 func isUnauthorizedError(err error) bool {
@@ -143,7 +148,9 @@ func isUnprocessableEntityError(err error) bool {
 	return errors.Is(err, domain.ErrDataViolation) ||
 		errors.Is(err, domain.ErrWorkPriceLessThenOrEqualZero) ||
 		errors.Is(err, domain.ErrInvalidWorkPriceValue) ||
-		errors.Is(err, domain.ErrInvalidWorkStatusValue)
+		errors.Is(err, domain.ErrInvalidWorkStatusValue) ||
+		errors.Is(err, domain.ErrServiceOrderNotNew) ||
+		errors.Is(err, domain.ErrSupplyOutOfStock)
 }
 
 func unwrapAll(err error) []string {

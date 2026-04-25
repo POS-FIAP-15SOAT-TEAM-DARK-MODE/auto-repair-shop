@@ -49,6 +49,7 @@ type (
 		Create(*gin.Context)
 		List(*gin.Context)
 		Update(*gin.Context)
+		Delete(*gin.Context)
 	}
 
 	ServiceOrderHandler interface {
