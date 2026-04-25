@@ -230,6 +230,63 @@ func (_c *CustomerService_GetByID_Call) RunAndReturn(run func(context.Context, s
 	return _c
 }
 
+// GetByUserID provides a mock function with given fields: ctx, id
+func (_m *CustomerService) GetByUserID(ctx context.Context, id string) (domain.Customer, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByUserID")
+	}
+
+	var r0 domain.Customer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Customer, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Customer); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(domain.Customer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CustomerService_GetByUserID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByUserID'
+type CustomerService_GetByUserID_Call struct {
+	*mock.Call
+}
+
+// GetByUserID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *CustomerService_Expecter) GetByUserID(ctx interface{}, id interface{}) *CustomerService_GetByUserID_Call {
+	return &CustomerService_GetByUserID_Call{Call: _e.mock.On("GetByUserID", ctx, id)}
+}
+
+func (_c *CustomerService_GetByUserID_Call) Run(run func(ctx context.Context, id string)) *CustomerService_GetByUserID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerService_GetByUserID_Call) Return(_a0 domain.Customer, _a1 error) *CustomerService_GetByUserID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CustomerService_GetByUserID_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerService_GetByUserID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function with given fields: ctx, id, name, email, phone
 func (_m *CustomerService) Update(ctx context.Context, id string, name *string, email *string, phone *string) (domain.Customer, error) {
 	ret := _m.Called(ctx, id, name, email, phone)

@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -17,7 +19,11 @@ type UserClaims struct {
 
 var secretKey []byte
 
-const secretDefaultValue = "your_jwt_secret"
+const (
+	secretDefaultValue  = "your_jwt_secret"
+	authorizationHeader = "Authorization"
+	bearerPrefix        = "Bearer "
+)
 
 func init() {
 	secretKey = []byte(env.GetString("JWT_SECRET", secretDefaultValue))
@@ -35,6 +41,16 @@ func GenerateToken(userId string, roles []domain.Role, expiresAt time.Time) (str
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(secretKey)
+}
+
+func GetClaimsFromHeader(req *http.Request) (*UserClaims, error) {
+	token := req.Header.Get(authorizationHeader)
+	if token == "" || !strings.HasPrefix(token, bearerPrefix) {
+		return nil, domain.ErrInvalidUserCredentials
+	}
+
+	token = strings.TrimPrefix(token, bearerPrefix)
+	return GetClaims(token)
 }
 
 func GetClaims(token string) (*UserClaims, error) {

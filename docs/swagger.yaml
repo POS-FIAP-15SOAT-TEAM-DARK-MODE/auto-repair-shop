@@ -888,7 +888,7 @@ paths:
               type: string
             description: Id of service order to send to approval
         responses:
-          "202":
+          "204":
             description: Service Order successfully sent
           "400":
             description: Invalid Body Content
@@ -904,6 +904,80 @@ paths:
                   $ref: '#/components/schemas/ErrorResponse'
           "500":
             description: Internal Server Error
+
+  /v1/service-order/{id}/accept:
+    put:
+      summary: Accept service order by customer
+      description: Customer accept a specific service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order UUID
+      responses:
+        "204":
+          description: Service order accepted successfully
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
+  /v1/service-order/{id}/reject:
+    put:
+      summary: Reject service order by customer
+      description: Customer reject a specific service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order UUID
+      responses:
+        "204":
+          description: Service order rejected successfully
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
 
   /v1/service-order/{id}/services:
     get:

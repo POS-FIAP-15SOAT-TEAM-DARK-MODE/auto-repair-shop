@@ -57,3 +57,13 @@ func (r *memory_repo) Delete(_ context.Context, id string) error {
 	delete(r.data, id)
 	return nil
 }
+
+func (r *memory_repo) GetByUserID(_ context.Context, id string) (domain.Customer, error) {
+	for _, c := range r.data {
+		if c.UserID == id {
+			return c, nil
+		}
+	}
+
+	return domain.Customer{}, domain.ErrCustomerNotFound
+}
