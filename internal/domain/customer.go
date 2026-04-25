@@ -35,6 +35,7 @@ type (
 		Create(ctx context.Context, customer Customer) error
 		GetByID(ctx context.Context, id string) (Customer, error)
 		GetByDocument(ctx context.Context, rawDocument string) (Customer, error)
+		GetByUserID(ctx context.Context, id string) (Customer, error)
 		Update(ctx context.Context, id string, name, email, phone *string) (Customer, error)
 		Delete(ctx context.Context, id string) error
 	}
@@ -43,6 +44,7 @@ type (
 		Create(ctx context.Context, customer *Customer) error
 		GetByID(ctx context.Context, id string) (Customer, error)
 		GetByDocument(ctx context.Context, document string) (Customer, error)
+		GetByUserID(ctx context.Context, id string) (Customer, error)
 		Update(ctx context.Context, id, phone string) error
 		Delete(ctx context.Context, id string) error
 	}

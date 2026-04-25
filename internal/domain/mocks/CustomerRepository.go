@@ -230,6 +230,63 @@ func (_c *CustomerRepository_GetByID_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
+// GetByUserID provides a mock function with given fields: ctx, id
+func (_m *CustomerRepository) GetByUserID(ctx context.Context, id string) (domain.Customer, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByUserID")
+	}
+
+	var r0 domain.Customer
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.Customer, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.Customer); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(domain.Customer)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CustomerRepository_GetByUserID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByUserID'
+type CustomerRepository_GetByUserID_Call struct {
+	*mock.Call
+}
+
+// GetByUserID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *CustomerRepository_Expecter) GetByUserID(ctx interface{}, id interface{}) *CustomerRepository_GetByUserID_Call {
+	return &CustomerRepository_GetByUserID_Call{Call: _e.mock.On("GetByUserID", ctx, id)}
+}
+
+func (_c *CustomerRepository_GetByUserID_Call) Run(run func(ctx context.Context, id string)) *CustomerRepository_GetByUserID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *CustomerRepository_GetByUserID_Call) Return(_a0 domain.Customer, _a1 error) *CustomerRepository_GetByUserID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CustomerRepository_GetByUserID_Call) RunAndReturn(run func(context.Context, string) (domain.Customer, error)) *CustomerRepository_GetByUserID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function with given fields: ctx, id, phone
 func (_m *CustomerRepository) Update(ctx context.Context, id string, phone string) error {
 	ret := _m.Called(ctx, id, phone)

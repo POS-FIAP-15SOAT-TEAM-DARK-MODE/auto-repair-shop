@@ -22,56 +22,9 @@ func (_m *SupplyService) EXPECT() *SupplyService_Expecter {
 	return &SupplyService_Expecter{mock: &_m.Mock}
 }
 
-// Change provides a mock function with given fields: _a0, _a1
-func (_m *SupplyService) Change(_a0 context.Context, _a1 *domain.Supply) error {
+// Create provides a mock function with given fields: _a0, _a1
+func (_m *SupplyService) Create(_a0 context.Context, _a1 *domain.Supply) error {
 	ret := _m.Called(_a0, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Change")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.Supply) error); ok {
-		r0 = rf(_a0, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SupplyService_Change_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Change'
-type SupplyService_Change_Call struct {
-	*mock.Call
-}
-
-// Change is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 *domain.Supply
-func (_e *SupplyService_Expecter) Change(_a0 interface{}, _a1 interface{}) *SupplyService_Change_Call {
-	return &SupplyService_Change_Call{Call: _e.mock.On("Change", _a0, _a1)}
-}
-
-func (_c *SupplyService_Change_Call) Run(run func(_a0 context.Context, _a1 *domain.Supply)) *SupplyService_Change_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.Supply))
-	})
-	return _c
-}
-
-func (_c *SupplyService_Change_Call) Return(_a0 error) *SupplyService_Change_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *SupplyService_Change_Call) RunAndReturn(run func(context.Context, *domain.Supply) error) *SupplyService_Change_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Create provides a mock function with given fields: ctx, c
-func (_m *SupplyService) Create(ctx context.Context, c *domain.Supply) error {
-	ret := _m.Called(ctx, c)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
@@ -79,7 +32,7 @@ func (_m *SupplyService) Create(ctx context.Context, c *domain.Supply) error {
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *domain.Supply) error); ok {
-		r0 = rf(ctx, c)
+		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -93,13 +46,13 @@ type SupplyService_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - ctx context.Context
-//   - c *domain.Supply
-func (_e *SupplyService_Expecter) Create(ctx interface{}, c interface{}) *SupplyService_Create_Call {
-	return &SupplyService_Create_Call{Call: _e.mock.On("Create", ctx, c)}
+//   - _a0 context.Context
+//   - _a1 *domain.Supply
+func (_e *SupplyService_Expecter) Create(_a0 interface{}, _a1 interface{}) *SupplyService_Create_Call {
+	return &SupplyService_Create_Call{Call: _e.mock.On("Create", _a0, _a1)}
 }
 
-func (_c *SupplyService_Create_Call) Run(run func(ctx context.Context, c *domain.Supply)) *SupplyService_Create_Call {
+func (_c *SupplyService_Create_Call) Run(run func(_a0 context.Context, _a1 *domain.Supply)) *SupplyService_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(*domain.Supply))
 	})

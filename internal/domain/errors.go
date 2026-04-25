@@ -48,13 +48,15 @@ var (
 
 // Service order errors
 var (
-	ErrInvalidServiceOrderId      = errors.New("invalid service order id")
-	ErrServiceOrderNotFound       = errors.New("service order not found")
-	ErrServiceOrderNotNew         = errors.New("service order isn't at NEW state")
-	ErrServiceOrderNotInDiagnosis = errors.New("service order isn't at IN_DIAGNOSIS state")
-	ErrServiceOrderWorkNotFound   = errors.New("work is not linked to this service order")
-	ErrServiceOrderSupplyNotFound = errors.New("supply is not linked to this service order")
-	ErrEmptyServicesList          = errors.New("services list cannot be empty")
+	ErrInvalidServiceOrderId           = errors.New("invalid service order id")
+	ErrServiceOrderNotFound            = errors.New("service order not found")
+	ErrServiceOrderNotNew              = errors.New("service order isn't at NEW state")
+	ErrServiceOrderNotInDiagnosis      = errors.New("service order isn't at IN_DIAGNOSIS state")
+	ErrServiceOrderNotAwaitingApproval = errors.New("service order isn't at AWAITING_APPROVAL state")
+	ErrServiceOrderWorkNotFound        = errors.New("work is not linked to this service order")
+	ErrServiceOrderSupplyNotFound      = errors.New("supply is not linked to this service order")
+	ErrEmptyServicesList               = errors.New("services list cannot be empty")
+	ErrServiceOrderIDRequired          = errors.New("service order id is required")
 )
 
 // Customer errors
@@ -92,9 +94,4 @@ var (
 	ErrInvalidSupplyStockQuantity = errors.New("supply stock quantity must be greater than or equal to 0")
 	ErrInvalidSupplyVersion       = errors.New("supply version must be greater than or equal to 0")
 	ErrSupplyNotFound             = errors.New("supply not found")
-)
-
-// Service Order errors
-var (
-	ErrServiceOrderIDRequired = errors.New("service order id is required")
 )

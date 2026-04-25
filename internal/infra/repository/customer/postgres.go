@@ -108,6 +108,36 @@ func (r *repository) GetByDocument(ctx context.Context, document string) (domain
 	return c, nil
 }
 
+func (r *repository) GetByUserID(ctx context.Context, id string) (domain.Customer, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return domain.Customer{}, err
+	}
+
+	var c domain.Customer
+	c.User = &domain.User{}
+
+	err = db.QueryRowContext(ctx, getCustomerByUserIDQuery, id).Scan(
+		&c.ID, &c.UserID, &c.Type,
+		&c.CPF, &c.CNPJ, &c.CompanyName, &c.Phone,
+		&c.User.Name, &c.User.Email,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Customer{}, domain.ErrCustomerNotFound
+		}
+		logger.Of(ctx).Warn("customer repository: failed to get customer by user id",
+			zap.String("operation", "get_customer_by_user_id"),
+			zap.String("entity_id", id),
+			zap.Error(err),
+		)
+		return domain.Customer{}, pgPkg.Error(ctx, err)
+	}
+
+	c.User.ID = c.UserID
+	return c, nil
+}
+
 func (r *repository) Update(ctx context.Context, id, phone string) error {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {

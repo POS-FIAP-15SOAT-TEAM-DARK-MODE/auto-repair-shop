@@ -15,6 +15,7 @@ const (
 	SERVICE_ORDER_STATUS_RECEIVED          SERVICE_ORDER_STATUS = "RECEIVED"
 	SERVICE_ORDER_STATUS_IN_DIAGNOSIS      SERVICE_ORDER_STATUS = "IN_DIAGNOSIS"
 	SERVICE_ORDER_STATUS_AWAITING_APPROVAL SERVICE_ORDER_STATUS = "AWAITING_APPROVAL"
+	SERVICE_ORDER_STATUS_REJECTED          SERVICE_ORDER_STATUS = "REJECTED"
 	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
 	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
 	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
@@ -84,6 +85,8 @@ type (
 		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
 		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
 		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
+		Accept(ctx context.Context, serviceOrderID, userID string) error
+		Reject(ctx context.Context, serviceOrderID, userID string) error
 	}
 
 	ServiceOrderRepository interface {

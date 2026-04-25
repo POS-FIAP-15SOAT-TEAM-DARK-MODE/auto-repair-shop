@@ -92,3 +92,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		func(txCtx context.Context) error { return s.userRepo.Delete(txCtx, customer.UserID) },
 	)
 }
+
+func (s *service) GetByUserID(ctx context.Context, id string) (domain.Customer, error) {
+	return s.customerRepo.GetByUserID(ctx, id)
+}

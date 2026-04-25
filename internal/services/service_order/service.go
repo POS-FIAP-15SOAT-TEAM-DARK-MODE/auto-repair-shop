@@ -382,3 +382,74 @@ func (s *svc) checkID(serviceOrderID string) error {
 	}
 	return nil
 }
+
+func (s *svc) Accept(ctx context.Context, serviceOrderID, userID string) error {
+	eg := errgroup.Group{}
+
+	var so domain.ServiceOrder
+	eg.Go(func() (err error) {
+		so, err = s.repo.FindByID(ctx, serviceOrderID)
+		return
+	})
+
+	var cust domain.Customer
+	eg.Go(func() (err error) {
+		cust, err = s.customerService.GetByUserID(ctx, userID)
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	if so.Customer.ID != cust.ID {
+		return domain.ErrInvalidCustomerId
+	}
+
+	if so.Status != domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL {
+		return domain.ErrServiceOrderNotAwaitingApproval
+	}
+
+	so.Status = domain.SERVICE_ORDER_STATUS_IN_PROGRESS
+
+	// TODO: NOTIFY MECHANICAL TO START SERVICE
+
+	return s.uow.Execute(ctx, func(c context.Context) error {
+		return s.repo.Save(c, &so)
+	})
+}
+func (s *svc) Reject(ctx context.Context, serviceOrderID, userID string) error {
+	eg := errgroup.Group{}
+
+	var so domain.ServiceOrder
+	eg.Go(func() (err error) {
+		so, err = s.repo.FindByID(ctx, serviceOrderID)
+		return
+	})
+
+	var cust domain.Customer
+	eg.Go(func() (err error) {
+		cust, err = s.customerService.GetByUserID(ctx, userID)
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	if so.Customer.ID != cust.ID {
+		return domain.ErrInvalidCustomerId
+	}
+
+	if so.Status != domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL {
+		return domain.ErrServiceOrderNotAwaitingApproval
+	}
+
+	so.Status = domain.SERVICE_ORDER_STATUS_REJECTED
+
+	// TODO: RELEASE STOCK
+
+	return s.uow.Execute(ctx, func(c context.Context) error {
+		return s.repo.Save(c, &so)
+	})
+}
