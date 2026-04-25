@@ -3,14 +3,10 @@ package domain
 import (
 	"context"
 	"time"
-
-	"github.com/oklog/ulid/v2"
 )
 
 type (
 	ServiceOrderHistory struct {
-		ID              string
-		ServiceOrderID  string
 		PreviousStatus  SERVICE_ORDER_STATUS
 		NewStatus       SERVICE_ORDER_STATUS
 		CreatedAt       time.Time
@@ -79,7 +75,6 @@ func (list WorkServiceOrderHistoryList) ToWorkTransitionGroup() []WorkTransition
 
 func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistory {
 	return &ServiceOrderHistory{
-		ID:             ulid.Make().String(),
 		PreviousStatus: previousStatus,
 		NewStatus:      newStatus,
 		CreatedAt:      createdAt,

@@ -16,22 +16,16 @@ import (
 var (
 	soBaseTime = time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
 	soReceived = domain.ServiceOrderHistory{
-		ID:             "soh-1",
-		ServiceOrderID: "so-1",
 		PreviousStatus: "",
 		NewStatus:      domain.SERVICE_ORDER_STATUS_RECEIVED,
 		CreatedAt:      soBaseTime,
 	}
 	soInProgress = domain.ServiceOrderHistory{
-		ID:             "soh-2",
-		ServiceOrderID: "so-1",
 		PreviousStatus: domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL,
 		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		CreatedAt:      soBaseTime.Add(2 * time.Hour),
 	}
 	soCompleted = domain.ServiceOrderHistory{
-		ID:             "soh-3",
-		ServiceOrderID: "so-1",
 		PreviousStatus: domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		NewStatus:      domain.SERVICE_ORDER_STATUS_COMPLETED,
 		CreatedAt:      soBaseTime.Add(4 * time.Hour),

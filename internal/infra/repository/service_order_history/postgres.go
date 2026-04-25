@@ -50,8 +50,6 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 		)
 
 		if err = rows.Scan(
-			&history.ID,
-			&history.ServiceOrderID,
 			&previousStatus,
 			&history.NewStatus,
 			&history.CreatedAt,

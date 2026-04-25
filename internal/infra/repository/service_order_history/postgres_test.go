@@ -30,21 +30,20 @@ func TestMain(m *testing.M) {
 
 func TestPostgresRepository_Search(t *testing.T) {
 	tests := []struct {
-		name          string
-		params        *domain.SearchServiceOrderHistoryParams
-		mockSetup     func()
-		expectError   bool
-		expectLen     int
-		expectOrderID string
+		name        string
+		params      *domain.SearchServiceOrderHistoryParams
+		mockSetup   func()
+		expectError bool
+		expectLen   int
 	}{
 		{
 			name:   "success without ID filter returns all rows",
 			params: &domain.SearchServiceOrderHistoryParams{},
 			mockSetup: func() {
-				rows := sqlmock.NewRows([]string{"id", "service_order_id", "previous_status", "new_status", "created_at"}).
-					AddRow("hist-1", "so-1", domain.SERVICE_ORDER_STATUS_NEW, domain.SERVICE_ORDER_STATUS_RECEIVED, time.Now()).
-					AddRow("hist-2", "so-1", domain.SERVICE_ORDER_STATUS_RECEIVED, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, time.Now())
-				testMock.ExpectQuery(`SELECT soh.id, soh.service_order_id, soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`).
+				rows := sqlmock.NewRows([]string{"previous_status", "new_status", "created_at"}).
+					AddRow(domain.SERVICE_ORDER_STATUS_NEW, domain.SERVICE_ORDER_STATUS_RECEIVED, time.Now()).
+					AddRow(domain.SERVICE_ORDER_STATUS_RECEIVED, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, time.Now())
+				testMock.ExpectQuery(`SELECT soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`).
 					WillReturnRows(rows)
 			},
 			expectError: false,
@@ -54,21 +53,20 @@ func TestPostgresRepository_Search(t *testing.T) {
 			name:   "success with ID filter binds the id arg",
 			params: &domain.SearchServiceOrderHistoryParams{ID: "so-99"},
 			mockSetup: func() {
-				rows := sqlmock.NewRows([]string{"id", "service_order_id", "previous_status", "new_status", "created_at"}).
-					AddRow("hist-3", "so-99", domain.SERVICE_ORDER_STATUS_NEW, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now())
-				testMock.ExpectQuery(`SELECT soh.id, soh.service_order_id, soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`).
+				rows := sqlmock.NewRows([]string{"previous_status", "new_status", "created_at"}).
+					AddRow(domain.SERVICE_ORDER_STATUS_NEW, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, time.Now())
+				testMock.ExpectQuery(`SELECT soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`).
 					WithArgs("so-99").
 					WillReturnRows(rows)
 			},
-			expectError:   false,
-			expectLen:     1,
-			expectOrderID: "so-99",
+			expectError: false,
+			expectLen:   1,
 		},
 		{
 			name:   "query error",
 			params: &domain.SearchServiceOrderHistoryParams{},
 			mockSetup: func() {
-				testMock.ExpectQuery(`SELECT soh.id, soh.service_order_id, soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`).
+				testMock.ExpectQuery(`SELECT soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`).
 					WillReturnError(errors.New("query failed"))
 			},
 			expectError: true,
@@ -90,9 +88,6 @@ func TestPostgresRepository_Search(t *testing.T) {
 			}
 			assert.NoError(t, err)
 			assert.Len(t, histories, tt.expectLen)
-			if tt.expectOrderID != "" {
-				assert.Equal(t, tt.expectOrderID, histories[0].ServiceOrderID)
-			}
 		})
 	}
 }

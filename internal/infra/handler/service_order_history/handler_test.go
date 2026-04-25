@@ -20,7 +20,6 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	inProgressHistory := domain.ServiceOrderHistory{
-		ID:             "history-id-1",
 		PreviousStatus: domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL,
 		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
 		CreatedAt:      time.Date(2026, 4, 5, 12, 34, 56, 0, time.UTC),
