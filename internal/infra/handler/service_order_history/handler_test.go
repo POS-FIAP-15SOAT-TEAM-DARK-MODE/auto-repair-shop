@@ -135,12 +135,12 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 				assert.Len(t, statuses, 2)
 
 				s0, _ := statuses[0].(map[string]interface{})
-				assert.Equal(t, "work-tx-1", s0["id"])
 				assert.Equal(t, "NEW", s0["new_status"])
+				assert.Nil(t, s0["id"])
 
 				s1, _ := statuses[1].(map[string]interface{})
-				assert.Equal(t, "work-tx-2", s1["id"])
 				assert.Equal(t, "IN_PROGRESS", s1["new_status"])
+				assert.Nil(t, s1["id"])
 			}
 
 			if tt.expectedErr != "" {

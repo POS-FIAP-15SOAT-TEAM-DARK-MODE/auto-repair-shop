@@ -853,12 +853,10 @@ paths:
                   work_transitions:
                     - work_id: eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
                       status:
-                        - id: "1"
-                          previous_status: ""
+                        - previous_status: ""
                           new_status: NEW
                           created_at: "2026-04-15T14:34:37.026Z"
-                        - id: "2"
-                          previous_status: NEW
+                        - previous_status: NEW
                           new_status: IN_PROGRESS
                           created_at: "2026-04-16T14:34:37.026Z"
                 - id: 01HZ8X2TJ8M2YV5N1QX9G2KX6R
@@ -1383,10 +1381,6 @@ components:
       type: object
       description: A single status transition for one work.
       properties:
-        id:
-          type: string
-          format: uuid
-          example: 4e2c1b9a-7d8f-4a3b-9c1e-2f3a4b5c6d7e
         previous_status:
           type: string
           example: NEW
@@ -1398,7 +1392,6 @@ components:
           format: date-time
           example: "2026-04-16T14:34:37.026Z"
       required:
-        - id
         - previous_status
         - new_status
         - created_at

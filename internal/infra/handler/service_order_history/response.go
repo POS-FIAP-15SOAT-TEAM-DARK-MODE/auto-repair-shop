@@ -7,7 +7,6 @@ import (
 )
 
 type workStatusEntryDTO struct {
-	ID             string    `json:"id"`
 	PreviousStatus string    `json:"previous_status"`
 	NewStatus      string    `json:"new_status"`
 	CreatedAt      time.Time `json:"created_at"`
@@ -40,7 +39,6 @@ func mapResponseDTOFromDomain(so *domain.ServiceOrderHistory) serviceOrderHistor
 			statuses := make([]workStatusEntryDTO, len(g.Status))
 			for j, s := range g.Status {
 				statuses[j] = workStatusEntryDTO{
-					ID:             s.ID,
 					PreviousStatus: s.PreviousStatus.String(),
 					NewStatus:      s.NewStatus.String(),
 					CreatedAt:      s.CreatedAt,
