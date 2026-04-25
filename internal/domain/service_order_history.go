@@ -44,12 +44,7 @@ type (
 	}
 
 	ServiceOrderHistoryRepository interface {
-		// Search returns all SO status transitions for the given service order,
-		// ordered by created_at ASC. The endpoint is non-paginated by design
-		// because a service order's lifecycle is bounded (~8 transitions).
 		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
-		// SearchWorkTransitions returns all work-status transitions for the given
-		// service order, ordered by created_at ASC.
 		SearchWorkTransitions(ctx context.Context, serviceOrderID string) ([]WorkServiceOrderHistory, error)
 	}
 )
