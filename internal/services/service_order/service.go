@@ -503,3 +503,25 @@ func (s *svc) Reject(c context.Context, serviceOrderID, userID string) error {
 		return s.repo.Save(ctx, &so)
 	})
 }
+
+func (s *svc) Deliver(c context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(c, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_COMPLETED {
+			return domain.ErrServiceOrderNotCompleted
+		}
+
+		so.Status = domain.SERVICE_ORDER_STATUS_DELIVERED
+
+		return s.repo.Save(ctx, &so)
+	})
+}

@@ -95,6 +95,7 @@ type (
 		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
 		Accept(ctx context.Context, serviceOrderID, userID string) error
 		Reject(ctx context.Context, serviceOrderID, userID string) error
+		Deliver(ctx context.Context, serviceOrderID string) error
 	}
 
 	ServiceOrderRepository interface {
