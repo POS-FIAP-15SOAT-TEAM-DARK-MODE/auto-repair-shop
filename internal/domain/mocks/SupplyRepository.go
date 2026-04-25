@@ -79,6 +79,101 @@ func (_c *SupplyRepository_Count_Call) RunAndReturn(run func(context.Context, *d
 	return _c
 }
 
+// DecrementStock provides a mock function with given fields: ctx, id, amount
+func (_m *SupplyRepository) DecrementStock(ctx context.Context, id string, amount int) error {
+	ret := _m.Called(ctx, id, amount)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DecrementStock")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
+		r0 = rf(ctx, id, amount)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyRepository_DecrementStock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DecrementStock'
+type SupplyRepository_DecrementStock_Call struct {
+	*mock.Call
+}
+
+// DecrementStock is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - amount int
+func (_e *SupplyRepository_Expecter) DecrementStock(ctx interface{}, id interface{}, amount interface{}) *SupplyRepository_DecrementStock_Call {
+	return &SupplyRepository_DecrementStock_Call{Call: _e.mock.On("DecrementStock", ctx, id, amount)}
+}
+
+func (_c *SupplyRepository_DecrementStock_Call) Run(run func(ctx context.Context, id string, amount int)) *SupplyRepository_DecrementStock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(int))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_DecrementStock_Call) Return(_a0 error) *SupplyRepository_DecrementStock_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyRepository_DecrementStock_Call) RunAndReturn(run func(context.Context, string, int) error) *SupplyRepository_DecrementStock_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Delete provides a mock function with given fields: _a0, _a1
+func (_m *SupplyRepository) Delete(_a0 context.Context, _a1 string) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyRepository_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type SupplyRepository_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 string
+func (_e *SupplyRepository_Expecter) Delete(_a0 interface{}, _a1 interface{}) *SupplyRepository_Delete_Call {
+	return &SupplyRepository_Delete_Call{Call: _e.mock.On("Delete", _a0, _a1)}
+}
+
+func (_c *SupplyRepository_Delete_Call) Run(run func(_a0 context.Context, _a1 string)) *SupplyRepository_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_Delete_Call) Return(_a0 error) *SupplyRepository_Delete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyRepository_Delete_Call) RunAndReturn(run func(context.Context, string) error) *SupplyRepository_Delete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindById provides a mock function with given fields: _a0, _a1
 func (_m *SupplyRepository) FindById(_a0 context.Context, _a1 string) (domain.Supply, error) {
 	ret := _m.Called(_a0, _a1)
@@ -132,6 +227,54 @@ func (_c *SupplyRepository_FindById_Call) Return(_a0 domain.Supply, _a1 error) *
 }
 
 func (_c *SupplyRepository_FindById_Call) RunAndReturn(run func(context.Context, string) (domain.Supply, error)) *SupplyRepository_FindById_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RestoreStock provides a mock function with given fields: ctx, id, amount
+func (_m *SupplyRepository) RestoreStock(ctx context.Context, id string, amount int) error {
+	ret := _m.Called(ctx, id, amount)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RestoreStock")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
+		r0 = rf(ctx, id, amount)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SupplyRepository_RestoreStock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RestoreStock'
+type SupplyRepository_RestoreStock_Call struct {
+	*mock.Call
+}
+
+// RestoreStock is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - amount int
+func (_e *SupplyRepository_Expecter) RestoreStock(ctx interface{}, id interface{}, amount interface{}) *SupplyRepository_RestoreStock_Call {
+	return &SupplyRepository_RestoreStock_Call{Call: _e.mock.On("RestoreStock", ctx, id, amount)}
+}
+
+func (_c *SupplyRepository_RestoreStock_Call) Run(run func(ctx context.Context, id string, amount int)) *SupplyRepository_RestoreStock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(int))
+	})
+	return _c
+}
+
+func (_c *SupplyRepository_RestoreStock_Call) Return(_a0 error) *SupplyRepository_RestoreStock_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *SupplyRepository_RestoreStock_Call) RunAndReturn(run func(context.Context, string, int) error) *SupplyRepository_RestoreStock_Call {
 	_c.Call.Return(run)
 	return _c
 }

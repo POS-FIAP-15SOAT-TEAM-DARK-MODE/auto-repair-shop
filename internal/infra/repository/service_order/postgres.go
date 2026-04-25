@@ -160,24 +160,21 @@ func (r *repository) AddSupplyLink(ctx context.Context, serviceOrderID string, s
 	return nil
 }
 
-func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string, supplyID string) error {
+func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string, supplyID string) (int, error) {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	res, err := tx.ExecContext(ctx, deleteServiceOrderSuppliesQuery, serviceOrderID, supplyID)
+	var qty int
+	err = tx.QueryRowContext(ctx, deleteServiceOrderSuppliesQuery, serviceOrderID, supplyID).Scan(&qty)
 	if err != nil {
-		return pgPkg.Error(ctx, err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, domain.ErrServiceOrderSupplyNotFound
+		}
+		return 0, pgPkg.Error(ctx, err)
 	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return pgPkg.Error(ctx, err)
-	}
-	if n == 0 {
-		return domain.ErrServiceOrderSupplyNotFound
-	}
-	return nil
+	return qty, nil
 }
 
 func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {

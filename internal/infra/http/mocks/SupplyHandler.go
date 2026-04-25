@@ -54,6 +54,39 @@ func (_c *SupplyHandler_Create_Call) RunAndReturn(run func(*gin.Context)) *Suppl
 	return _c
 }
 
+// Delete provides a mock function with given fields: _a0
+func (_m *SupplyHandler) Delete(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// SupplyHandler_Delete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Delete'
+type SupplyHandler_Delete_Call struct {
+	*mock.Call
+}
+
+// Delete is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *SupplyHandler_Expecter) Delete(_a0 interface{}) *SupplyHandler_Delete_Call {
+	return &SupplyHandler_Delete_Call{Call: _e.mock.On("Delete", _a0)}
+}
+
+func (_c *SupplyHandler_Delete_Call) Run(run func(_a0 *gin.Context)) *SupplyHandler_Delete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *SupplyHandler_Delete_Call) Return() *SupplyHandler_Delete_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *SupplyHandler_Delete_Call) RunAndReturn(run func(*gin.Context)) *SupplyHandler_Delete_Call {
+	_c.Run(run)
+	return _c
+}
+
 // List provides a mock function with given fields: _a0
 func (_m *SupplyHandler) List(_a0 *gin.Context) {
 	_m.Called(_a0)
