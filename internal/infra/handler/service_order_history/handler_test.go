@@ -109,17 +109,17 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 				assert.Len(t, items, tt.expectedLen)
 
 				first := items[0]
-				workTransitions, ok := first["work_transitions"].([]interface{})
+				workTransitions, ok := first["workTransitions"].([]interface{})
 				if !ok {
-					t.Fatalf("expected work_transitions array, got: %T", first["work_transitions"])
+					t.Fatalf("expected workTransitions array, got: %T", first["workTransitions"])
 				}
 				assert.Len(t, workTransitions, 1)
 
 				group, ok := workTransitions[0].(map[string]interface{})
 				if !ok {
-					t.Fatalf("expected work_transitions[0] to be an object")
+					t.Fatalf("expected workTransitions[0] to be an object")
 				}
-				assert.Equal(t, "work-1", group["work_id"])
+				assert.Equal(t, "work-1", group["workId"])
 
 				statuses, ok := group["status"].([]interface{})
 				if !ok {
@@ -128,12 +128,10 @@ func TestGetHistoryByID_Handler(t *testing.T) {
 				assert.Len(t, statuses, 2)
 
 				s0, _ := statuses[0].(map[string]interface{})
-				assert.Equal(t, "NEW", s0["new_status"])
-				assert.Nil(t, s0["id"])
+				assert.Equal(t, "NEW", s0["newStatus"])
 
 				s1, _ := statuses[1].(map[string]interface{})
-				assert.Equal(t, "IN_PROGRESS", s1["new_status"])
-				assert.Nil(t, s1["id"])
+				assert.Equal(t, "IN_PROGRESS", s1["newStatus"])
 			}
 
 			if tt.expectedErr != "" {

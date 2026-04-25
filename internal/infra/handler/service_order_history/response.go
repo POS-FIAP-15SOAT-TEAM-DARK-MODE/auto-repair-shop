@@ -7,21 +7,21 @@ import (
 )
 
 type workStatusEntryDTO struct {
-	PreviousStatus string    `json:"previous_status"`
-	NewStatus      string    `json:"new_status"`
-	CreatedAt      time.Time `json:"created_at"`
+	PreviousStatus string    `json:"previousStatus"`
+	NewStatus      string    `json:"newStatus"`
+	CreatedAt      time.Time `json:"createdAt"`
 }
 
 type workTransitionGroupDTO struct {
-	WorkID string               `json:"work_id"`
+	WorkID string               `json:"workId"`
 	Status []workStatusEntryDTO `json:"status"`
 }
 
 type serviceOrderHistoryResponseDTO struct {
-	PreviousStatus  string                   `json:"previous_status"`
-	NewStatus       string                   `json:"new_status"`
-	CreatedAt       time.Time                `json:"created_at"`
-	WorkTransitions []workTransitionGroupDTO `json:"work_transitions,omitempty"`
+	PreviousStatus  string                   `json:"previousStatus"`
+	NewStatus       string                   `json:"newStatus"`
+	CreatedAt       time.Time                `json:"createdAt"`
+	WorkTransitions []workTransitionGroupDTO `json:"workTransitions,omitempty"`
 }
 
 func mapResponseDTOFromDomain(so *domain.ServiceOrderHistoryItem) serviceOrderHistoryResponseDTO {
