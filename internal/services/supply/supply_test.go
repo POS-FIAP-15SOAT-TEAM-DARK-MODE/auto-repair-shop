@@ -474,7 +474,6 @@ func TestService_Update_UnitOfWorkError(t *testing.T) {
 
 	assert.ErrorIs(t, err, expectedErr)
 }
-
 func TestService_Delete_Success(t *testing.T) {
 	ctx := context.Background()
 	exec := uowmocks.NewExecutor(t)

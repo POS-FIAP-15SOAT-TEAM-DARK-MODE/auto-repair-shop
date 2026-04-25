@@ -817,6 +817,63 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/history:
+    get:
+      summary: Get service order history
+      description: Returns the history of status changes for the specified service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order UUID
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based)
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page
+      responses:
+        "200":
+          description: History retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkOrderHistoryResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
   /v1/service-order/{id}/services:
     get:
       summary: Get all services of a service order
@@ -909,6 +966,113 @@ paths:
       responses:
         "204":
           description: Service successfully deleted
+        "400":
+          description: Invalid Body Content
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "422":
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
+  /v1/service-order/{id}/supplies:
+    get:
+      summary: Get all supplies of a service order
+      description: Get all supplies of a service order by its id
+      tags:
+        - ServiceOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Id of service order to get all supplies from.
+      responses:
+        "200":
+          description: Services successfully fetched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListWorksResponse"
+        "400":
+          description: Invalid Body Content
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "422":
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+    post:
+      summary: Add a new supply to a service order
+      description: Add a new supply to a service order by its id
+      tags:
+        - ServiceOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Id of service order to add a supply to.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSuppliesToServiceOrderRequest"
+      responses:
+        "204":
+          description: Service successfully added
+        "400":
+          description: Invalid Body Content
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "422":
+          description: Business rule violation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
+  /v1/service-order/{id}/supplies/{supplyId}:
+    delete:
+      summary: Delete a supply from a service order
+      description: Delete a supply from a service order by its id
+      tags:
+        - ServiceOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Id of service order to delete a supply from.
+        - in: path
+          name: supplyId
+          required: true
+          schema:
+            type: string
+          description: Id of supply to be deleted.
+      responses:
+        "204":
+          description: Supply successfully deleted
         "400":
           description: Invalid Body Content
         "401":
@@ -1174,6 +1338,40 @@ components:
         - pageSize
         - page
 
+    WorkOrderHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 8b6f1c2e-3c4a-4f8c-9a2b-1d2e3f4a5b6c
+        previous_status:
+          type: string
+          example: RECEIVED
+        new_status:
+          type: string
+          example: IN_DIAGNOSIS
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-04-05T12:34:56Z"
+      required:
+        - id
+        - service_order_id
+        - previous_status
+        - new_status
+        - created_at
+
+    WorkOrderHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkOrderHistoryEntry"
+      required:
+        - items
+
     VehicleRequest:
       type: object
       required:
@@ -1384,3 +1582,20 @@ components:
           items:
             type: string
             description: ID of the service to add to the service order
+
+    AddSuppliesToServiceOrderRequest:
+      type: object
+      required:
+        - supplies
+      properties:
+        supplies:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of the supply to add to the service order
+              amount:
+                type: integer
+                description: Amount of supplies to add

@@ -10,22 +10,35 @@ import (
 type SERVICE_ORDER_STATUS string
 
 const (
-	SERVICE_ORDER_STATUS_NEW SERVICE_ORDER_STATUS = "NEW"
+	SERVICE_ORDER_STATUS_NEW               SERVICE_ORDER_STATUS = "NEW"
+	SERVICE_ORDER_STATUS_RECEIVED          SERVICE_ORDER_STATUS = "RECEIVED"
+	SERVICE_ORDER_STATUS_IN_DIAGNOSIS      SERVICE_ORDER_STATUS = "IN_DIAGNOSIS"
+	SERVICE_ORDER_STATUS_AWAITING_APPROVAL SERVICE_ORDER_STATUS = "AWAITING_APPROVAL"
+	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
+	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
+	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
 )
 
 func (s SERVICE_ORDER_STATUS) String() string {
 	return string(s)
 }
 
-type ServiceOrder struct {
-	ID          string
-	Status      SERVICE_ORDER_STATUS
-	Customer    *Customer
-	Vehicle     *Vehicle
-	Services    []Work
-	Supplies    []Supply
-	TotalAmount decimal.Decimal
-}
+type (
+	ServiceOrder struct {
+		ID          string
+		Status      SERVICE_ORDER_STATUS
+		Customer    *Customer
+		Vehicle     *Vehicle
+		Services    []Work
+		Supplies    []Supply
+		TotalAmount decimal.Decimal
+	}
+
+	AddSupply struct {
+		ID     string
+		Amount int
+	}
+)
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderService --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderRepository --with-expecter
@@ -35,13 +48,20 @@ type (
 		ListWorks(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error
 		RemoveWork(ctx context.Context, serviceOrderID, workID string) error
+		ListSupplies(ctx context.Context, serviceOrderID string) ([]Supply, error)
+		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
+		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
 	}
+
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
 		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
+		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Supply, error)
+		AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error
+		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) error
 	}
 )
 

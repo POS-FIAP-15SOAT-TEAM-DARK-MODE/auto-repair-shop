@@ -20,14 +20,16 @@ func Service(uow uow.Executor, repo domain.SupplyRepository) domain.SupplyServic
 	return &service{uow, repo}
 }
 
-func (s *service) Create(ctx context.Context, req *domain.Supply) error {
-	if err := req.Validate(); err != nil {
-		err := fmt.Errorf("supply validation failed: %w", err)
+func (s *service) Create(ctx context.Context, supply *domain.Supply) error {
+	if err := s.uow.Execute(ctx, s.saveRepositoryStep(supply)); err != nil {
 		logger.Of(ctx).Error(err)
 		return err
 	}
+	return nil
+}
 
-	if err := s.uow.Execute(ctx, s.saveRepositoryStep(req)); err != nil {
+func (s *service) Update(ctx context.Context, supply *domain.Supply) error {
+	if err := s.uow.Execute(ctx, s.saveRepositoryStep(supply)); err != nil {
 		logger.Of(ctx).Error(err)
 		return err
 	}
@@ -36,6 +38,12 @@ func (s *service) Create(ctx context.Context, req *domain.Supply) error {
 
 func (s *service) saveRepositoryStep(supply *domain.Supply) func(context.Context) error {
 	return func(ctx context.Context) error {
+		if err := supply.Validate(); err != nil {
+			err = fmt.Errorf("supply validation failed: %w", err)
+			logger.Of(ctx).Error(err)
+			return err
+		}
+
 		if err := s.repo.Save(ctx, supply); err != nil {
 			return fmt.Errorf("repository.Save failed: %w", err)
 		}
@@ -43,32 +51,17 @@ func (s *service) saveRepositoryStep(supply *domain.Supply) func(context.Context
 	}
 }
 
-func (s *service) List(c context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
-	var response *domain.PaginatorResponse[domain.Supply]
-	if err := s.uow.Execute(c, func(ctx context.Context) error {
-		r, err := s.getPaginatedList(ctx, params)
-		if err != nil {
-			return err
-		}
-		response = r
-		return nil
-	}); err != nil {
-		logger.Of(c).Error(err)
+func (s *service) List(ctx context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
+	if err := params.Validate(); err != nil {
 		return nil, err
 	}
-
-	return response, nil
-}
-
-func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSupplyParams) (*domain.PaginatorResponse[domain.Supply], error) {
-	p := params.SearchSupplyParams()
 
 	var total int64
 	var items []domain.Supply
 	var eg errgroup.Group
 
 	eg.Go(func() error {
-		t, err := s.repo.Count(ctx, p)
+		t, err := s.repo.Count(ctx, params)
 		if err != nil {
 			return err
 		}
@@ -77,16 +70,16 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSuppl
 	})
 
 	eg.Go(func() error {
-		list, err := s.repo.Search(ctx, p)
+		list, err := s.repo.Search(ctx, params)
 		if err != nil {
 			return err
 		}
 		items = list
-		return err
+		return nil
 	})
 
 	if err := eg.Wait(); err != nil {
-		return nil, fmt.Errorf("fail to list works: %w", err)
+		return nil, fmt.Errorf("fail to list supplies: %w", err)
 	}
 
 	return &domain.PaginatorResponse[domain.Supply]{
@@ -97,22 +90,6 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListSuppl
 		PageSize:   params.PageSize,
 	}, nil
 }
-
-func (s *service) Update(ctx context.Context, supply *domain.Supply) error {
-	if err := supply.Validate(); err != nil {
-		err = fmt.Errorf("supply validation failed: %w", err)
-		logger.Of(ctx).Error(err)
-		return err
-	}
-
-	if err := s.uow.Execute(ctx, s.saveRepositoryStep(supply)); err != nil {
-		logger.Of(ctx).Error(err)
-		return err
-	}
-
-	return nil
-}
-
 func (s *service) Delete(c context.Context, id string) error {
 	if err := s.uow.Execute(c, func(ctx context.Context) error { return s.repo.Delete(ctx, id) }); err != nil {
 		logger.Of(c).Error(err)

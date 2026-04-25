@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 	"github.com/gin-gonic/gin"
@@ -37,19 +36,7 @@ func (h *handler) Create(c *gin.Context) {
 
 	body := req.MapToDomain()
 	logger.Of(ctx).Debug("create request", zap.Any("service", body))
-	if err := h.svc.Create(ctx, body); err != nil {
-		status, response := web.Error(err)
-		logger.Of(ctx).Error(err)
-		logger.Of(ctx).Debug("Supply creation failed in service layer",
-			zap.String("operation", "create_supply"),
-			zap.Error(err),
-			zap.String("entity", "supply"),
-		)
-		c.JSON(status, response)
-		return
-	}
-
-	if err := h.svc.Create(ctx, body); err != nil {
+	if err = h.svc.Create(ctx, body); err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
 		logger.Of(ctx).Debug("Supply creation failed in service layer",
@@ -65,34 +52,23 @@ func (h *handler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, mapSupplyToResponseDTO(body))
 }
 
-func (h *handler) List(c *gin.Context) {
-	params := mapListParamsToDomain(c)
+func (h *handler) Update(c *gin.Context) {
 	ctx := c.Request.Context()
-
-	logger.Of(ctx).Debug("list request", zap.Any("params", params))
-	response, err := h.svc.List(ctx, params)
-	if err != nil {
-		status, response := web.Error(err)
-		logger.Of(ctx).Error(err)
-		logger.Of(ctx).Debug("Failed to list supplies in service layer",
-			zap.String("operation", "list_supplies"),
-			zap.Error(err),
+	id := c.Param(idPathParamKey)
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidSupplyID)
+		logger.Of(ctx).Debug("Supply invalid supply id",
+			zap.String("operation", "update_supply"),
+			zap.Error(domain.ErrInvalidSupplyID),
 			zap.String("entity", "supply"),
+			zap.String("entity.id", id),
 		)
 		c.JSON(status, response)
 		return
 	}
 
-	logger.Of(ctx).Debug("list response", zap.Any("service", response))
-	c.JSON(http.StatusOK, mapListResponseDTOFromDomain(response))
-
-}
-
-func (h *handler) Update(c *gin.Context) {
-	ctx := c.Request.Context()
 	dto, err := mapBodyToRequestDTO(c)
 	if err != nil {
-		err = json.CheckJsonError(err)
 		status, response := web.Error(err)
 		logger.Of(ctx).Debug("Failed to bind supply update payload",
 			zap.String("operation", "update_supply"),
@@ -104,22 +80,9 @@ func (h *handler) Update(c *gin.Context) {
 	}
 
 	body := dto.MapToDomain()
-	id := c.Param(idPathParamKey)
-	if id == "" {
-		status, response := web.Error(domain.ErrInvalidSupplyId)
-		logger.Of(ctx).Debug("Supply invalid supply id",
-			zap.String("operation", "update_supply"),
-			zap.Error(domain.ErrInvalidSupplyId),
-			zap.String("entity", "supply"),
-			zap.String("entity.id", id),
-		)
-		c.JSON(status, response)
-		return
-	}
-
 	body.ID = id
 	logger.Of(ctx).Debug("update request", zap.Any("service", body))
-	if err := h.svc.Update(ctx, body); err != nil {
+	if err = h.svc.Update(ctx, body); err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Error(err)
 		logger.Of(ctx).Debug("Supply update failed in service layer",
@@ -132,7 +95,30 @@ func (h *handler) Update(c *gin.Context) {
 	}
 
 	logger.Of(ctx).Debug("update response", zap.Any("service", body))
-	c.JSON(http.StatusOK, mapResponseDTOFromDomain(body))
+	c.JSON(http.StatusOK, mapSupplyToResponseDTO(body))
+
+}
+
+func (h *handler) List(c *gin.Context) {
+	params := mapListParamsToDomain(c)
+	ctx := c.Request.Context()
+
+	logger.Of(ctx).Debug("list request", zap.Any("params", params))
+	response, err := h.svc.List(ctx, params)
+	if err != nil {
+		status, errResp := web.Error(err)
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("Failed to list supplies in service layer",
+			zap.String("operation", "list_supplies"),
+			zap.Error(err),
+			zap.String("entity", "supply"),
+		)
+		c.JSON(status, errResp)
+		return
+	}
+
+	logger.Of(ctx).Debug("list response", zap.Any("service", response))
+	c.JSON(http.StatusOK, mapListResponseDTOFromDomain(response))
 
 }
 

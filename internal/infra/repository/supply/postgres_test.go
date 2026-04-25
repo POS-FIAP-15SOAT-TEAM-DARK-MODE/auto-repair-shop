@@ -2,495 +2,413 @@ package supply_test
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	postgresdb "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
-	supplyrepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/supply"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	infraPostgres "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/supply"
 )
 
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
 
-// fullSupplyRepo expõe todos os métodos do repositório concreto,
-// incluindo os que não fazem parte da interface domain.SupplyRepository.
-type fullSupplyRepo interface {
-	domain.SupplyRepository
-	Create(context.Context, *domain.Supply) error
-	List(context.Context) ([]*domain.Supply, error)
-	Update(context.Context, *domain.SupplyUpdate) error
+func newSupply() *domain.Supply {
+	return &domain.Supply{
+		ID:            uuid.New().String(),
+		Name:          "Óleo Motor 5W30",
+		Description:   "Lubrificante sintético",
+		UnitPrice:     decimal.NewFromFloat(49.90),
+		StockQuantity: 100,
+	}
 }
 
-func newRepo() fullSupplyRepo {
-	return supplyrepo.Repository().(fullSupplyRepo)
+func newListParams(page, pageSize int) *domain.ListSupplyParams {
+	return &domain.ListSupplyParams{
+		Page:     int64(page),
+		PageSize: int64(pageSize),
+	}
 }
 
-func newTestSupply() *domain.Supply {
-	return domain.NewSupply("Oil Filter", "A good oil filter description", decimal.NewFromFloat(25.50), 10, 0)
+// setupMockDB injeta um *sql.DB mockado no singleton via ConnectWithDB.
+// GetOneTimeTransaction chama Connect() que devolve esse mesmo *sql.DB.
+// Para Save/Create usamos NewTransactionalUoW com esse mesmo db mockado.
+func setupMockDB(t *testing.T) (sqlmock.Sqlmock, func()) {
+	t.Helper()
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	infraPostgres.ConnectWithDB(db)
+	return mock, func() { db.Close() }
+}
+
+func supplyColumns() []string {
+	return []string{"id", "name", "description", "unit_price", "stock_quantity", "version"}
+}
+
+// ---------------------------------------------------------------------------
+// Repository()
+// ---------------------------------------------------------------------------
+
+func TestRepository_ReturnsNonNil(t *testing.T) {
+	r := supplyRepo.Repository()
+	assert.NotNil(t, r)
 }
 
 // ---------------------------------------------------------------------------
 // Save
 // ---------------------------------------------------------------------------
 
-func TestPostgresRepository_Supply_Save(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+func TestSave_Success(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	s := newTestSupply()
+	supply := newSupply()
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`INSERT INTO "supply"`).
-		WithArgs(s.ID, s.Name, s.Description, s.UnitPrice, s.StockQuantity).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		return repo.Save(ctx, s)
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.Save(ctx, supply)
 	})
 
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestPostgresRepository_Supply_Save_Error(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+func TestSave_ExecError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	s := newTestSupply()
+	supply := newSupply()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "supply"`).WillReturnError(assert.AnError)
+	mock.ExpectExec(`INSERT INTO "supply"`).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WillReturnError(errors.New("connection reset"))
 	mock.ExpectRollback()
 
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		return repo.Save(ctx, s)
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.Save(ctx, supply)
 	})
 
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestPostgresRepository_Supply_Save_NoTransaction(t *testing.T) {
-	repo := newRepo()
-	s := newTestSupply()
+func TestSave_NoTransaction(t *testing.T) {
+	r := supplyRepo.Repository()
+	err := r.Save(context.Background(), newSupply())
+	assert.ErrorIs(t, err, infraPostgres.ErrMissingPostgresTransaction)
+}
 
-	err := repo.Save(context.Background(), s)
-	assert.Error(t, err)
+func TestSave_ZeroValueSupply(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	supply := &domain.Supply{} // zero values
+
+	mock.ExpectBegin()
+	mock.ExpectExec(`INSERT INTO "supply"`).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.Save(ctx, supply)
+	})
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 // ---------------------------------------------------------------------------
 // Create
 // ---------------------------------------------------------------------------
 
-func TestPostgresRepository_Supply_Create(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+func TestCreate_Success(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	s := newTestSupply()
+	supply := newSupply()
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`INSERT INTO "supply"`).
-		WithArgs(s.ID, s.Name, s.Description, s.UnitPrice, s.StockQuantity, s.Version).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		return repo.Create(ctx, s)
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.Save(ctx, supply)
 	})
 
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestPostgresRepository_Supply_Create_Error(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+func TestCreate_ExecError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	s := newTestSupply()
+	supply := newSupply()
 
 	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "supply"`).WillReturnError(assert.AnError)
+	mock.ExpectExec(`INSERT INTO "supply"`).
+		WithArgs(supply.ID, supply.Name, supply.Description, supply.UnitPrice, supply.StockQuantity).
+		WillReturnError(errors.New("unique violation"))
 	mock.ExpectRollback()
 
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		return repo.Create(ctx, s)
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		return r.Save(ctx, supply)
 	})
 
 	assert.Error(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestPostgresRepository_Supply_Create_NoTransaction(t *testing.T) {
-	repo := newRepo()
-	s := newTestSupply()
-
-	err := repo.Create(context.Background(), s)
-	assert.Error(t, err)
-}
-
-// ---------------------------------------------------------------------------
-// List
-// ---------------------------------------------------------------------------
-
-func TestPostgresRepository_Supply_List(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	mock.ExpectBegin()
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "stock_quantity", "version"}).
-		AddRow("id1", "Supply 1", "Description one", decimal.NewFromFloat(10.00), 5, 0)
-	mock.ExpectQuery(`SELECT`).WillReturnRows(rows)
-	mock.ExpectCommit()
-
-	var results []*domain.Supply
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		results, err = repo.List(ctx)
-		return err
-	})
-
-	assert.NoError(t, err)
-	assert.Len(t, results, 1)
-	assert.Equal(t, "id1", results[0].ID)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_List_Error(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT`).WillReturnError(assert.AnError)
-	mock.ExpectRollback()
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.List(ctx)
-		return err
-	})
-
-	assert.Error(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_List_ScanError(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	mock.ExpectBegin()
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "stock_quantity", "version"}).
-		AddRow("id1", "Supply 1", "Description one", "not-a-decimal", "not-an-int", "not-an-int")
-	mock.ExpectQuery(`SELECT`).WillReturnRows(rows)
-	mock.ExpectRollback()
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.List(ctx)
-		return err
-	})
-
-	assert.Error(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_List_NoTransaction(t *testing.T) {
-	repo := newRepo()
-
-	_, err := repo.List(context.Background())
-	assert.Error(t, err)
-}
-
-// ---------------------------------------------------------------------------
-// Update
-// ---------------------------------------------------------------------------
-
-func TestPostgresRepository_Supply_Update(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	name := "Updated Name"
-	update := domain.UpdateSupply("supply-id", &name, nil, nil, nil)
-
-	mock.ExpectBegin()
-	mock.ExpectExec(`UPDATE "supply"`).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit()
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		return repo.Update(ctx, update)
-	})
-
-	assert.NoError(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_Update_NotFound(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	name := "Updated Name"
-	update := domain.UpdateSupply("nonexistent-id", &name, nil, nil, nil)
-
-	mock.ExpectBegin()
-	mock.ExpectExec(`UPDATE "supply"`).
-		WillReturnResult(sqlmock.NewResult(0, 0)) // 0 rows affected
-	mock.ExpectRollback()
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		return repo.Update(ctx, update)
-	})
-
-	assert.ErrorIs(t, err, domain.ErrNotFound)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_Update_Error(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	name := "Updated Name"
-	update := domain.UpdateSupply("supply-id", &name, nil, nil, nil)
-
-	mock.ExpectBegin()
-	mock.ExpectExec(`UPDATE "supply"`).WillReturnError(assert.AnError)
-	mock.ExpectRollback()
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		return repo.Update(ctx, update)
-	})
-
-	assert.Error(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_Update_NoTransaction(t *testing.T) {
-	repo := newRepo()
-	name := "Updated Name"
-	update := domain.UpdateSupply("supply-id", &name, nil, nil, nil)
-
-	err := repo.Update(context.Background(), update)
-	assert.Error(t, err)
-}
-
-// ---------------------------------------------------------------------------
-// Search
-// ---------------------------------------------------------------------------
-
-func TestPostgresRepository_Supply_Search(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	params := &domain.SearchSupplyParams{Limit: 10, Offset: 0}
-
-	mock.ExpectBegin()
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price"}).
-		AddRow("id1", "Supply 1", "Description one", decimal.NewFromFloat(10.00))
-	mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price`).
-		WillReturnRows(rows)
-	mock.ExpectCommit()
-
-	var results []domain.Supply
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		results, err = repo.Search(ctx, params)
-		return err
-	})
-
-	assert.NoError(t, err)
-	assert.Len(t, results, 1)
-	assert.Equal(t, "id1", results[0].ID)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_Search_Error(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price`).
-		WillReturnError(assert.AnError)
-	mock.ExpectRollback()
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.Search(ctx, &domain.SearchSupplyParams{Limit: 10})
-		return err
-	})
-
-	assert.Error(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_Search_ScanError(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
-
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
-
-	mock.ExpectBegin()
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price"}).
-		AddRow("id1", "Supply 1", "Description one", "not-a-decimal") // scan error
-	mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price`).
-		WillReturnRows(rows)
-	mock.ExpectRollback()
-
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.Search(ctx, &domain.SearchSupplyParams{Limit: 10})
-		return err
-	})
-
-	assert.Error(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestPostgresRepository_Supply_Search_NoTransaction(t *testing.T) {
-	repo := newRepo()
-
-	_, err := repo.Search(context.Background(), &domain.SearchSupplyParams{Limit: 10})
-	assert.Error(t, err)
+func TestCreate_NoTransaction(t *testing.T) {
+	r := supplyRepo.Repository()
+	err := r.Save(context.Background(), newSupply())
+	assert.ErrorIs(t, err, infraPostgres.ErrMissingPostgresTransaction)
 }
 
 // ---------------------------------------------------------------------------
 // Count
+// GetOneTimeTransaction retorna Connect() diretamente (não usa tx).
+// Basta ter o mock injetado via ConnectWithDB.
 // ---------------------------------------------------------------------------
 
-func TestPostgresRepository_Supply_Count(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+func TestCount_Success(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
+	mock.ExpectQuery(`SELECT COUNT`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(42))
 
-	params := &domain.SearchSupplyParams{}
-
-	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT COUNT\(s.id\) FROM "supply"`).
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(7))
-	mock.ExpectCommit()
-
-	var total int64
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
+	r := supplyRepo.Repository()
+	total, err := r.Count(context.Background(), newListParams(1, 10))
 
 	assert.NoError(t, err)
-	assert.Equal(t, int64(7), total)
+	assert.Equal(t, int64(42), total)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestPostgresRepository_Supply_Count_Error(t *testing.T) {
-	db, mock, err := sqlmock.New()
+func TestCount_Zero(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	mock.ExpectQuery(`SELECT COUNT`).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+
+	r := supplyRepo.Repository()
+	total, err := r.Count(context.Background(), newListParams(1, 10))
+
 	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	assert.Equal(t, int64(0), total)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
+func TestCount_QueryError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	params := &domain.SearchSupplyParams{}
+	mock.ExpectQuery(`SELECT COUNT`).
+		WillReturnError(errors.New("db error"))
 
-	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT COUNT\(s.id\) FROM "supply"`).
-		WillReturnError(assert.AnError)
-	mock.ExpectRollback()
-
-	var total int64
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
+	r := supplyRepo.Repository()
+	total, err := r.Count(context.Background(), newListParams(1, 10))
 
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), total)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestPostgresRepository_Supply_Count_WithStatus(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+func TestCount_NoRows(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := newRepo()
+	mock.ExpectQuery(`SELECT COUNT`).
+		WillReturnError(sql.ErrNoRows)
 
-	params := &domain.SearchSupplyParams{Status: "ACTIVE"}
+	r := supplyRepo.Repository()
+	total, err := r.Count(context.Background(), newListParams(1, 10))
 
-	mock.ExpectBegin()
-	mock.ExpectQuery(`SELECT COUNT\(s.id\) FROM "supply"`).
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
-	mock.ExpectCommit()
+	assert.Error(t, err)
+	assert.Equal(t, int64(0), total)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
 
-	var total int64
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
+// ---------------------------------------------------------------------------
+// Search
+// ---------------------------------------------------------------------------
 
-	assert.NoError(t, err)
-	assert.Equal(t, int64(3), total)
+func TestSearch_Success(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	s := newSupply()
+
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnRows(
+			sqlmock.NewRows(supplyColumns()).
+				AddRow(s.ID, s.Name, s.Description, s.UnitPrice, s.StockQuantity, 1),
+		)
+
+	r := supplyRepo.Repository()
+	results, err := r.Search(context.Background(), newListParams(1, 10))
+
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, s.ID, results[0].ID)
+	assert.Equal(t, s.Name, results[0].Name)
+	assert.Equal(t, s.Description, results[0].Description)
+	assert.Equal(t, s.UnitPrice, results[0].UnitPrice)
+	assert.Equal(t, s.StockQuantity, results[0].StockQuantity)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSearch_MultipleRows(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	s1, s2 := newSupply(), newSupply()
+	s2.Name = "Filtro de Ar"
+
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnRows(
+			sqlmock.NewRows(supplyColumns()).
+				AddRow(s1.ID, s1.Name, s1.Description, s1.UnitPrice, s1.StockQuantity, 1).
+				AddRow(s2.ID, s2.Name, s2.Description, s2.UnitPrice, s2.StockQuantity, 2),
+		)
+
+	r := supplyRepo.Repository()
+	results, err := r.Search(context.Background(), newListParams(1, 10))
+
+	require.NoError(t, err)
+	assert.Len(t, results, 2)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSearch_EmptyResult(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnRows(sqlmock.NewRows(supplyColumns()))
+
+	r := supplyRepo.Repository()
+	results, err := r.Search(context.Background(), newListParams(1, 10))
+
+	require.NoError(t, err)
+	assert.Empty(t, results)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSearch_QueryError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnError(errors.New("timeout"))
+
+	r := supplyRepo.Repository()
+	results, err := r.Search(context.Background(), newListParams(1, 10))
+
+	assert.Error(t, err)
+	assert.Nil(t, results)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSearch_ScanError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	// Uma coluna a menos força erro no Scan
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnRows(
+			sqlmock.NewRows([]string{"id"}).AddRow(uuid.New()),
+		)
+
+	r := supplyRepo.Repository()
+	results, err := r.Search(context.Background(), newListParams(1, 10))
+
+	assert.Error(t, err)
+	assert.Nil(t, results)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSearch_RowsError(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	s := newSupply()
+	rowsErr := errors.New("row error during iteration")
+
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnRows(
+			sqlmock.NewRows(supplyColumns()).
+				AddRow(s.ID, s.Name, s.Description, s.UnitPrice, s.StockQuantity, 1).
+				RowError(0, rowsErr),
+		)
+
+	r := supplyRepo.Repository()
+	results, err := r.Search(context.Background(), newListParams(1, 10))
+
+	assert.Error(t, err)
+	assert.Nil(t, results)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestSearch_SecondPage(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	s := newSupply()
+
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnRows(
+			sqlmock.NewRows(supplyColumns()).
+				AddRow(s.ID, s.Name, s.Description, s.UnitPrice, s.StockQuantity, 1),
+		)
+
+	r := supplyRepo.Repository()
+	// page=2, pageSize=5 → offset=5
+	results, err := r.Search(context.Background(), newListParams(2, 5))
+
+	require.NoError(t, err)
+	assert.Len(t, results, 1)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestPostgresRepository_Supply_Count_NoTransaction(t *testing.T) {
-	repo := newRepo()
+	repo := supplyRepo.Repository()
 
-	_, err := repo.Count(context.Background(), &domain.SearchSupplyParams{})
+	_, err := repo.Count(context.Background(), newListParams(1, 10))
 	assert.Error(t, err)
 }
 
@@ -499,8 +417,8 @@ func TestPostgresRepository_Delete_Error(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := supplyrepo.Repository()
+	uowExec := infraPostgres.NewTransactionalUoW(db)
+	repo := supplyRepo.Repository()
 
 	mock.ExpectBegin()
 	mock.ExpectExec("DELETE FROM \"supply\"").WillReturnError(assert.AnError)
@@ -517,8 +435,8 @@ func TestPostgresRepository_Delete(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
-	repo := supplyrepo.Repository()
+	uowExec := infraPostgres.NewTransactionalUoW(db)
+	repo := supplyRepo.Repository()
 
 	id := "supply-id"
 
@@ -536,7 +454,7 @@ func TestPostgresRepository_Delete(t *testing.T) {
 }
 
 func TestPostgresRepository_Delete_NoTransaction(t *testing.T) {
-	repo := supplyrepo.Repository()
+	repo := supplyRepo.Repository()
 
 	err := repo.Delete(context.Background(), "some-id")
 	assert.Error(t, err)
