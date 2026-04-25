@@ -182,23 +182,15 @@ func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain
 		return nil, domain.ErrInvalidServiceOrderId
 	}
 
-	var supplies []domain.Supply
-	err := s.uow.Execute(ctx, func(ctx context.Context) error {
-		ok, _, err := s.repo.ExistsByID(ctx, serviceOrderID)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return domain.ErrServiceOrderNotFound
-		}
-		supplies, err = s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
-		return err
-	})
+	ok, _, err := s.repo.ExistsByID(ctx, serviceOrderID)
 	if err != nil {
 		return nil, err
 	}
+	if !ok {
+		return nil, domain.ErrServiceOrderNotFound
+	}
 
-	return supplies, nil
+	return s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
 }
 
 func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies []domain.AddSupply) error {
@@ -316,8 +308,9 @@ func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string)
 }
 
 func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string) error {
-	if err := s.checkID(serviceOrderID); err != nil {
-		return err
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
 	}
 
 	err := s.uow.Execute(ctx, func(ctx context.Context) error {
@@ -348,8 +341,9 @@ func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string)
 }
 
 func (s *svc) reviewOSPricing(ctx context.Context, serviceOrderID string) error {
-	if err := s.checkID(serviceOrderID); err != nil {
-		return err
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
 	}
 
 	so, err := s.repo.FindByID(ctx, serviceOrderID)
@@ -391,92 +385,119 @@ func (s *svc) reviewOSPricing(ctx context.Context, serviceOrderID string) error 
 	})
 }
 
-func (s *svc) checkID(serviceOrderID string) error {
+func (s *svc) Accept(c context.Context, serviceOrderID, userID string) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
 		return domain.ErrInvalidServiceOrderId
 	}
-	return nil
+
+	return s.uow.Execute(c, func(ctx context.Context) error {
+		eg := errgroup.Group{}
+		var so domain.ServiceOrder
+		eg.Go(func() (err error) {
+			so, err = s.repo.FindByID(ctx, serviceOrderID)
+			if err != nil {
+				return
+			}
+
+			if so.Customer == nil {
+				return domain.ErrServiceOrderNotFound
+			}
+			return
+		})
+
+		var cust domain.Customer
+		eg.Go(func() (err error) {
+			cust, err = s.customerService.GetByUserID(ctx, userID)
+			if err != nil {
+				return
+			}
+
+			if cust.ID == "" {
+				return domain.ErrCustomerNotFound
+			}
+			return
+		})
+
+		if err := eg.Wait(); err != nil {
+			return err
+		}
+
+		if so.Customer.ID != cust.ID {
+			return domain.ErrInvalidCustomerProperty
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL {
+			return domain.ErrServiceOrderNotAwaitingApproval
+		}
+
+		so.Status = domain.SERVICE_ORDER_STATUS_IN_PROGRESS
+
+		// TODO: NOTIFY MECHANICAL TO START SERVICE (SMS / EMAIL / WPP)
+		return s.repo.Save(ctx, &so)
+	})
 }
 
-func (s *svc) Accept(ctx context.Context, serviceOrderID, userID string) error {
-	eg := errgroup.Group{}
-
-	var so domain.ServiceOrder
-	eg.Go(func() (err error) {
-		so, err = s.repo.FindByID(ctx, serviceOrderID)
-		return
-	})
-
-	var cust domain.Customer
-	eg.Go(func() (err error) {
-		cust, err = s.customerService.GetByUserID(ctx, userID)
-		return
-	})
-
-	if err := eg.Wait(); err != nil {
-		return err
+func (s *svc) Reject(c context.Context, serviceOrderID, userID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
 	}
 
-	if so.Customer.ID != cust.ID {
-		return domain.ErrInvalidCustomerId
-	}
+	return s.uow.Execute(c, func(ctx context.Context) error {
+		eg := errgroup.Group{}
+		var so domain.ServiceOrder
+		eg.Go(func() (err error) {
+			so, err = s.repo.FindByID(ctx, serviceOrderID)
+			if err != nil {
+				return
+			}
 
-	if so.Status != domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL {
-		return domain.ErrServiceOrderNotAwaitingApproval
-	}
+			if so.Customer == nil {
+				return domain.ErrServiceOrderNotFound
+			}
+			return
+		})
 
-	so.Status = domain.SERVICE_ORDER_STATUS_IN_PROGRESS
+		var cust domain.Customer
+		eg.Go(func() (err error) {
+			cust, err = s.customerService.GetByUserID(ctx, userID)
+			if err != nil {
+				return
+			}
 
-	// TODO: NOTIFY MECHANICAL TO START SERVICE (SMS / EMAIL / WPP)
+			if cust.ID == "" {
+				return domain.ErrCustomerNotFound
+			}
+			return
+		})
 
-	return s.uow.Execute(ctx, func(c context.Context) error {
-		return s.repo.Save(c, &so)
-	})
-}
+		var supplies []domain.Supply
+		eg.Go(func() (err error) {
+			supplies, err = s.ListSupplies(ctx, serviceOrderID)
+			return
+		})
 
-func (s *svc) Reject(ctx context.Context, serviceOrderID, userID string) error {
-	eg := errgroup.Group{}
+		if err := eg.Wait(); err != nil {
+			return err
+		}
 
-	var so domain.ServiceOrder
-	eg.Go(func() (err error) {
-		so, err = s.repo.FindByID(ctx, serviceOrderID)
-		return
-	})
+		if so.Customer.ID != cust.ID {
+			return domain.ErrInvalidCustomerProperty
+		}
 
-	var cust domain.Customer
-	eg.Go(func() (err error) {
-		cust, err = s.customerService.GetByUserID(ctx, userID)
-		return
-	})
+		if so.Status != domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL {
+			return domain.ErrServiceOrderNotAwaitingApproval
+		}
 
-	var supplies []domain.Supply
-	eg.Go(func() (err error) {
-		supplies, err = s.ListSupplies(ctx, serviceOrderID)
-		return
-	})
+		so.Status = domain.SERVICE_ORDER_STATUS_REJECTED
 
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-
-	if so.Customer.ID != cust.ID {
-		return domain.ErrInvalidCustomerId
-	}
-
-	if so.Status != domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL {
-		return domain.ErrServiceOrderNotAwaitingApproval
-	}
-
-	so.Status = domain.SERVICE_ORDER_STATUS_REJECTED
-
-	return s.uow.Execute(ctx, func(c context.Context) error {
 		for _, sup := range supplies {
-			if err := s.supplyRepo.RestoreStock(c, sup.ID, sup.StockQuantity); err != nil {
+			if err := s.supplyRepo.RestoreStock(ctx, sup.ID, sup.StockQuantity); err != nil {
 				return err
 			}
 		}
 
-		return s.repo.Save(c, &so)
+		return s.repo.Save(ctx, &so)
 	})
 }
