@@ -18,7 +18,6 @@ type workTransitionGroupDTO struct {
 }
 
 type serviceOrderHistoryResponseDTO struct {
-	ID              string                   `json:"id"`
 	PreviousStatus  string                   `json:"previous_status"`
 	NewStatus       string                   `json:"new_status"`
 	CreatedAt       time.Time                `json:"created_at"`
@@ -27,7 +26,6 @@ type serviceOrderHistoryResponseDTO struct {
 
 func mapResponseDTOFromDomain(so *domain.ServiceOrderHistory) serviceOrderHistoryResponseDTO {
 	dto := serviceOrderHistoryResponseDTO{
-		ID:             so.ID,
 		PreviousStatus: so.PreviousStatus.String(),
 		NewStatus:      so.NewStatus.String(),
 		CreatedAt:      so.CreatedAt,

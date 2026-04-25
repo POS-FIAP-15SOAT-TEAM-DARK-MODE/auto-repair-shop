@@ -842,12 +842,10 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkOrderHistoryEntry"
               example:
-                - id: 01HZ8X2TJ8M2YV5N1QX9G2KX4R
-                  previous_status: ""
+                - previous_status: ""
                   new_status: RECEIVED
                   created_at: "2026-04-13T14:34:37.026Z"
-                - id: 01HZ8X2TJ8M2YV5N1QX9G2KX5R
-                  previous_status: AWAITING_APPROVAL
+                - previous_status: AWAITING_APPROVAL
                   new_status: IN_PROGRESS
                   created_at: "2026-04-16T14:34:37.026Z"
                   work_transitions:
@@ -859,8 +857,7 @@ paths:
                         - previous_status: NEW
                           new_status: IN_PROGRESS
                           created_at: "2026-04-16T14:34:37.026Z"
-                - id: 01HZ8X2TJ8M2YV5N1QX9G2KX6R
-                  previous_status: IN_PROGRESS
+                - previous_status: IN_PROGRESS
                   new_status: COMPLETED
                   created_at: "2026-04-17T14:34:37.026Z"
         "400":
@@ -1416,10 +1413,6 @@ components:
     WorkOrderHistoryEntry:
       type: object
       properties:
-        id:
-          type: string
-          format: ulid
-          example: 01HZ8X2TJ8M2YV5N1QX9G2KX5R
         previous_status:
           type: string
           example: RECEIVED
@@ -1436,7 +1429,6 @@ components:
           items:
             $ref: "#/components/schemas/WorkTransitionGroup"
       required:
-        - id
         - previous_status
         - new_status
         - created_at
