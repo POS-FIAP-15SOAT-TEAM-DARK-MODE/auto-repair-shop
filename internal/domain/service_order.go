@@ -15,6 +15,7 @@ const (
 	SERVICE_ORDER_STATUS_RECEIVED          SERVICE_ORDER_STATUS = "RECEIVED"
 	SERVICE_ORDER_STATUS_IN_DIAGNOSIS      SERVICE_ORDER_STATUS = "IN_DIAGNOSIS"
 	SERVICE_ORDER_STATUS_AWAITING_APPROVAL SERVICE_ORDER_STATUS = "AWAITING_APPROVAL"
+	SERVICE_ORDER_STATUS_REJECTED          SERVICE_ORDER_STATUS = "REJECTED"
 	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
 	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
 	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
@@ -45,6 +46,14 @@ type (
 		Amount int
 	}
 )
+
+func (so *ServiceOrder) ResetPricing() {
+	so.PrepareForSum()
+
+	so.sumLocker.Lock()
+	so.TotalAmount = decimal.Zero
+	so.sumLocker.Unlock()
+}
 
 func (so *ServiceOrder) PrepareForSum() {
 	sync.OnceFunc(func() {
@@ -107,4 +116,29 @@ func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 		Vehicle:     Vehicle,
 		TotalAmount: decimal.Zero,
 	}
+}
+
+func GetPreviousStatus(currentStatus SERVICE_ORDER_STATUS) *SERVICE_ORDER_STATUS {
+	switch currentStatus {
+	case SERVICE_ORDER_STATUS_RECEIVED:
+		return new(SERVICE_ORDER_STATUS_NEW)
+	case SERVICE_ORDER_STATUS_IN_DIAGNOSIS:
+		return new(SERVICE_ORDER_STATUS_RECEIVED)
+	case SERVICE_ORDER_STATUS_AWAITING_APPROVAL:
+		return new(SERVICE_ORDER_STATUS_IN_DIAGNOSIS)
+	case SERVICE_ORDER_STATUS_IN_PROGRESS:
+		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
+	case SERVICE_ORDER_STATUS_COMPLETED:
+		return new(SERVICE_ORDER_STATUS_IN_PROGRESS)
+	case SERVICE_ORDER_STATUS_DELIVERED:
+		return new(SERVICE_ORDER_STATUS_COMPLETED)
+	case SERVICE_ORDER_STATUS_REJECTED:
+		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
+	default:
+		return nil
+	}
+}
+
+func NewHistoryServiceOrderID() string {
+	return ulid.Make().String()
 }

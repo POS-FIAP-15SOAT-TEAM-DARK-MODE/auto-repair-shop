@@ -35,6 +35,15 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 		return pgPkg.Error(ctx, err)
 	}
 
+	_, err = tx.ExecContext(ctx, insertServiceOrderStatusQuery,
+		domain.NewHistoryServiceOrderID(),
+		so.ID,
+		domain.GetPreviousStatus(so.Status),
+		so.Status)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
 	return nil
 }
 
@@ -46,6 +55,9 @@ func (r *repository) ExistsByID(ctx context.Context, id string) (bool, domain.SE
 
 	var status domain.SERVICE_ORDER_STATUS
 	if err = tx.QueryRowContext(ctx, serviceOrderExistsQuery, id).Scan(&status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, "", domain.ErrServiceOrderNotFound
+		}
 		return false, "", pgPkg.Error(ctx, err)
 	}
 	return status != "", status, nil

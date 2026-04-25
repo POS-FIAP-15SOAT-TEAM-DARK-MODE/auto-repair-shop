@@ -1,4 +1,7 @@
 -- Drop all tables in reverse order of creation
+ALTER TABLE service_order_status_history
+DROP CONSTRAINT IF EXISTS uq_service_order_status_history_service_order_id_new_status;
+
 DROP TABLE IF EXISTS service_order_status_history CASCADE;
 
 DROP TABLE IF EXISTS service_order_supply CASCADE;

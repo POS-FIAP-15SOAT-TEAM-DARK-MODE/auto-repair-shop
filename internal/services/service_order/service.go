@@ -357,6 +357,8 @@ func (s *svc) reviewOSPricing(ctx context.Context, serviceOrderID string) error 
 		return err
 	}
 
+	so.ResetPricing()
+
 	var eg errgroup.Group
 	eg.Go(func() error {
 		works, e := s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
