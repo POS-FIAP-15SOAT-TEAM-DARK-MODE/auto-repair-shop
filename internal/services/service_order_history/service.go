@@ -37,7 +37,6 @@ func (s *svc) GetHistoryByID(ctx context.Context, params *domain.SearchServiceOr
 }
 
 func (s *svc) getPaginatedList(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) (*domain.PaginatorResponse[domain.ServiceOrderHistory], error) {
-
 	var eg errgroup.Group
 	var total int64
 	var items []domain.ServiceOrderHistory

@@ -2,6 +2,7 @@ package service_order_history
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
@@ -45,14 +46,19 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 		}
 
 		var history domain.ServiceOrderHistory
+		var previousStatus sql.NullString
 		if err = rows.Scan(
 			&history.ID,
 			&history.ServiceOrderID,
-			&history.PreviousStatus,
+			&previousStatus,
 			&history.NewStatus,
 			&history.CreatedAt,
 		); err != nil {
 			return nil, pgPkg.Error(ctx, err)
+		}
+
+		if previousStatus.Valid {
+			history.PreviousStatus = domain.SERVICE_ORDER_STATUS(previousStatus.String)
 		}
 
 		histories = append(histories, history)
