@@ -390,6 +390,53 @@ func (_c *ServiceOrderService_RemoveWork_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// SendToCustomerApproval provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderService) SendToCustomerApproval(ctx context.Context, serviceOrderID string) error {
+	ret := _m.Called(ctx, serviceOrderID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SendToCustomerApproval")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, serviceOrderID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_SendToCustomerApproval_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendToCustomerApproval'
+type ServiceOrderService_SendToCustomerApproval_Call struct {
+	*mock.Call
+}
+
+// SendToCustomerApproval is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+func (_e *ServiceOrderService_Expecter) SendToCustomerApproval(ctx interface{}, serviceOrderID interface{}) *ServiceOrderService_SendToCustomerApproval_Call {
+	return &ServiceOrderService_SendToCustomerApproval_Call{Call: _e.mock.On("SendToCustomerApproval", ctx, serviceOrderID)}
+}
+
+func (_c *ServiceOrderService_SendToCustomerApproval_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderService_SendToCustomerApproval_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_SendToCustomerApproval_Call) Return(_a0 error) *ServiceOrderService_SendToCustomerApproval_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_SendToCustomerApproval_Call) RunAndReturn(run func(context.Context, string) error) *ServiceOrderService_SendToCustomerApproval_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewServiceOrderService creates a new instance of ServiceOrderService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewServiceOrderService(t interface {

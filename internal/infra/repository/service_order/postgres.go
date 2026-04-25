@@ -52,7 +52,7 @@ func (r *repository) ExistsByID(ctx context.Context, id string) (bool, domain.SE
 }
 
 func (r *repository) ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func (r *repository) RemoveWorkLink(ctx context.Context, serviceOrderID, workID 
 }
 
 func (r *repository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -175,4 +175,34 @@ func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string
 		return 0, pgPkg.Error(ctx, err)
 	}
 	return qty, nil
+}
+
+func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return domain.ServiceOrder{}, err
+	}
+
+	var so domain.ServiceOrder
+	var ct domain.Customer
+	var vh domain.Vehicle
+	var status string
+	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
+		&so.ID,
+		&status,
+		&so.TotalAmount,
+		&ct.ID,
+		&vh.ID,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ServiceOrder{}, domain.ErrServiceOrderNotFound
+		}
+		return domain.ServiceOrder{}, pgPkg.Error(ctx, err)
+	}
+
+	so.Status = domain.StringToServiceOrderStatus(status)
+	so.Customer = &ct
+	so.Vehicle = &vh
+
+	return so, nil
 }

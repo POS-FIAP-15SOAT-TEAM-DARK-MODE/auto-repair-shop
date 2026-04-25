@@ -890,6 +890,37 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/send:
+      put:
+        summary: Send service order to consumer approval
+        description: Send a existant service order to client review and approval
+        tags:
+          - ServiceOrder
+        parameters:
+          - in: path
+            name: id
+            required: true
+            schema:
+              type: string
+            description: Id of service order to send to approval
+        responses:
+          "202":
+            description: Service Order successfully sent
+          "400":
+            description: Invalid Body Content
+          "401":
+            description: Unauthorized (missing or invalid JWT)
+          "403":
+            description: Forbidden (insufficient permissions)
+          "422":
+            description: Business rule violation
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          "500":
+            description: Internal Server Error
+
   /v1/service-order/{id}/services:
     get:
       summary: Get all services of a service order

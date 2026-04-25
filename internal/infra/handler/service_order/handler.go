@@ -237,3 +237,26 @@ func (h *handler) DeleteSupply(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (h *handler) SendToCustomerApproval(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+
+	if err := h.svc.SendToCustomerApproval(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("send service order to customer approval failed",
+			zap.String("operation", "send_service_order_to_customer_approval"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusAccepted)
+}

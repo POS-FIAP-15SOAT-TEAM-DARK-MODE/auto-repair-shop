@@ -252,6 +252,39 @@ func (_c *ServiceOrderHandler_GetWorks_Call) RunAndReturn(run func(*gin.Context)
 	return _c
 }
 
+// SendToCustomerApproval provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) SendToCustomerApproval(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_SendToCustomerApproval_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendToCustomerApproval'
+type ServiceOrderHandler_SendToCustomerApproval_Call struct {
+	*mock.Call
+}
+
+// SendToCustomerApproval is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) SendToCustomerApproval(_a0 interface{}) *ServiceOrderHandler_SendToCustomerApproval_Call {
+	return &ServiceOrderHandler_SendToCustomerApproval_Call{Call: _e.mock.On("SendToCustomerApproval", _a0)}
+}
+
+func (_c *ServiceOrderHandler_SendToCustomerApproval_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_SendToCustomerApproval_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_SendToCustomerApproval_Call) Return() *ServiceOrderHandler_SendToCustomerApproval_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_SendToCustomerApproval_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_SendToCustomerApproval_Call {
+	_c.Run(run)
+	return _c
+}
+
 // NewServiceOrderHandler creates a new instance of ServiceOrderHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewServiceOrderHandler(t interface {
