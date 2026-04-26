@@ -351,6 +351,8 @@ func (s *svc) reviewOSPricing(ctx context.Context, serviceOrderID string) error 
 		return err
 	}
 
+	so.ResetPricing()
+
 	var eg errgroup.Group
 	eg.Go(func() error {
 		works, e := s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
@@ -497,6 +499,54 @@ func (s *svc) Reject(c context.Context, serviceOrderID, userID string) error {
 				return err
 			}
 		}
+
+		return s.repo.Save(ctx, &so)
+	})
+}
+
+func (s *svc) Deliver(c context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(c, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_COMPLETED {
+			return domain.ErrServiceOrderNotCompleted
+		}
+
+		so.Status = domain.SERVICE_ORDER_STATUS_DELIVERED
+
+		return s.repo.Save(ctx, &so)
+	})
+}
+
+func (s *svc) Cancel(c context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(c, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Customer == nil {
+			return domain.ErrServiceOrderNotFound
+		}
+
+		if so.Status.IsCancelable() {
+			return domain.ErrServiceOrderNotCancelable
+		}
+
+		so.Status = domain.SERVICE_ORDER_STATUS_CANCELLED
 
 		return s.repo.Save(ctx, &so)
 	})

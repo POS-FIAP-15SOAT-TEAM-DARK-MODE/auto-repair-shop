@@ -16,10 +16,10 @@ func MemoryRepository() domain.ServiceOrderHistoryRepository {
 	}
 }
 
-func (r *memory_repo) Search(_ context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistory, error) {
-	return []domain.ServiceOrderHistory{}, nil
+func (r *memory_repo) Search(_ context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistoryItem, error) {
+	return []domain.ServiceOrderHistoryItem{}, nil
 }
 
-func (r *memory_repo) Count(_ context.Context, params *domain.SearchServiceOrderHistoryParams) (int64, error) {
-	return 0, nil
+func (r *memory_repo) SearchWorkTransitionsByServiceOrderID(_ context.Context, _ string) ([]domain.WorkTransitionGroup, error) {
+	return []domain.WorkTransitionGroup{}, nil
 }

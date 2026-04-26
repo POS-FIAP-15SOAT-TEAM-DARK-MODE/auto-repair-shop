@@ -19,10 +19,18 @@ const (
 	SERVICE_ORDER_STATUS_IN_PROGRESS       SERVICE_ORDER_STATUS = "IN_PROGRESS"
 	SERVICE_ORDER_STATUS_COMPLETED         SERVICE_ORDER_STATUS = "COMPLETED"
 	SERVICE_ORDER_STATUS_DELIVERED         SERVICE_ORDER_STATUS = "DELIVERED"
+	SERVICE_ORDER_STATUS_CANCELLED         SERVICE_ORDER_STATUS = "CANCELLED"
 )
 
 func (s SERVICE_ORDER_STATUS) String() string {
 	return string(s)
+}
+
+func (s SERVICE_ORDER_STATUS) IsCancelable() bool {
+	return s != SERVICE_ORDER_STATUS_REJECTED &&
+		s != SERVICE_ORDER_STATUS_COMPLETED &&
+		s != SERVICE_ORDER_STATUS_DELIVERED &&
+		s != SERVICE_ORDER_STATUS_CANCELLED
 }
 
 func StringToServiceOrderStatus(val string) SERVICE_ORDER_STATUS {
@@ -46,6 +54,14 @@ type (
 		Amount int
 	}
 )
+
+func (so *ServiceOrder) ResetPricing() {
+	so.PrepareForSum()
+
+	so.sumLocker.Lock()
+	so.TotalAmount = decimal.Zero
+	so.sumLocker.Unlock()
+}
 
 func (so *ServiceOrder) PrepareForSum() {
 	sync.OnceFunc(func() {
@@ -87,6 +103,8 @@ type (
 		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
 		Accept(ctx context.Context, serviceOrderID, userID string) error
 		Reject(ctx context.Context, serviceOrderID, userID string) error
+		Deliver(ctx context.Context, serviceOrderID string) error
+		Cancel(ctx context.Context, serviceOrderID string) error
 	}
 
 	ServiceOrderRepository interface {
@@ -110,4 +128,29 @@ func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 		Vehicle:     Vehicle,
 		TotalAmount: decimal.Zero,
 	}
+}
+
+func GetPreviousStatus(currentStatus SERVICE_ORDER_STATUS) *SERVICE_ORDER_STATUS {
+	switch currentStatus {
+	case SERVICE_ORDER_STATUS_RECEIVED:
+		return new(SERVICE_ORDER_STATUS_NEW)
+	case SERVICE_ORDER_STATUS_IN_DIAGNOSIS:
+		return new(SERVICE_ORDER_STATUS_RECEIVED)
+	case SERVICE_ORDER_STATUS_AWAITING_APPROVAL:
+		return new(SERVICE_ORDER_STATUS_IN_DIAGNOSIS)
+	case SERVICE_ORDER_STATUS_IN_PROGRESS:
+		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
+	case SERVICE_ORDER_STATUS_COMPLETED:
+		return new(SERVICE_ORDER_STATUS_IN_PROGRESS)
+	case SERVICE_ORDER_STATUS_DELIVERED:
+		return new(SERVICE_ORDER_STATUS_COMPLETED)
+	case SERVICE_ORDER_STATUS_REJECTED:
+		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
+	default:
+		return nil
+	}
+}
+
+func NewHistoryServiceOrderID() string {
+	return ulid.Make().String()
 }

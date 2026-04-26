@@ -3,23 +3,29 @@ package domain
 import (
 	"context"
 	"time"
-
-	"github.com/oklog/ulid/v2"
 )
 
 type (
-	ServiceOrderHistory struct {
-		ID             string
-		ServiceOrderID string
+	ServiceOrderHistoryItem struct {
+		PreviousStatus  SERVICE_ORDER_STATUS
+		NewStatus       SERVICE_ORDER_STATUS
+		CreatedAt       time.Time
+		WorkTransitions []WorkTransitionGroup
+	}
+
+	WorkTransitionGroup struct {
+		WorkID string
+		Status []WorkStatusItem
+	}
+
+	WorkStatusItem struct {
 		PreviousStatus SERVICE_ORDER_STATUS
 		NewStatus      SERVICE_ORDER_STATUS
 		CreatedAt      time.Time
 	}
 
 	SearchServiceOrderHistoryParams struct {
-		ID       string
-		Page     int64
-		PageSize int64
+		ID string
 	}
 )
 
@@ -27,12 +33,12 @@ type (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryRepository --with-expecter
 type (
 	ServiceOrderHistoryService interface {
-		GetHistoryByID(ctx context.Context, params *SearchServiceOrderHistoryParams) (*PaginatorResponse[ServiceOrderHistory], error)
+		GetHistoryByID(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistoryItem, error)
 	}
 
 	ServiceOrderHistoryRepository interface {
-		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistory, error)
-		Count(ctx context.Context, params *SearchServiceOrderHistoryParams) (int64, error)
+		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistoryItem, error)
+		SearchWorkTransitionsByServiceOrderID(ctx context.Context, serviceOrderID string) ([]WorkTransitionGroup, error)
 	}
 )
 
@@ -43,9 +49,8 @@ func (p *SearchServiceOrderHistoryParams) Validate() error {
 	return nil
 }
 
-func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistory {
-	return &ServiceOrderHistory{
-		ID:             ulid.Make().String(),
+func NewServiceOrderHistory(previousStatus, newStatus SERVICE_ORDER_STATUS, createdAt time.Time) *ServiceOrderHistoryItem {
+	return &ServiceOrderHistoryItem{
 		PreviousStatus: previousStatus,
 		NewStatus:      newStatus,
 		CreatedAt:      createdAt,

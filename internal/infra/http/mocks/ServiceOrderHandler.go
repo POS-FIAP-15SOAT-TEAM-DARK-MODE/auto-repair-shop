@@ -120,6 +120,39 @@ func (_c *ServiceOrderHandler_AddWork_Call) RunAndReturn(run func(*gin.Context))
 	return _c
 }
 
+// Cancel provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) Cancel(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_Cancel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Cancel'
+type ServiceOrderHandler_Cancel_Call struct {
+	*mock.Call
+}
+
+// Cancel is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) Cancel(_a0 interface{}) *ServiceOrderHandler_Cancel_Call {
+	return &ServiceOrderHandler_Cancel_Call{Call: _e.mock.On("Cancel", _a0)}
+}
+
+func (_c *ServiceOrderHandler_Cancel_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Cancel_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Cancel_Call) Return() *ServiceOrderHandler_Cancel_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Cancel_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Cancel_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Create provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) Create(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -215,6 +248,39 @@ func (_c *ServiceOrderHandler_DeleteWork_Call) Return() *ServiceOrderHandler_Del
 }
 
 func (_c *ServiceOrderHandler_DeleteWork_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_DeleteWork_Call {
+	_c.Run(run)
+	return _c
+}
+
+// Deliver provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) Deliver(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_Deliver_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Deliver'
+type ServiceOrderHandler_Deliver_Call struct {
+	*mock.Call
+}
+
+// Deliver is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) Deliver(_a0 interface{}) *ServiceOrderHandler_Deliver_Call {
+	return &ServiceOrderHandler_Deliver_Call{Call: _e.mock.On("Deliver", _a0)}
+}
+
+func (_c *ServiceOrderHandler_Deliver_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Deliver_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Deliver_Call) Return() *ServiceOrderHandler_Deliver_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Deliver_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Deliver_Call {
 	_c.Run(run)
 	return _c
 }
