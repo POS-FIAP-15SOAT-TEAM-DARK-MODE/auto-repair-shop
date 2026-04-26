@@ -16,6 +16,7 @@ type svc struct {
 	repo            domain.ServiceOrderRepository
 	workRepo        domain.WorkRepository
 	supplyRepo      domain.SupplyRepository
+	workHistoryRepo domain.ServiceOrderHistoryRepository
 	customerService domain.CustomerService
 	vehicleService  domain.VehicleService
 }
@@ -25,9 +26,10 @@ func Service(
 	repo domain.ServiceOrderRepository,
 	workRepo domain.WorkRepository,
 	supplyRepo domain.SupplyRepository,
+	workHistoryRepo domain.ServiceOrderHistoryRepository,
 	customerService domain.CustomerService,
 	vehicleService domain.VehicleService) *svc {
-	return &svc{uow, repo, workRepo, supplyRepo, customerService, vehicleService}
+	return &svc{uow, repo, workRepo, supplyRepo, workHistoryRepo, customerService, vehicleService}
 }
 
 func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (domain.ServiceOrder, error) {
@@ -111,6 +113,10 @@ func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []str
 			}
 
 			if e = s.repo.AddWorkLink(ctx, serviceOrderID, w.ID, w.Price); e != nil {
+				return e
+			}
+
+			if e = s.workHistoryRepo.InsertWorkHistory(ctx, serviceOrderID, w.ID, domain.SERVICE_ORDER_STATUS_NEW); e != nil {
 				return e
 			}
 		}
