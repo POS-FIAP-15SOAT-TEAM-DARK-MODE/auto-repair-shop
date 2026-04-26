@@ -54,6 +54,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.GET("/service-order", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.List)
 	v1.GET("/service-order/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetFullByID)
 	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
+	v1.PUT("/service-order/:id/start-diagnosis", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.SendToDiagnosis)
 	v1.PUT("/service-order/:id/finish", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.Finish)
 	v1.PUT("/service-order/:id/send", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.SendToCustomerApproval)
 	v1.PUT("/service-order/:id/accept", middleware.Auth(role.CustomerRoles...), c.ServiceOrderHandler.Accept)
