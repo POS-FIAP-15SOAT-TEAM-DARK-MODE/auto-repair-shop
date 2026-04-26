@@ -285,6 +285,39 @@ func (_c *ServiceOrderHandler_Deliver_Call) RunAndReturn(run func(*gin.Context))
 	return _c
 }
 
+// Finish provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) Finish(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_Finish_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Finish'
+type ServiceOrderHandler_Finish_Call struct {
+	*mock.Call
+}
+
+// Finish is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) Finish(_a0 interface{}) *ServiceOrderHandler_Finish_Call {
+	return &ServiceOrderHandler_Finish_Call{Call: _e.mock.On("Finish", _a0)}
+}
+
+func (_c *ServiceOrderHandler_Finish_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Finish_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Finish_Call) Return() *ServiceOrderHandler_Finish_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Finish_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Finish_Call {
+	_c.Run(run)
+	return _c
+}
+
 // GetSupplies provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) GetSupplies(_a0 *gin.Context) {
 	_m.Called(_a0)

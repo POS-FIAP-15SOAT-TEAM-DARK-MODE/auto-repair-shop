@@ -53,6 +53,7 @@ var (
 	ErrServiceOrderNotNew              = errors.New("service order isn't at NEW state")
 	ErrServiceOrderNotInDiagnosis      = errors.New("service order isn't at IN_DIAGNOSIS state")
 	ErrServiceOrderNotAwaitingApproval = errors.New("service order isn't at AWAITING_APPROVAL state")
+	ErrServiceOrderNotInProgress       = errors.New("service order isn't at IN_PROGRESS state")
 	ErrServiceOrderNotCompleted        = errors.New("service order isn't at COMPLETED state")
 	ErrServiceOrderNotCancelable       = errors.New("service order state isn't cancelable")
 	ErrServiceOrderWorkNotFound        = errors.New("work is not linked to this service order")

@@ -144,6 +144,7 @@ func isConflictError(err error) bool {
 		errors.Is(err, domain.ErrCustomerHasServiceOrders) ||
 		errors.Is(err, domain.ErrServiceOrderNotNew) ||
 		errors.Is(err, domain.ErrServiceOrderNotInDiagnosis) ||
+		errors.Is(err, domain.ErrServiceOrderNotInProgress) ||
 		errors.Is(err, domain.ErrServiceOrderNotCompleted) ||
 		errors.Is(err, domain.ErrServiceOrderNotCancelable) ||
 		errors.Is(err, domain.ErrServiceOrderNotAwaitingApproval)
