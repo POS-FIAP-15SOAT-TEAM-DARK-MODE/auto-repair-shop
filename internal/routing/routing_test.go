@@ -69,6 +69,7 @@ func TestSetupRouter(t *testing.T) {
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockSO.EXPECT().List(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockSO.EXPECT().SendToCustomerApproval(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockSO.EXPECT().SendToDiagnosis(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Accept(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Reject(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Deliver(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
@@ -84,6 +85,7 @@ func TestSetupRouter(t *testing.T) {
 	mockSO.EXPECT().GetSupplies(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockSO.EXPECT().AddSupplies(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().DeleteSupply(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockSO.EXPECT().GetAverageExecutionTime(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 
 	// Service Order History
 	mockSOHistory.EXPECT().GetHistoryByID(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
@@ -157,6 +159,7 @@ func TestSetupRouter(t *testing.T) {
 		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},
 		{goHttp.MethodGet, "/v1/service-order", goHttp.StatusOK, ""},
 		{goHttp.MethodGet, "/v1/service-order/:id", goHttp.StatusOK, `{"id":"123"}`},
+		{goHttp.MethodPut, "/v1/service-order/:id/start-diagnosis", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/send", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/accept", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/reject", goHttp.StatusNoContent, ""},
@@ -175,6 +178,9 @@ func TestSetupRouter(t *testing.T) {
 
 		// Service Order History
 		{goHttp.MethodGet, "/v1/service-order/:id/history", goHttp.StatusOK, ""},
+
+		// Reports
+		{goHttp.MethodGet, "/v1/reports/average-execution-time", goHttp.StatusOK, ""},
 
 		// Swagger UI (based on mountSwaggerUI in routing.go)
 		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK, ""},

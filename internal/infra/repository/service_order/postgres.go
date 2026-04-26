@@ -211,6 +211,41 @@ func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string
 	return qty, nil
 }
 
+func (r *repository) AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query, args := dbPkg.QueryBuilder(averageExecutionTimeBaseQuery).
+		Add("h_start.new_status =", "IN_PROGRESS").
+		Add("h_end.new_status =", "COMPLETED").
+		AddAny("w.id", workIDs).
+		GroupBy("w.id", "w.name").
+		OrderBy("w.name", dbPkg.ASC).
+		Build()
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []domain.WorkExecutionTime
+	for rows.Next() {
+		var w domain.WorkExecutionTime
+		if err = rows.Scan(&w.WorkID, &w.WorkName, &w.AverageHours); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		result = append(result, w)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	return result, nil
+}
+
 func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
 	db, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {

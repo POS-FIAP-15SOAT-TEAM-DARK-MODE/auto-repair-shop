@@ -197,11 +197,13 @@ DELETE /service-order/:id/supplies/:supplyId       — remove supply + restore s
 HTTP codes: 400 (validation), 401 (auth), 403 (forbidden), 404 (not found), 409 (conflict), 422 (business rule violation), 500 (unexpected)
 
 ## Logging
-- Structured JSON via Zap; fields: `timestamp`, `level`, `operation`, `entity_id`
-- Log: service order creation, every status transition, stock decrement, validation errors
-- Never log: CPF, CNPJ, passwords, tokens
-- Levels: INFO (normal), WARN (business rule violations), ERROR (unexpected)
-- Read operations: log errors only, not success paths
+- Structured JSON via Zap with standardized service-order events implemented in the service layer.
+- Issue #236 implemented with explicit events: `service_order.created`, `service_order.status_transition`, `service_order.validation_failed`.
+- Issue #223 implemented with centralized sanitization/redaction in logger (`internal/pkg/logger/logger.go`) for sensitive keys and DSN passwords.
+- Avoid payload logging with `zap.Any` for domain/request objects when fields can include sensitive data.
+- Never log or expose CPF, CNPJ, passwords, or tokens.
+- Preferred levels: INFO (business events), WARN (rule violations), ERROR (unexpected failures).
+- Read operations should prioritize error logging and keep success logs minimal.
 
 ## Infrastructure
 - `Dockerfile` + `docker-compose.yml` (app + PostgreSQL)

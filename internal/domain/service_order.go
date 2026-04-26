@@ -118,11 +118,13 @@ type (
 		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
 		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
 		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
+		SendToDiagnosis(ctx context.Context, serviceOrderID string) error
 		Accept(ctx context.Context, serviceOrderID, userID string) error
 		Reject(ctx context.Context, serviceOrderID, userID string) error
 		Deliver(ctx context.Context, serviceOrderID string) error
 		Cancel(ctx context.Context, serviceOrderID string) error
 		GetFullOSByID(ctx context.Context, serviceOrderID string) (FullServiceOrder, error)
+		AverageExecutionTime(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
 	}
 
 	ServiceOrderRepository interface {
@@ -137,8 +139,15 @@ type (
 		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Supply, error)
 		AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error
 		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) (int, error)
+		AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
 	}
 )
+
+type WorkExecutionTime struct {
+	WorkID       string
+	WorkName     string
+	AverageHours float64
+}
 
 func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 	return &ServiceOrder{
