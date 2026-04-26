@@ -484,6 +484,7 @@ func (h *handler) GetStatus(c *gin.Context) {
 		c.JSON(status, response)
 		return
 	}
+	domainServiceOrder := domain.ServiceOrder{ID: id, Status: statusOS}
 
-	c.JSON(http.StatusOK, mapResponseDTOFromDomain(domain.ServiceOrder{ID: id, Status: statusOS}))
+	c.JSON(http.StatusOK, mapResponseDTOFromDomain(domainServiceOrder))
 }
