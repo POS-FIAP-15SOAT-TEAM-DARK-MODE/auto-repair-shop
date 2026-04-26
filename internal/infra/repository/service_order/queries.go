@@ -1,6 +1,7 @@
 package service_order
 
 const (
+	selectSOStatusQuery     = "SELECT status FROM service_order WHERE id = $1"
 	insertServiceOrderQuery = `
 	INSERT INTO service_order (id, customer_id, vehicle_id, status, total_amount)
 	VALUES ($1, $2, $3, $4, $5)
@@ -14,7 +15,6 @@ const (
 	insertServiceOrderStatusQuery = `
 	INSERT INTO service_order_status_history (id, service_order_id, previous_status, new_status)
 	VALUES ($1, $2, $3, $4)
-	ON CONFLICT (service_order_id, new_status) DO NOTHING
 	`
 
 	serviceOrderExistsQuery = `SELECT so.status FROM service_order so WHERE id = $1`

@@ -1,0 +1,3 @@
+ALTER TABLE service_order_status_history
+ADD CONSTRAINT uq_service_order_status_history_service_order_id_new_status
+UNIQUE (service_order_id, new_status);
