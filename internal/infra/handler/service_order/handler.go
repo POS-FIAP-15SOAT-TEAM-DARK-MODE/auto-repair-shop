@@ -345,6 +345,22 @@ func (h *handler) Deliver(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *handler) GetAverageExecutionTime(c *gin.Context) {
+	ctx := c.Request.Context()
+	avg, err := h.svc.AverageExecutionTime(ctx)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("get average execution time failed",
+			zap.String("operation", "get_average_execution_time"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+	c.JSON(http.StatusOK, averageExecutionTimeResponse{AverageExecutionTimeHours: avg})
+}
+
 func (h *handler) Cancel(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := strings.TrimSpace(c.Param(serviceOrderIDParam))

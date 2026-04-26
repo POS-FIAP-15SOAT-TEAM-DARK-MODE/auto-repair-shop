@@ -285,6 +285,39 @@ func (_c *ServiceOrderHandler_Deliver_Call) RunAndReturn(run func(*gin.Context))
 	return _c
 }
 
+// GetAverageExecutionTime provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) GetAverageExecutionTime(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_GetAverageExecutionTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAverageExecutionTime'
+type ServiceOrderHandler_GetAverageExecutionTime_Call struct {
+	*mock.Call
+}
+
+// GetAverageExecutionTime is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) GetAverageExecutionTime(_a0 interface{}) *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	return &ServiceOrderHandler_GetAverageExecutionTime_Call{Call: _e.mock.On("GetAverageExecutionTime", _a0)}
+}
+
+func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) Return() *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	_c.Run(run)
+	return _c
+}
+
 // GetSupplies provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) GetSupplies(_a0 *gin.Context) {
 	_m.Called(_a0)

@@ -70,4 +70,17 @@ DELETE FROM service_order_supply
 WHERE service_order_id = $1 AND supply_id = $2
 RETURNING quantity
 `
+
+	averageExecutionTimeQuery = `
+SELECT COALESCE(
+    AVG(EXTRACT(EPOCH FROM (h_end.created_at - h_start.created_at)) / 3600),
+    0
+) AS avg_hours
+FROM work_service_order_status_history h_start
+JOIN work_service_order_status_history h_end
+    ON h_start.work_id = h_end.work_id
+    AND h_start.service_order_id = h_end.service_order_id
+WHERE h_start.new_status = 'IN_PROGRESS'
+  AND h_end.new_status   = 'COMPLETED'
+`
 )

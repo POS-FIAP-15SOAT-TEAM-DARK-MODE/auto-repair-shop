@@ -60,6 +60,10 @@ func mapWorksListToResponse(works []domain.Work) listResponse[workItemResponse] 
 	}
 }
 
+type averageExecutionTimeResponse struct {
+	AverageExecutionTimeHours float64 `json:"average_execution_time_hours"`
+}
+
 func mapSuppliesListToResponse(supplies []domain.Supply) listResponse[supplyItemResponse] {
 	items := make([]supplyItemResponse, 0, len(supplies))
 	for _, w := range supplies {

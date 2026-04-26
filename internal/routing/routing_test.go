@@ -81,6 +81,7 @@ func TestSetupRouter(t *testing.T) {
 	mockSO.EXPECT().GetSupplies(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockSO.EXPECT().AddSupplies(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().DeleteSupply(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockSO.EXPECT().GetAverageExecutionTime(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 
 	// Service Order History
 	mockSOHistory.EXPECT().GetHistoryByID(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
@@ -169,6 +170,9 @@ func TestSetupRouter(t *testing.T) {
 
 		// Service Order History
 		{goHttp.MethodGet, "/v1/service-order/:id/history", goHttp.StatusOK, ""},
+
+		// Reports
+		{goHttp.MethodGet, "/v1/reports/average-execution-time", goHttp.StatusOK, ""},
 
 		// Swagger UI (based on mountSwaggerUI in routing.go)
 		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK, ""},

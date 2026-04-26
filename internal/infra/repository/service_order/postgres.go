@@ -189,6 +189,18 @@ func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string
 	return qty, nil
 }
 
+func (r *repository) AverageExecutionTimeInHours(ctx context.Context) (float64, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+	var avg float64
+	if err = db.QueryRowContext(ctx, averageExecutionTimeQuery).Scan(&avg); err != nil {
+		return 0, pgPkg.Error(ctx, err)
+	}
+	return avg, nil
+}
+
 func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
 	db, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {

@@ -526,6 +526,10 @@ func (s *svc) Deliver(c context.Context, serviceOrderID string) error {
 	})
 }
 
+func (s *svc) AverageExecutionTime(ctx context.Context) (float64, error) {
+	return s.repo.AverageExecutionTimeInHours(ctx)
+}
+
 func (s *svc) Cancel(c context.Context, serviceOrderID string) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
@@ -542,7 +546,7 @@ func (s *svc) Cancel(c context.Context, serviceOrderID string) error {
 			return domain.ErrServiceOrderNotFound
 		}
 
-		if so.Status.IsCancelable() {
+		if !so.Status.IsCancelable() {
 			return domain.ErrServiceOrderNotCancelable
 		}
 

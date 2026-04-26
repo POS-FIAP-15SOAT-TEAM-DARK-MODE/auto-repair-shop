@@ -166,6 +166,62 @@ func (_c *ServiceOrderService_AddWorks_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
+// AverageExecutionTime provides a mock function with given fields: ctx
+func (_m *ServiceOrderService) AverageExecutionTime(ctx context.Context) (float64, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AverageExecutionTime")
+	}
+
+	var r0 float64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (float64, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) float64); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(float64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderService_AverageExecutionTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AverageExecutionTime'
+type ServiceOrderService_AverageExecutionTime_Call struct {
+	*mock.Call
+}
+
+// AverageExecutionTime is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *ServiceOrderService_Expecter) AverageExecutionTime(ctx interface{}) *ServiceOrderService_AverageExecutionTime_Call {
+	return &ServiceOrderService_AverageExecutionTime_Call{Call: _e.mock.On("AverageExecutionTime", ctx)}
+}
+
+func (_c *ServiceOrderService_AverageExecutionTime_Call) Run(run func(ctx context.Context)) *ServiceOrderService_AverageExecutionTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_AverageExecutionTime_Call) Return(_a0 float64, _a1 error) *ServiceOrderService_AverageExecutionTime_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderService_AverageExecutionTime_Call) RunAndReturn(run func(context.Context) (float64, error)) *ServiceOrderService_AverageExecutionTime_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Cancel provides a mock function with given fields: ctx, serviceOrderID
 func (_m *ServiceOrderService) Cancel(ctx context.Context, serviceOrderID string) error {
 	ret := _m.Called(ctx, serviceOrderID)
