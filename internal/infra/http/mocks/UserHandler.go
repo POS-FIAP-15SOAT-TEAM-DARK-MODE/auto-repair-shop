@@ -87,6 +87,39 @@ func (_c *UserHandler_Login_Call) RunAndReturn(run func(*gin.Context)) *UserHand
 	return _c
 }
 
+// UpdateRole provides a mock function with given fields: _a0
+func (_m *UserHandler) UpdateRole(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// UserHandler_UpdateRole_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateRole'
+type UserHandler_UpdateRole_Call struct {
+	*mock.Call
+}
+
+// UpdateRole is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *UserHandler_Expecter) UpdateRole(_a0 interface{}) *UserHandler_UpdateRole_Call {
+	return &UserHandler_UpdateRole_Call{Call: _e.mock.On("UpdateRole", _a0)}
+}
+
+func (_c *UserHandler_UpdateRole_Call) Run(run func(_a0 *gin.Context)) *UserHandler_UpdateRole_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *UserHandler_UpdateRole_Call) Return() *UserHandler_UpdateRole_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *UserHandler_UpdateRole_Call) RunAndReturn(run func(*gin.Context)) *UserHandler_UpdateRole_Call {
+	_c.Run(run)
+	return _c
+}
+
 // NewUserHandler creates a new instance of UserHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserHandler(t interface {

@@ -337,6 +337,49 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/users/{id}/role:
+    patch:
+      summary: Update a user role
+      description: Replaces all current roles of the user with a single new role. Only ADMIN users can perform this operation.
+      tags:
+        - Users
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRoleRequest"
+      responses:
+        "204":
+          description: User role updated successfully
+        "400":
+          description: Invalid request body, empty role, or invalid role value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/works:
     post:
       summary: Register a new Work
@@ -816,6 +859,98 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal Server Error
+    get:
+      summary: List service orders
+      description: List service orders with pagination and optional filters by status, customer and vehicle.
+      tags:
+        - ServiceOrder
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based).
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [NEW, RECEIVED, IN_DIAGNOSIS, AWAITING_APPROVAL, REJECTED, IN_PROGRESS, COMPLETED, DELIVERED, CANCELLED]
+          description: Filter by service order status.
+        - in: query
+          name: customerId
+          schema:
+            type: string
+          description: Filter by customer id.
+        - in: query
+          name: vehicleId
+          schema:
+            type: string
+          description: Filter by vehicle id.
+      responses:
+        "200":
+          description: Successful list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListServiceOrdersResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "500":
+          description: Internal Server Error
+
+  /v1/service-order/{id}:
+    get:
+      summary: Get service order detail
+      description: Returns the full information for the specified service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order id
+      responses:
+        "200":
+          description: Informations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceOrderDetails"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
 
   /v1/service-order/{id}/status:
     get:
@@ -903,6 +1038,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
+  /v1/service-order/{id}/start-diagnosis:
+    put:
+      summary: Send service order to the in diagnosis status
+      description: Send an existent service order from received to in diagnosis
+      tags:
+        - ServiceOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Id of service order to send to diagnosis
+      responses:
+        "204":
+          description: Service Order successfully sent to in diagnosis status
+        "400":
+          description: Invalid Body Content
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "409":
+          description: Conflict (Doesnt meet the service order status requirements)
         "500":
           description: Internal Server Error
 
@@ -1299,6 +1461,53 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/reports/average-execution-time:
+    get:
+      summary: Get average work execution time
+      description: Returns the average execution time in hours for individual works (billable services), calculated as the mean time between each work's IN_PROGRESS and COMPLETED status transitions across all service orders.
+      tags:
+        - Reports
+      security:
+        - SessionToken: []
+      parameters:
+        - in: query
+          name: work_id
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Filter by one or more work IDs. Repeat the parameter for multiple values (?work_id=id1&work_id=id2). Omit to return all works.
+          example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      responses:
+        "200":
+          description: List of works with their average execution time. Empty array when no works have been completed yet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkExecutionTimeResponse"
+              example:
+                - workId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                  workName: Troca de óleo
+                  averageExecutionTimeHours: 1.5
+                - workId: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+                  workName: Revisão de freios
+                  averageExecutionTimeHours: 3.2
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     SessionToken:
@@ -1345,6 +1554,21 @@ components:
           format: password
           description: User password
 
+    UpdateUserRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          description: New role to be assigned to the user
+          enum:
+            - ADMIN
+            - ATTENDANT
+            - MECHANIC
+            - CUSTOMER
+          example: MECHANIC
+
     UserLoginResponse:
       type: object
       properties:
@@ -1386,6 +1610,21 @@ components:
           items:
             type: string
           description: List of validation/business error messages
+
+    WorkExecutionTimeResponse:
+      type: object
+      properties:
+        workId:
+          type: string
+          format: uuid
+          description: Work identifier
+        workName:
+          type: string
+          description: Name of the billable service
+        averageExecutionTimeHours:
+          type: number
+          format: double
+          description: Average time in hours for this work to go from IN_PROGRESS to COMPLETED across all service orders
 
     CreateCustomerRequest:
       type: object
@@ -1822,6 +2061,59 @@ components:
           format: date-time
           description: Creation timestamp
 
+    ServiceOrderVehicleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        licensePlate:
+          type: string
+        brandModel:
+          type: string
+        year:
+          type: integer
+
+    ServiceOrderListItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        totalValue:
+          type: number
+          format: float
+        customer:
+          $ref: "#/components/schemas/CustomerResponse"
+        vehicle:
+          $ref: "#/components/schemas/ServiceOrderVehicleResponse"
+
+    ListServiceOrdersResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceOrderListItemResponse"
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+      required:
+        - items
+        - totalItems
+        - totalPages
+        - pageSize
+        - page
+
     AddServiceToServiceOrderRequest:
       type: object
       required:
@@ -1849,3 +2141,33 @@ components:
               amount:
                 type: integer
                 description: Amount of supplies to add
+
+    ServiceOrderDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          required: true
+          example: '01KQ2ZNRQQZRQ480K7HEB8YH70'
+        status:
+          type: string
+          required: true
+          example: 'IN_PROGRESS'
+        totalValue:
+          type: number
+          required: true
+          example: 10.50
+        customer:
+          $ref: '#/components/schemas/CustomerResponse'
+        vehicle:
+          $ref: '#/components/schemas/VehicleResponse'
+        works:
+          required: true
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateWorkResponse'
+        supplies:
+          required: true
+          type: array
+          items:
+            $ref: "#/components/schemas/SupplyResponse"

@@ -269,3 +269,83 @@ func TestService_Login(t *testing.T) {
 		})
 	}
 }
+
+func TestService_UpdateRole(t *testing.T) {
+	tests := []struct {
+		name             string
+		id               string
+		role             domain.Role
+		prepareMocks     func(t *testing.T, executor *uowmocks.Executor, repo *domainmocks.UserRepository)
+		expectedErrorMsg string
+	}{
+		{
+			name: "Should fail gracefully when role is invalid",
+			id:   "user-1",
+			role: domain.Role("INVALID"),
+			prepareMocks: func(t *testing.T, executor *uowmocks.Executor, repo *domainmocks.UserRepository) {
+			},
+			expectedErrorMsg: "invalid role",
+		},
+		{
+			name: "Should fail gracefully when repository fails",
+			id:   "user-1",
+			role: domain.MECHANIC,
+			prepareMocks: func(t *testing.T, executor *uowmocks.Executor, repo *domainmocks.UserRepository) {
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, steps ...uow.Step) error {
+					for _, step := range steps {
+						if err := step(ctx); err != nil {
+							return err
+						}
+					}
+					return nil
+				})
+				repo.EXPECT().UpdateRole(mock.Anything, "user-1", domain.MECHANIC).Return(errors.New("repo failed"))
+			},
+			expectedErrorMsg: "repository.UpdateRole failed: repo failed",
+		},
+		{
+			name: "Should fail gracefully when transaction fails",
+			id:   "user-1",
+			role: domain.MECHANIC,
+			prepareMocks: func(t *testing.T, executor *uowmocks.Executor, repo *domainmocks.UserRepository) {
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).Return(errors.New("transaction failed"))
+			},
+			expectedErrorMsg: "transaction failed",
+		},
+		{
+			name: "Should update role successfully",
+			id:   "user-1",
+			role: domain.MECHANIC,
+			prepareMocks: func(t *testing.T, executor *uowmocks.Executor, repo *domainmocks.UserRepository) {
+				executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, steps ...uow.Step) error {
+					for _, step := range steps {
+						if err := step(ctx); err != nil {
+							return err
+						}
+					}
+					return nil
+				})
+				repo.EXPECT().UpdateRole(mock.Anything, "user-1", domain.MECHANIC).Return(nil)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			executor := uowmocks.NewExecutor(t)
+			repo := domainmocks.NewUserRepository(t)
+			tt.prepareMocks(t, executor, repo)
+
+			svc := user.Service(executor, repo, time.Minute)
+			err := svc.UpdateRole(context.Background(), tt.id, tt.role)
+
+			if tt.expectedErrorMsg != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedErrorMsg)
+				return
+			}
+
+			assert.NoError(t, err)
+		})
+	}
+}

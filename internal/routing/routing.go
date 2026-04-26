@@ -26,6 +26,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 
 	v1.POST("/auth/register", middleware.Auth(role.ADMIN), c.UserHandler.Create)
 	v1.POST("/auth/login", c.UserHandler.Login)
+	v1.PATCH("/users/:id/role", middleware.Auth(role.ADMIN), c.UserHandler.UpdateRole)
 
 	v1.POST("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Create)
 	v1.GET("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByID)
@@ -50,7 +51,10 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Delete)
 
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
-	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
+	v1.GET("/service-order", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.List)
+	v1.GET("/service-order/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetFullByID)
+	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
+	v1.PUT("/service-order/:id/start-diagnosis", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.SendToDiagnosis)
 	v1.PUT("/service-order/:id/send", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.SendToCustomerApproval)
 	v1.PUT("/service-order/:id/accept", middleware.Auth(role.CustomerRoles...), c.ServiceOrderHandler.Accept)
 	v1.PUT("/service-order/:id/reject", middleware.Auth(role.CustomerRoles...), c.ServiceOrderHandler.Reject)
@@ -64,6 +68,8 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.GET("/service-order/:id/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetSupplies)
 	v1.POST("/service-order/:id/supplies", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.AddSupplies)
 	v1.DELETE("/service-order/:id/supplies/:supplyId", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.DeleteSupply)
+
+	v1.GET("/reports/average-execution-time", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.GetAverageExecutionTime)
 
 	v1.GET("/service-order/:id/status", c.ServiceOrderHandler.GetStatus)
 
