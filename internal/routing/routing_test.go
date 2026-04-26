@@ -38,6 +38,7 @@ func TestSetupRouter(t *testing.T) {
 	// User
 	mockUser.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockUser.EXPECT().Login(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockUser.EXPECT().UpdateRole(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Customer
 	mockCustomer.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -66,12 +67,14 @@ func TestSetupRouter(t *testing.T) {
 
 	// Service Order
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
+	mockSO.EXPECT().List(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 	mockSO.EXPECT().SendToCustomerApproval(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().SendToDiagnosis(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Accept(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Reject(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Deliver(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Cancel(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockSO.EXPECT().GetFullByID(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 
 	// Service Order Works
 	mockSO.EXPECT().GetWorks(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
@@ -122,6 +125,7 @@ func TestSetupRouter(t *testing.T) {
 		// User
 		{goHttp.MethodPost, "/v1/auth/register", goHttp.StatusCreated, ""},
 		{goHttp.MethodPost, "/v1/auth/login", goHttp.StatusOK, ""},
+		{goHttp.MethodPatch, "/v1/users/:id/role", goHttp.StatusNoContent, `{"role":"MECHANIC"}`},
 
 		// Customer
 		{goHttp.MethodPost, "/v1/customers", goHttp.StatusCreated, ""},
@@ -152,6 +156,8 @@ func TestSetupRouter(t *testing.T) {
 
 		// Service Order
 		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},
+		{goHttp.MethodGet, "/v1/service-order", goHttp.StatusOK, ""},
+		{goHttp.MethodGet, "/v1/service-order/:id", goHttp.StatusOK, `{"id":"123"}`},
 		{goHttp.MethodPut, "/v1/service-order/:id/start-diagnosis", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/send", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/accept", goHttp.StatusNoContent, ""},

@@ -7,6 +7,7 @@ import (
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	dbPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -196,15 +197,17 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	}
 
 	var so domain.ServiceOrder
-	var ct domain.Customer
-	var vh domain.Vehicle
+	so.Customer = new(domain.Customer)
+	so.Customer.User = new(domain.User)
+	so.Vehicle = new(domain.Vehicle)
 	var status string
 	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
-		&so.ID,
-		&status,
-		&so.TotalAmount,
-		&ct.ID,
-		&vh.ID,
+		&so.ID, &status, &so.TotalAmount,
+		&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+		&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+		&so.Customer.User.Name, &so.Customer.User.Email,
+		&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+		&so.Vehicle.Model, &so.Vehicle.Year,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ServiceOrder{}, domain.ErrServiceOrderNotFound
@@ -213,8 +216,76 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	}
 
 	so.Status = domain.StringToServiceOrderStatus(status)
-	so.Customer = &ct
-	so.Vehicle = &vh
 
 	return so, nil
+}
+
+func (r *repository) Count(ctx context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	queryBuilder := dbPkg.QueryBuilder(countServiceOrderQuery)
+	queryBuilder.Add("so.status =", params.Status)
+	queryBuilder.Add("so.customer_id =", params.CustomerID)
+	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
+	query, args := queryBuilder.Build()
+
+	var total int64
+	if err = tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+		return 0, pgPkg.Error(ctx, err)
+	}
+
+	return total, nil
+}
+
+func (r *repository) Search(ctx context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queryBuilder := dbPkg.QueryBuilder(searchServiceOrderQuery).
+		OrderBy("so.created_at", dbPkg.ASC).
+		AddPagination(params.Limit, params.Offset)
+	queryBuilder.Add("so.status =", params.Status)
+	queryBuilder.Add("so.customer_id =", params.CustomerID)
+	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
+	query, args := queryBuilder.Build()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	items := make([]domain.ServiceOrder, 0, params.Limit)
+	for rows.Next() {
+		var so domain.ServiceOrder
+		so.Customer = new(domain.Customer)
+		so.Customer.User = new(domain.User)
+		so.Vehicle = new(domain.Vehicle)
+		var status string
+
+		if err = rows.Scan(
+			&so.ID, &status, &so.TotalAmount,
+			&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+			&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+			&so.Customer.User.Name, &so.Customer.User.Email,
+			&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+			&so.Vehicle.Model, &so.Vehicle.Year,
+		); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+
+		so.Status = domain.StringToServiceOrderStatus(status)
+		items = append(items, so)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	return items, nil
 }

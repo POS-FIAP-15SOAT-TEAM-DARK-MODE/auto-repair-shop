@@ -3,6 +3,7 @@ package service_order
 import (
 	"context"
 	"slices"
+	"sort"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/shopspring/decimal"
@@ -115,4 +116,54 @@ func (r *memory_repo) FindByID(ctx context.Context, id string) (domain.ServiceOr
 	}
 
 	return so, nil
+}
+
+func (r *memory_repo) Count(_ context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
+	var total int64
+	for _, so := range r.data {
+		if params.Status != "" && so.Status.String() != params.Status {
+			continue
+		}
+		if params.CustomerID != "" && (so.Customer == nil || so.Customer.ID != params.CustomerID) {
+			continue
+		}
+		if params.VehicleID != "" && (so.Vehicle == nil || so.Vehicle.ID != params.VehicleID) {
+			continue
+		}
+		total++
+	}
+
+	return total, nil
+}
+
+func (r *memory_repo) Search(_ context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
+	items := make([]domain.ServiceOrder, 0, params.Limit)
+	filtered := make([]domain.ServiceOrder, 0)
+	for _, so := range r.data {
+		if params.Status != "" && so.Status.String() != params.Status {
+			continue
+		}
+		if params.CustomerID != "" && (so.Customer == nil || so.Customer.ID != params.CustomerID) {
+			continue
+		}
+		if params.VehicleID != "" && (so.Vehicle == nil || so.Vehicle.ID != params.VehicleID) {
+			continue
+		}
+		filtered = append(filtered, so)
+	}
+
+	sort.Slice(filtered, func(i, j int) bool {
+		return filtered[i].ID < filtered[j].ID
+	})
+
+	start := int(params.Offset)
+	if start >= len(filtered) {
+		return items, nil
+	}
+
+	for i := start; i < len(filtered) && len(items) < int(params.Limit); i++ {
+		items = append(items, filtered[i])
+	}
+
+	return items, nil
 }

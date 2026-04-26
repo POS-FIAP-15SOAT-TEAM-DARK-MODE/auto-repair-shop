@@ -178,3 +178,70 @@ func TestLoginUser(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateRole(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name       string
+		path       string
+		body       string
+		mockSvc    func(t *testing.T) *domainmocks.UserService
+		expectedSC int
+	}{
+		{
+			name:       "Should fail gracefully when request body is invalid",
+			path:       "/v1/users/123/role",
+			body:       `{"role":`,
+			expectedSC: http.StatusBadRequest,
+		},
+		{
+			name:       "Should fail gracefully when role is empty",
+			path:       "/v1/users/123/role",
+			body:       `{}`,
+			expectedSC: http.StatusBadRequest,
+		},
+		{
+			name: "Should fail gracefully when service fails",
+			path: "/v1/users/123/role",
+			body: `{"role":"MECHANIC"}`,
+			mockSvc: func(t *testing.T) *domainmocks.UserService {
+				svc := domainmocks.NewUserService(t)
+				svc.EXPECT().UpdateRole(mock.Anything, "123", domain.MECHANIC).Return(errors.New("service failed"))
+				return svc
+			},
+			expectedSC: http.StatusInternalServerError,
+		},
+		{
+			name: "Should update role successfully",
+			path: "/v1/users/123/role",
+			body: `{"role":"MECHANIC"}`,
+			mockSvc: func(t *testing.T) *domainmocks.UserService {
+				svc := domainmocks.NewUserService(t)
+				svc.EXPECT().UpdateRole(mock.Anything, "123", domain.MECHANIC).Return(nil)
+				return svc
+			},
+			expectedSC: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockSvc := &domainmocks.UserService{}
+			if tt.mockSvc != nil {
+				mockSvc = tt.mockSvc(t)
+			}
+
+			h := handler.HttpHandler(mockSvc)
+			router := gin.New()
+			router.PATCH("/v1/users/:id/role", h.UpdateRole)
+
+			req := httptest.NewRequest(http.MethodPatch, tt.path, bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+
+			assert.Equal(t, tt.expectedSC, rec.Code)
+		})
+	}
+}

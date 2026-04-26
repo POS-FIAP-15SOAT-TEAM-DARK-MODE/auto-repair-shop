@@ -20,6 +20,10 @@ type (
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
+
+	updateRoleRequestDTO struct {
+		Role domain.Role `json:"role"`
+	}
 )
 
 func mapBodyToUserRequestDTO(body *gin.Context) (*userRequestDTO, error) {
@@ -56,4 +60,19 @@ func (l *loginRequestDTO) toLoggedUserDomain() *domain.LoggedUser {
 			Password: l.Password,
 		},
 	}
+}
+
+func mapBodyToUpdateRoleRequestDTO(body *gin.Context) (*updateRoleRequestDTO, error) {
+	var req updateRoleRequestDTO
+	if err := body.ShouldBindJSON(&req); err != nil {
+		return nil, json.CheckJsonError(err)
+	}
+	return &req, nil
+}
+
+func (u *updateRoleRequestDTO) Validate() error {
+	if u.Role == "" {
+		return domain.ValidationError{Message: "role is required"}
+	}
+	return nil
 }

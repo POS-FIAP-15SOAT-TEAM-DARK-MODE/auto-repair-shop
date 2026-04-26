@@ -20,6 +20,7 @@ type (
 	UserHandler interface {
 		Create(*gin.Context)
 		Login(*gin.Context)
+		UpdateRole(*gin.Context)
 	}
 
 	CustomerHandler interface {
@@ -54,6 +55,7 @@ type (
 
 	ServiceOrderHandler interface {
 		Create(*gin.Context)
+		List(*gin.Context)
 		GetWorks(*gin.Context)
 		AddWork(*gin.Context)
 		DeleteWork(*gin.Context)
@@ -66,6 +68,7 @@ type (
 		Reject(*gin.Context)
 		Deliver(*gin.Context)
 		Cancel(*gin.Context)
+		GetFullByID(*gin.Context)
 	}
 
 	ServiceOrderHistoryHandler interface {
