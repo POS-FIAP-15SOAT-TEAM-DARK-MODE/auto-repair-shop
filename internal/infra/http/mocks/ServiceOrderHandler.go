@@ -153,6 +153,39 @@ func (_c *ServiceOrderHandler_Cancel_Call) RunAndReturn(run func(*gin.Context)) 
 	return _c
 }
 
+// CancelWork provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) CancelWork(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_CancelWork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CancelWork'
+type ServiceOrderHandler_CancelWork_Call struct {
+	*mock.Call
+}
+
+// CancelWork is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) CancelWork(_a0 interface{}) *ServiceOrderHandler_CancelWork_Call {
+	return &ServiceOrderHandler_CancelWork_Call{Call: _e.mock.On("CancelWork", _a0)}
+}
+
+func (_c *ServiceOrderHandler_CancelWork_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_CancelWork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_CancelWork_Call) Return() *ServiceOrderHandler_CancelWork_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_CancelWork_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_CancelWork_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Create provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) Create(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -285,39 +318,6 @@ func (_c *ServiceOrderHandler_Deliver_Call) RunAndReturn(run func(*gin.Context))
 	return _c
 }
 
-// GetFullByID provides a mock function with given fields: _a0
-func (_m *ServiceOrderHandler) GetFullByID(_a0 *gin.Context) {
-	_m.Called(_a0)
-}
-
-// ServiceOrderHandler_GetFullByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFullByID'
-type ServiceOrderHandler_GetFullByID_Call struct {
-	*mock.Call
-}
-
-// GetFullByID is a helper method to define mock.On call
-//   - _a0 *gin.Context
-func (_e *ServiceOrderHandler_Expecter) GetFullByID(_a0 interface{}) *ServiceOrderHandler_GetFullByID_Call {
-	return &ServiceOrderHandler_GetFullByID_Call{Call: _e.mock.On("GetFullByID", _a0)}
-}
-
-func (_c *ServiceOrderHandler_GetFullByID_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_GetFullByID_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*gin.Context))
-	})
-	return _c
-}
-
-func (_c *ServiceOrderHandler_GetFullByID_Call) Return() *ServiceOrderHandler_GetFullByID_Call {
-	_c.Call.Return()
-	return _c
-}
-
-func (_c *ServiceOrderHandler_GetFullByID_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetFullByID_Call {
-	_c.Run(run)
-	return _c
-}
-
 // GetAverageExecutionTime provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) GetAverageExecutionTime(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -347,6 +347,39 @@ func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) Return() *ServiceOrd
 }
 
 func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	_c.Run(run)
+	return _c
+}
+
+// GetFullByID provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) GetFullByID(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_GetFullByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFullByID'
+type ServiceOrderHandler_GetFullByID_Call struct {
+	*mock.Call
+}
+
+// GetFullByID is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) GetFullByID(_a0 interface{}) *ServiceOrderHandler_GetFullByID_Call {
+	return &ServiceOrderHandler_GetFullByID_Call{Call: _e.mock.On("GetFullByID", _a0)}
+}
+
+func (_c *ServiceOrderHandler_GetFullByID_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_GetFullByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetFullByID_Call) Return() *ServiceOrderHandler_GetFullByID_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetFullByID_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetFullByID_Call {
 	_c.Run(run)
 	return _c
 }
@@ -446,6 +479,39 @@ func (_c *ServiceOrderHandler_List_Call) Return() *ServiceOrderHandler_List_Call
 }
 
 func (_c *ServiceOrderHandler_List_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_List_Call {
+	_c.Run(run)
+	return _c
+}
+
+// NextWork provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) NextWork(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_NextWork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NextWork'
+type ServiceOrderHandler_NextWork_Call struct {
+	*mock.Call
+}
+
+// NextWork is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) NextWork(_a0 interface{}) *ServiceOrderHandler_NextWork_Call {
+	return &ServiceOrderHandler_NextWork_Call{Call: _e.mock.On("NextWork", _a0)}
+}
+
+func (_c *ServiceOrderHandler_NextWork_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_NextWork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_NextWork_Call) Return() *ServiceOrderHandler_NextWork_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_NextWork_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_NextWork_Call {
 	_c.Run(run)
 	return _c
 }

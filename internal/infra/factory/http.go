@@ -15,6 +15,7 @@ import (
 	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
 	soHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order_history"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
+	workSOHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work_service_order_history"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/server"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
@@ -123,13 +124,14 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	workRepository := workRepo.Repository()
 	supplyRepository := supplyRepo.Repository()
 	workHistoryRepository := soHistoryRepo.Repository()
+	workSOHistoryRepository := workSOHistoryRepo.Repository()
 	userRepository := userRepo.Repository()
 	customerRepository := customerRepo.Repository()
 	vehicleRepository := vehicleRepo.NewVehicleRepository()
 
 	vehicle := vehicleSvc.NewService(uow, vehicleRepository)
 	customer := customerSvc.Service(uow, userRepository, customerRepository)
-	svc := soSvc.Service(uow, repo, workRepository, supplyRepository, workHistoryRepository, customer, vehicle)
+	svc := soSvc.Service(uow, repo, workRepository, supplyRepository, workHistoryRepository, workSOHistoryRepository, customer, vehicle)
 
 	return soHandler.HttpHandler(svc)
 }

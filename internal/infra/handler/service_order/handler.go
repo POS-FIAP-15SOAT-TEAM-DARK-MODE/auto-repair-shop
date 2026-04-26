@@ -17,6 +17,7 @@ const (
 	serviceOrderIDParam = "id"
 	workIDPathParam     = "serviceId"
 	supplyIDPathParam   = "supplyId"
+	workIDParam         = "workId"
 )
 
 type handler struct {
@@ -439,6 +440,44 @@ func (h *handler) Cancel(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+func (h *handler) NextWork(c *gin.Context) {
+	ctx := c.Request.Context()
+	soID := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	workID := strings.TrimSpace(c.Param(workIDParam))
+
+	if err := h.svc.NextWork(ctx, soID, workID); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("advance work status failed",
+			zap.String("operation", "next_work_status"),
+			zap.Error(err),
+			zap.String("entity", "work_service_order_history"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (h *handler) CancelWork(c *gin.Context) {
+	ctx := c.Request.Context()
+	soID := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	workID := strings.TrimSpace(c.Param(workIDParam))
+
+	if err := h.svc.CancelWork(ctx, soID, workID); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("cancel work failed",
+			zap.String("operation", "cancel_work_status"),
+			zap.Error(err),
+			zap.String("entity", "work_service_order_history"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func (h *handler) GetFullByID(c *gin.Context) {

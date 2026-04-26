@@ -54,6 +54,7 @@ var (
 	ErrServiceOrderNotInReceived       = errors.New("service order isn't in RECEIVED state")
 	ErrServiceOrderNotInDiagnosis      = errors.New("service order isn't at IN_DIAGNOSIS state")
 	ErrServiceOrderNotAwaitingApproval = errors.New("service order isn't at AWAITING_APPROVAL state")
+	ErrServiceOrderNotInProgress       = errors.New("service order isn't at IN_PROGRESS state")
 	ErrServiceOrderNotCompleted        = errors.New("service order isn't at COMPLETED state")
 	ErrServiceOrderNotCancelable       = errors.New("service order state isn't cancelable")
 	ErrServiceOrderWorkNotFound        = errors.New("work is not linked to this service order")
@@ -87,6 +88,14 @@ var (
 	ErrParamVehicleYear            = errors.New("year of the vehicle is not valid")
 	ErrVehicleNotFound             = errors.New("vehicle not found")
 	ErrInvalidVehicleId            = errors.New("invalid vehicle id")
+)
+
+// Work service order history errors
+var (
+	ErrWorkServiceOrderNotFound         = errors.New("work has no history in this service order")
+	ErrWorkServiceOrderAlreadyCompleted = errors.New("work has already been completed")
+	ErrWorkServiceOrderAlreadyCancelled = errors.New("work has already been cancelled")
+	ErrWorkServiceOrderInvalidStatus    = errors.New("invalid work status transition")
 )
 
 // Supply errors

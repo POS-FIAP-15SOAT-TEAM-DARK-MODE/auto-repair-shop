@@ -14,13 +14,14 @@ import (
 )
 
 type svc struct {
-	uow             uow.Executor
-	repo            domain.ServiceOrderRepository
-	workRepo        domain.WorkRepository
-	supplyRepo      domain.SupplyRepository
-	workHistoryRepo domain.ServiceOrderHistoryRepository
-	customerService domain.CustomerService
-	vehicleService  domain.VehicleService
+	uow               uow.Executor
+	repo              domain.ServiceOrderRepository
+	workRepo          domain.WorkRepository
+	supplyRepo        domain.SupplyRepository
+	workHistoryRepo   domain.ServiceOrderHistoryRepository
+	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository
+	customerService   domain.CustomerService
+	vehicleService    domain.VehicleService
 }
 
 func Service(
@@ -29,9 +30,10 @@ func Service(
 	workRepo domain.WorkRepository,
 	supplyRepo domain.SupplyRepository,
 	workHistoryRepo domain.ServiceOrderHistoryRepository,
+	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository,
 	customerService domain.CustomerService,
 	vehicleService domain.VehicleService) *svc {
-	return &svc{uow, repo, workRepo, supplyRepo, workHistoryRepo, customerService, vehicleService}
+	return &svc{uow, repo, workRepo, supplyRepo, workHistoryRepo, workSOHistoryRepo, customerService, vehicleService}
 }
 
 func (s *svc) logValidationError(ctx context.Context, operation string, err error) {
@@ -180,7 +182,7 @@ func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []str
 				return e
 			}
 
-			if e = s.workHistoryRepo.InsertWorkHistory(ctx, serviceOrderID, w.ID, domain.SERVICE_ORDER_STATUS_NEW); e != nil {
+			if e = s.workSOHistoryRepo.Insert(ctx, serviceOrderID, w.ID, nil, domain.WORK_SERVICE_ORDER_STATUS_AWAITING_START); e != nil {
 				return e
 			}
 		}
@@ -707,4 +709,72 @@ func (s *svc) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.
 	}
 
 	return res, nil
+}
+
+func (s *svc) NextWork(ctx context.Context, serviceOrderID, workID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	workID = strings.TrimSpace(workID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+	if workID == "" {
+		return domain.ErrInvalidWorkId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		results, err := s.workSOHistoryRepo.Search(ctx, domain.SearchWorkSOHistoryParams{
+			ServiceOrderID: serviceOrderID,
+			WorkID:         workID,
+		})
+		if err != nil {
+			return err
+		}
+		if len(results) == 0 {
+			return domain.ErrWorkServiceOrderNotFound
+		}
+
+		latest := results[0]
+		next, err := latest.NextStatus()
+		if err != nil {
+			return err
+		}
+
+		prev := latest.Status
+		return s.workSOHistoryRepo.Insert(ctx, serviceOrderID, workID, &prev, next)
+	})
+}
+
+func (s *svc) CancelWork(ctx context.Context, serviceOrderID, workID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	workID = strings.TrimSpace(workID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+	if workID == "" {
+		return domain.ErrInvalidWorkId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		results, err := s.workSOHistoryRepo.Search(ctx, domain.SearchWorkSOHistoryParams{
+			ServiceOrderID: serviceOrderID,
+			WorkID:         workID,
+		})
+		if err != nil {
+			return err
+		}
+		if len(results) == 0 {
+			return domain.ErrWorkServiceOrderNotFound
+		}
+
+		latest := results[0]
+		if latest.Status == domain.WORK_SERVICE_ORDER_STATUS_COMPLETED {
+			return domain.ErrWorkServiceOrderAlreadyCompleted
+		}
+		if latest.Status == domain.WORK_SERVICE_ORDER_STATUS_CANCELLED {
+			return domain.ErrWorkServiceOrderAlreadyCancelled
+		}
+
+		prev := latest.Status
+		return s.workSOHistoryRepo.Insert(ctx, serviceOrderID, workID, &prev, domain.WORK_SERVICE_ORDER_STATUS_CANCELLED)
+	})
 }
