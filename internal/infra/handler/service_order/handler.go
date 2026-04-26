@@ -366,3 +366,7 @@ func (h *handler) Cancel(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func (h *handler) GetStatus(c *gin.Context) {
+	c.Status(http.StatusNotImplemented)
+}

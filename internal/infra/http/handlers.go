@@ -65,6 +65,7 @@ type (
 		Reject(*gin.Context)
 		Deliver(*gin.Context)
 		Cancel(*gin.Context)
+		GetStatus(*gin.Context)
 	}
 
 	ServiceOrderHistoryHandler interface {
