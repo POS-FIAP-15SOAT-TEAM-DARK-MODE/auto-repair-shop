@@ -1021,6 +1021,43 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/cancel:
+    put:
+      summary: Cancel service order
+      description: Cancels a specific service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order UUID
+      responses:
+        "200":
+          description: Service order cancelled successfully
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
   /v1/service-order/{id}/services:
     get:
       summary: Get all services of a service order

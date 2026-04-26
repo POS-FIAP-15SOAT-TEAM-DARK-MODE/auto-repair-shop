@@ -344,3 +344,25 @@ func (h *handler) Deliver(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (h *handler) Cancel(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+	if err := h.svc.Cancel(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("cancel service order",
+			zap.String("operation", "cancel_service_order"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}

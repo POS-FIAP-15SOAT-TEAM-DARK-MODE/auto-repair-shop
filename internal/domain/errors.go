@@ -54,6 +54,7 @@ var (
 	ErrServiceOrderNotInDiagnosis      = errors.New("service order isn't at IN_DIAGNOSIS state")
 	ErrServiceOrderNotAwaitingApproval = errors.New("service order isn't at AWAITING_APPROVAL state")
 	ErrServiceOrderNotCompleted        = errors.New("service order isn't at COMPLETED state")
+	ErrServiceOrderNotCancelable       = errors.New("service order state isn't cancelable")
 	ErrServiceOrderWorkNotFound        = errors.New("work is not linked to this service order")
 	ErrServiceOrderSupplyNotFound      = errors.New("supply is not linked to this service order")
 	ErrEmptyServicesList               = errors.New("services list cannot be empty")
