@@ -279,6 +279,7 @@ func (h *handler) SendToDiagnosis(c *gin.Context) {
 			zap.String("entity", "service_order"),
 		)
 		c.JSON(status, response)
+		return
 	}
 
 	c.Status(http.StatusNoContent)
