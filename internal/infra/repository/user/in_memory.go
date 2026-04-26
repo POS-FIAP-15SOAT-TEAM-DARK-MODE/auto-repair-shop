@@ -7,12 +7,14 @@ import (
 )
 
 type memory_repo struct {
-	data map[string]domain.User
+	data  map[string]domain.User
+	roles map[string][]domain.Role
 }
 
 func MemoryRepository() domain.UserRepository {
 	return &memory_repo{
-		data: make(map[string]domain.User),
+		data:  make(map[string]domain.User),
+		roles: make(map[string][]domain.Role),
 	}
 }
 
@@ -30,11 +32,17 @@ func (r *memory_repo) GetByEmail(_ context.Context, email string) (*domain.User,
 	return nil, nil
 }
 
-func (r *memory_repo) GetRolesByUserId(_ context.Context, _ string) ([]domain.Role, error) {
-	return []domain.Role{}, nil
+func (r *memory_repo) GetRolesByUserId(_ context.Context, userID string) ([]domain.Role, error) {
+	return r.roles[userID], nil
 }
 
-func (r *memory_repo) AssignRole(_ context.Context, _ string, _ domain.Role) error {
+func (r *memory_repo) AssignRole(_ context.Context, userID string, role domain.Role) error {
+	r.roles[userID] = append(r.roles[userID], role)
+	return nil
+}
+
+func (r *memory_repo) UpdateRole(_ context.Context, userID string, role domain.Role) error {
+	r.roles[userID] = []domain.Role{role}
 	return nil
 }
 

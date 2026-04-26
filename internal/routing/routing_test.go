@@ -38,6 +38,7 @@ func TestSetupRouter(t *testing.T) {
 	// User
 	mockUser.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockUser.EXPECT().Login(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	mockUser.EXPECT().UpdateRole(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Customer
 	mockCustomer.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -121,6 +122,7 @@ func TestSetupRouter(t *testing.T) {
 		// User
 		{goHttp.MethodPost, "/v1/auth/register", goHttp.StatusCreated, ""},
 		{goHttp.MethodPost, "/v1/auth/login", goHttp.StatusOK, ""},
+		{goHttp.MethodPatch, "/v1/users/:id/role", goHttp.StatusNoContent, `{"role":"MECHANIC"}`},
 
 		// Customer
 		{goHttp.MethodPost, "/v1/customers", goHttp.StatusCreated, ""},

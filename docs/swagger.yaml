@@ -337,6 +337,49 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/users/{id}/role:
+    patch:
+      summary: Update a user role
+      description: Replaces all current roles of the user with a single new role. Only ADMIN users can perform this operation.
+      tags:
+        - Users
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User UUID
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRoleRequest"
+      responses:
+        "204":
+          description: User role updated successfully
+        "400":
+          description: Invalid request body, empty role, or invalid role value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/works:
     post:
       summary: Register a new Work
@@ -1317,6 +1360,21 @@ components:
           type: string
           format: password
           description: User password
+
+    UpdateUserRoleRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+          description: New role to be assigned to the user
+          enum:
+            - ADMIN
+            - ATTENDANT
+            - MECHANIC
+            - CUSTOMER
+          example: MECHANIC
 
     UserLoginResponse:
       type: object
