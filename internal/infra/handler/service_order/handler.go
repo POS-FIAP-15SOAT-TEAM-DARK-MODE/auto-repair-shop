@@ -286,6 +286,29 @@ func (h *handler) SendToCustomerApproval(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *handler) Finish(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+
+	if err := h.svc.Finish(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("finish service order failed",
+			zap.String("operation", "finish_service_order"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func (h *handler) SendToDiagnosis(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
