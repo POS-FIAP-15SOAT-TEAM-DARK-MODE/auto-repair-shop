@@ -42,7 +42,12 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	logger.Of(ctx).Debug("create request", zap.Any("service_order", dto))
+	logger.Of(ctx).Debug("create request",
+		zap.String("operation", "create_service_order"),
+		zap.String("entity", "service_order"),
+		zap.String("client_id", dto.ClientID),
+		zap.String("vehicle_id", dto.VehicleID),
+	)
 	res, err := h.svc.Create(ctx, dto.ClientID, dto.VehicleID)
 	if err != nil {
 		status, response := web.Error(err)
@@ -56,7 +61,12 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	logger.Of(ctx).Debug("create response", zap.Any("service_order", res))
+	logger.Of(ctx).Debug("create response",
+		zap.String("operation", "create_service_order"),
+		zap.String("entity", "service_order"),
+		zap.String("service_order_id", res.ID),
+		zap.String("status", res.Status.String()),
+	)
 	c.JSON(http.StatusCreated, mapResponseDTOFromDomain(res))
 }
 
@@ -402,6 +412,34 @@ func (h *handler) Deliver(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *handler) GetAverageExecutionTime(c *gin.Context) {
+	ctx := c.Request.Context()
+	workIDs := c.QueryArray("work_id")
+	if workIDs == nil {
+		workIDs = []string{}
+	}
+	avg, err := h.svc.AverageExecutionTime(ctx, workIDs)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("get average execution time failed",
+			zap.String("operation", "get_average_execution_time"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+	items := make([]workExecutionTimeResponse, 0, len(avg))
+	for _, w := range avg {
+		items = append(items, workExecutionTimeResponse{
+			WorkID:               w.WorkID,
+			WorkName:             w.WorkName,
+			AverageExecutionTime: w.AverageHours,
+		})
+	}
+	c.JSON(http.StatusOK, items)
 }
 
 func (h *handler) Cancel(c *gin.Context) {

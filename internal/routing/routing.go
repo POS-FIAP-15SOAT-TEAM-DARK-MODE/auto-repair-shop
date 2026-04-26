@@ -70,5 +70,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.POST("/service-order/:id/supplies", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.AddSupplies)
 	v1.DELETE("/service-order/:id/supplies/:supplyId", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.DeleteSupply)
 
+	v1.GET("/reports/average-execution-time", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.GetAverageExecutionTime)
+
 	return router
 }

@@ -125,6 +125,7 @@ type (
 		Deliver(ctx context.Context, serviceOrderID string) error
 		Cancel(ctx context.Context, serviceOrderID string) error
 		GetFullOSByID(ctx context.Context, serviceOrderID string) (FullServiceOrder, error)
+		AverageExecutionTime(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
 	}
 
 	ServiceOrderRepository interface {
@@ -139,8 +140,15 @@ type (
 		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Supply, error)
 		AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error
 		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) (int, error)
+		AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
 	}
 )
+
+type WorkExecutionTime struct {
+	WorkID       string
+	WorkName     string
+	AverageHours float64
+}
 
 func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 	return &ServiceOrder{
@@ -149,27 +157,6 @@ func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 		Customer:    Customer,
 		Vehicle:     Vehicle,
 		TotalAmount: decimal.Zero,
-	}
-}
-
-func GetPreviousStatus(currentStatus SERVICE_ORDER_STATUS) *SERVICE_ORDER_STATUS {
-	switch currentStatus {
-	case SERVICE_ORDER_STATUS_RECEIVED:
-		return new(SERVICE_ORDER_STATUS_NEW)
-	case SERVICE_ORDER_STATUS_IN_DIAGNOSIS:
-		return new(SERVICE_ORDER_STATUS_RECEIVED)
-	case SERVICE_ORDER_STATUS_AWAITING_APPROVAL:
-		return new(SERVICE_ORDER_STATUS_IN_DIAGNOSIS)
-	case SERVICE_ORDER_STATUS_IN_PROGRESS:
-		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
-	case SERVICE_ORDER_STATUS_COMPLETED:
-		return new(SERVICE_ORDER_STATUS_IN_PROGRESS)
-	case SERVICE_ORDER_STATUS_DELIVERED:
-		return new(SERVICE_ORDER_STATUS_COMPLETED)
-	case SERVICE_ORDER_STATUS_REJECTED:
-		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
-	default:
-		return nil
 	}
 }
 

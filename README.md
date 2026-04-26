@@ -41,7 +41,7 @@ internal/
 
 - [Go 1.26+](https://go.dev/dl/)
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/)
-- PostgreSQL (provided via Docker Compose)
+- Make
 
 ## Contributing
 To contribute with the project you should install pre-commit:
@@ -62,28 +62,45 @@ pre-commit install
 
 ## Getting Started
 
-### Setup with Docker
+### 1) Environment Variables
+
+Create a local `.env` file before running the project:
 
 ```bash
-# 1. Start the database
-make docker-up
+cp .env.example .env
+```
 
-# 2. Install migration tool (first time only)
+### 2) Setup with Docker
+
+```bash
+# Start all services (app, migrations, and database)
+make docker-up
+```
+
+API URL: `http://localhost:8080`
+
+### 3) Local Development (app outside Docker)
+
+Use this flow when you want to run only the database in Docker and the app directly with Go:
+
+```bash
+# Start only PostgreSQL
+# (in a separate terminal, from repository root)
+docker-compose up -d db
+
+# Install migration tool (first time only)
 make migrate-install
 
-# 3. Run all pending migrations
+# Run all pending migrations
 make migrate-up
 
-# 4. Start the application locally
+# Start the application locally
 make run
 ```
 
-### Local Development
+### Useful Commands
 
 ```bash
-# Run the application locally
-make run
-
 # Run tests
 make test
 
@@ -148,15 +165,18 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 
 ## Environment Variables
 
-| Variable       | Description                  |
-|----------------|------------------------------|
-| `PORT`         | Server port (default: 8080)  |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `JWT_SECRET`   | Secret key for JWT signing   |
-| `JWT_EXPIRY`   | Token expiration duration    |
-| `BCRYPT_COST`  | bcrypt hashing cost factor   |
-| `POSTGRES_USER` | PostgreSQL username (for migrations) |
-| `POSTGRES_PASSWORD` | PostgreSQL password (for migrations) |
+| Variable            | Description                                      |
+|---------------------|--------------------------------------------------|
+| `PORT`              | Server port (default: 8080)                      |
+| `POSTGRES_USER`     | PostgreSQL username                              |
+| `POSTGRES_PASSWORD` | PostgreSQL password                              |
+| `POSTGRES_DB`       | PostgreSQL database name                          |
+| `POSTGRES_HOST`     | PostgreSQL host (`db` in Docker, `localhost` local) |
+| `POSTGRES_PORT`     | PostgreSQL port (default: 5432)                  |
+| `JWT_SECRET`        | Secret key for JWT signing                        |
+| `JWT_EXPIRES_IN`    | Token expiration duration (e.g. `24h`)           |
+| `BCRYPT_COST`       | bcrypt hashing cost factor                        |
+| `LOG_LEVEL`         | Application log level (default: `INFO`)           |
 
 ## API Endpoints
 
