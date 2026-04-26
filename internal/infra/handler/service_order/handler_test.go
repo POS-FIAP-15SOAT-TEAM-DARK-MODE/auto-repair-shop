@@ -132,3 +132,92 @@ func TestGetAverageExecutionTime_InternalError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 }
+
+func TestHandler_GetStatus(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name           string
+		serviceOrderID string
+		mockSetup      func(m *domainmocks.ServiceOrderService)
+		expectedStatus int
+	}{
+		{
+			name:           "success - should return status",
+			serviceOrderID: "123",
+			mockSetup: func(m *domainmocks.ServiceOrderService) {
+				m.EXPECT().
+					GetStatus(
+						mock.Anything,
+						"123",
+					).
+					Return(domain.StringToServiceOrderStatus("NEW"), nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "error - empty service order id",
+			serviceOrderID: "   ", // trim deve deixar vazio
+			mockSetup: func(m *domainmocks.ServiceOrderService) {
+				// NÃO deve chamar o service
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "error - service returns error",
+			serviceOrderID: "123",
+			mockSetup: func(m *domainmocks.ServiceOrderService) {
+				m.EXPECT().
+					GetStatus(
+						mock.Anything,
+						"123",
+					).
+					Return("", domain.ErrServiceOrderNotFound)
+			},
+			expectedStatus: http.StatusNotFound,
+		},
+		{
+			name:           "edge case - id with spaces",
+			serviceOrderID: " 123 ",
+			mockSetup: func(m *domainmocks.ServiceOrderService) {
+				m.EXPECT().
+					GetStatus(
+						mock.Anything,
+						"123", // trimmed
+					).
+					Return(domain.StringToServiceOrderStatus("CANCELED"), nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set("Content-Type", "application/json")
+
+			c.Request = req
+
+			// 🔥 path param
+			c.Params = gin.Params{
+				{Key: serviceOrderIDParam, Value: tt.serviceOrderID},
+			}
+
+			mockService := domainmocks.NewServiceOrderService(t)
+
+			if tt.mockSetup != nil {
+				tt.mockSetup(mockService)
+			}
+
+			h := HttpHandler(mockService)
+
+			handlerFunc := h.GetStatus
+			handlerFunc(c)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+		})
+	}
+}

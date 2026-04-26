@@ -2,6 +2,7 @@ package service_order
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -444,4 +445,181 @@ func newBasicServiceWith(t *testing.T, repo domain.ServiceOrderRepository) *svc 
 		mocks.NewCustomerService(t),
 		mocks.NewVehicleService(t),
 	)
+}
+
+func TestService_GetStatus_Success(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	serviceOrderID := "123"
+	expectedStatus := domain.SERVICE_ORDER_STATUS("NEW")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			return steps[0](ctx)
+		})
+
+	repo.
+		EXPECT().
+		ExistsByID(ctx, serviceOrderID).
+		Return(true, expectedStatus, nil)
+
+	service := Service(exec, repo, nil, nil, nil, nil)
+
+	result, err := service.GetStatus(ctx, serviceOrderID)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if result != expectedStatus {
+		t.Fatalf("expected status %v, got %v", expectedStatus, result)
+	}
+}
+
+func TestService_GetStatus_InvalidID(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	service := Service(exec, repo, nil, nil, nil, nil)
+
+	result, err := service.GetStatus(ctx, "   ")
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, domain.ErrInvalidServiceOrderId) {
+		t.Fatalf("expected ErrInvalidServiceOrderId, got %v", err)
+	}
+
+	if result != "" {
+		t.Fatalf("expected empty result, got %v", result)
+	}
+
+	exec.AssertNotCalled(t, "Execute", mock.Anything, mock.Anything)
+	repo.AssertNotCalled(t, "ExistsByID", mock.Anything, mock.Anything)
+}
+
+func TestService_GetStatus_RepositoryError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	serviceOrderID := "123"
+	expectedErr := errors.New("repo error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			return steps[0](ctx)
+		})
+
+	repo.
+		EXPECT().
+		ExistsByID(ctx, serviceOrderID).
+		Return(false, "", expectedErr)
+
+	service := Service(exec, repo, nil, nil, nil, nil)
+
+	result, err := service.GetStatus(ctx, serviceOrderID)
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	if result != "" {
+		t.Fatalf("expected empty result, got %v", result)
+	}
+}
+
+func TestService_GetStatus_NotFound(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	serviceOrderID := "123"
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
+			if len(steps) != 1 {
+				t.Fatalf("expected 1 step, got %d", len(steps))
+			}
+			return steps[0](ctx)
+		})
+
+	repo.
+		EXPECT().
+		ExistsByID(ctx, serviceOrderID).
+		Return(false, "", nil)
+
+	service := Service(exec, repo, nil, nil, nil, nil)
+
+	result, err := service.GetStatus(ctx, serviceOrderID)
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, domain.ErrServiceOrderNotFound) {
+		t.Fatalf("expected ErrServiceOrderNotFound, got %v", err)
+	}
+
+	if result != "" {
+		t.Fatalf("expected empty result, got %v", result)
+	}
+}
+
+func TestService_GetStatus_UowError(t *testing.T) {
+	ctx := context.Background()
+
+	exec := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	serviceOrderID := "123"
+	expectedErr := errors.New("uow error")
+
+	exec.
+		EXPECT().
+		Execute(ctx, mock.Anything).
+		Return(expectedErr)
+
+	service := Service(exec, repo, nil, nil, nil, nil)
+
+	result, err := service.GetStatus(ctx, serviceOrderID)
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+
+	if !errors.Is(err, expectedErr) {
+		t.Fatalf("expected error %v, got %v", expectedErr, err)
+	}
+
+	if result != "" {
+		t.Fatalf("expected empty result, got %v", result)
+	}
+
+	// 🔥 repo NÃO deve ser chamado
+	repo.AssertNotCalled(t, "ExistsByID", mock.Anything, mock.Anything)
 }
