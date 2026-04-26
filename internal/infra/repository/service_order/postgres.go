@@ -196,15 +196,17 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	}
 
 	var so domain.ServiceOrder
-	var ct domain.Customer
-	var vh domain.Vehicle
+	so.Customer = new(domain.Customer)
+	so.Customer.User = new(domain.User)
+	so.Vehicle = new(domain.Vehicle)
 	var status string
 	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
-		&so.ID,
-		&status,
-		&so.TotalAmount,
-		&ct.ID,
-		&vh.ID,
+		&so.ID, &status, &so.TotalAmount,
+		&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+		&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+		&so.Customer.User.Name, &so.Customer.User.Email,
+		&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Model,
+		&so.Vehicle.Brand, &so.Vehicle.Year,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ServiceOrder{}, domain.ErrServiceOrderNotFound
@@ -213,8 +215,6 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	}
 
 	so.Status = domain.StringToServiceOrderStatus(status)
-	so.Customer = &ct
-	so.Vehicle = &vh
 
 	return so, nil
 }

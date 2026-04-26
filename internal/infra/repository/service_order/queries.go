@@ -24,10 +24,14 @@ const (
 		so.id,
 		so.status,
 		so.total_amount,
-		c.id as cId,
-		v.id as vId
+		c.id as cId, c.user_id, c.type,
+	    COALESCE(c.cpf, ''), COALESCE(c.cnpj, ''), COALESCE(c.company_name, ''), c.phone,
+	    u.name, u.email,
+		v.id as vId, v.license_plate, v.brand,
+		v.model, v.year
 	FROM service_order so
 	JOIN customer c ON c.id = so.customer_id
+	JOIN "user" u ON u.id = c.user_id
 	JOIN vehicle v ON v.id = so.vehicle_id
 	WHERE so.id = $1
 	`

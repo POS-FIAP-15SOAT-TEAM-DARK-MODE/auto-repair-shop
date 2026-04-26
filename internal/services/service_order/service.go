@@ -551,3 +551,34 @@ func (s *svc) Cancel(c context.Context, serviceOrderID string) error {
 		return s.repo.Save(ctx, &so)
 	})
 }
+
+func (s *svc) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.FullServiceOrder, error) {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.FullServiceOrder{}, domain.ErrInvalidServiceOrderId
+	}
+
+	var res domain.FullServiceOrder
+	eg := errgroup.Group{}
+	eg.Go(func() (err error) {
+		os, err := s.repo.FindByID(ctx, serviceOrderID)
+		res.ServiceOrder = os
+		return
+	})
+	eg.Go(func() (err error) {
+		wors, err := s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
+		res.Works = wors
+		return
+	})
+	eg.Go(func() (err error) {
+		supplies, err := s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
+		res.Supplies = supplies
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
+		return domain.FullServiceOrder{}, err
+	}
+
+	return res, nil
+}

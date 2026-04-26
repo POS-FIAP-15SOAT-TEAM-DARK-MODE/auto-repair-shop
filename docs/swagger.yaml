@@ -817,6 +817,49 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}:
+    get:
+      summary: Get service order detail
+      description: Returns the full information for the specified service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order id
+      responses:
+        "200":
+          description: Informations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceOrderDetails"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
   /v1/service-order/{id}/history:
     get:
       summary: Get service order history
@@ -1808,3 +1851,33 @@ components:
               amount:
                 type: integer
                 description: Amount of supplies to add
+
+    ServiceOrderDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          required: true
+          example: '01KQ2ZNRQQZRQ480K7HEB8YH70'
+        status:
+          type: string
+          required: true
+          example: 'IN_PROGRESS'
+        totalValue:
+          type: number
+          required: true
+          example: 10.50
+        customer:
+          $ref: '#/components/schemas/CustomerResponse'
+        vehicle:
+          $ref: '#/components/schemas/VehicleResponse'
+        works:
+          required: true
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateWorkResponse'
+        supplies:
+          required: true
+          type: array
+          items:
+            $ref: "#/components/schemas/SupplyResponse"

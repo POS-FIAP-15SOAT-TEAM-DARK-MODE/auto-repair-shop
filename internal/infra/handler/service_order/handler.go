@@ -366,3 +366,26 @@ func (h *handler) Cancel(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func (h *handler) GetFullByID(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+	os, err := h.svc.GetFullOSByID(ctx, id)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("get full service order by id",
+			zap.String("operation", "get_full_service_order_by_id"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.JSON(http.StatusOK, mapServiceOrderDetailResponse(os))
+}

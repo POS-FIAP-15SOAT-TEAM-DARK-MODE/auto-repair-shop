@@ -53,6 +53,12 @@ type (
 		ID     string
 		Amount int
 	}
+
+	FullServiceOrder struct {
+		ServiceOrder
+		Works    []Work
+		Supplies []Supply
+	}
 )
 
 func (so *ServiceOrder) ResetPricing() {
@@ -105,6 +111,7 @@ type (
 		Reject(ctx context.Context, serviceOrderID, userID string) error
 		Deliver(ctx context.Context, serviceOrderID string) error
 		Cancel(ctx context.Context, serviceOrderID string) error
+		GetFullOSByID(ctx context.Context, serviceOrderID string) (FullServiceOrder, error)
 	}
 
 	ServiceOrderRepository interface {
