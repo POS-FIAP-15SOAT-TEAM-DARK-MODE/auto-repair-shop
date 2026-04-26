@@ -69,7 +69,11 @@ func (u *repo) Create(ctx context.Context, c *domain.User) error {
 		return err
 	}
 
-	logger.Of(ctx).Debug("Executing query", zap.String("query", createUserQuery), zap.Any("params", c))
+	logger.Of(ctx).Debug("Executing query",
+		zap.String("query", createUserQuery),
+		zap.String("user_id", c.ID),
+		zap.String("email", c.Email),
+	)
 	if _, err = tx.ExecContext(ctx, createUserQuery, c.ID, c.Name, c.Email, c.Password); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
@@ -97,6 +101,24 @@ func (u *repo) AssignRole(ctx context.Context, userID string, role domain.Role) 
 
 	id := uuid.New().String()
 	if _, err = tx.ExecContext(ctx, assignRoleQuery, id, userID, string(role)); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (u *repo) UpdateRole(ctx context.Context, userID string, role domain.Role) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteRolesQuery, userID); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	id := uuid.New().String()
+	if _, err = tx.ExecContext(ctx, updateRoleQuery, id, userID, string(role)); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
 

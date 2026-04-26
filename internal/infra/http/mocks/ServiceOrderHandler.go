@@ -285,6 +285,72 @@ func (_c *ServiceOrderHandler_Deliver_Call) RunAndReturn(run func(*gin.Context))
 	return _c
 }
 
+// GetFullByID provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) GetFullByID(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_GetFullByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFullByID'
+type ServiceOrderHandler_GetFullByID_Call struct {
+	*mock.Call
+}
+
+// GetFullByID is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) GetFullByID(_a0 interface{}) *ServiceOrderHandler_GetFullByID_Call {
+	return &ServiceOrderHandler_GetFullByID_Call{Call: _e.mock.On("GetFullByID", _a0)}
+}
+
+func (_c *ServiceOrderHandler_GetFullByID_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_GetFullByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetFullByID_Call) Return() *ServiceOrderHandler_GetFullByID_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetFullByID_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetFullByID_Call {
+	_c.Run(run)
+	return _c
+}
+
+// GetAverageExecutionTime provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) GetAverageExecutionTime(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_GetAverageExecutionTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAverageExecutionTime'
+type ServiceOrderHandler_GetAverageExecutionTime_Call struct {
+	*mock.Call
+}
+
+// GetAverageExecutionTime is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) GetAverageExecutionTime(_a0 interface{}) *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	return &ServiceOrderHandler_GetAverageExecutionTime_Call{Call: _e.mock.On("GetAverageExecutionTime", _a0)}
+}
+
+func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) Return() *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_GetAverageExecutionTime_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_GetAverageExecutionTime_Call {
+	_c.Run(run)
+	return _c
+}
+
 // GetSupplies provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) GetSupplies(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -351,6 +417,39 @@ func (_c *ServiceOrderHandler_GetWorks_Call) RunAndReturn(run func(*gin.Context)
 	return _c
 }
 
+// List provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) List(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type ServiceOrderHandler_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) List(_a0 interface{}) *ServiceOrderHandler_List_Call {
+	return &ServiceOrderHandler_List_Call{Call: _e.mock.On("List", _a0)}
+}
+
+func (_c *ServiceOrderHandler_List_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_List_Call) Return() *ServiceOrderHandler_List_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_List_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_List_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Reject provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) Reject(_a0 *gin.Context) {
 	_m.Called(_a0)
@@ -413,6 +512,39 @@ func (_c *ServiceOrderHandler_SendToCustomerApproval_Call) Return() *ServiceOrde
 }
 
 func (_c *ServiceOrderHandler_SendToCustomerApproval_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_SendToCustomerApproval_Call {
+	_c.Run(run)
+	return _c
+}
+
+// SendToDiagnosis provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) SendToDiagnosis(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_SendToDiagnosis_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendToDiagnosis'
+type ServiceOrderHandler_SendToDiagnosis_Call struct {
+	*mock.Call
+}
+
+// SendToDiagnosis is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) SendToDiagnosis(_a0 interface{}) *ServiceOrderHandler_SendToDiagnosis_Call {
+	return &ServiceOrderHandler_SendToDiagnosis_Call{Call: _e.mock.On("SendToDiagnosis", _a0)}
+}
+
+func (_c *ServiceOrderHandler_SendToDiagnosis_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_SendToDiagnosis_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_SendToDiagnosis_Call) Return() *ServiceOrderHandler_SendToDiagnosis_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_SendToDiagnosis_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_SendToDiagnosis_Call {
 	_c.Run(run)
 	return _c
 }

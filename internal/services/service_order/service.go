@@ -2,6 +2,8 @@ package service_order
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"strings"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -32,6 +34,33 @@ func Service(
 	return &svc{uow, repo, workRepo, supplyRepo, workHistoryRepo, customerService, vehicleService}
 }
 
+func (s *svc) logValidationError(ctx context.Context, operation string, err error) {
+	logger.Of(ctx).Warn("service_order.validation_failed",
+		zap.String("operation", operation),
+		zap.String("entity", "service_order"),
+		zap.Error(err),
+	)
+}
+
+func (s *svc) logCreateSuccess(ctx context.Context, serviceOrderID string, status domain.SERVICE_ORDER_STATUS) {
+	logger.Of(ctx).Info("service_order.created",
+		zap.String("operation", "create_service_order"),
+		zap.String("entity", "service_order"),
+		zap.String("service_order_id", serviceOrderID),
+		zap.String("status", status.String()),
+	)
+}
+
+func (s *svc) logStatusTransition(ctx context.Context, operation string, serviceOrderID string, previousStatus, newStatus domain.SERVICE_ORDER_STATUS) {
+	logger.Of(ctx).Info("service_order.status_transition",
+		zap.String("operation", operation),
+		zap.String("entity", "service_order"),
+		zap.String("service_order_id", serviceOrderID),
+		zap.String("previous_status", previousStatus.String()),
+		zap.String("new_status", newStatus.String()),
+	)
+}
+
 func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (domain.ServiceOrder, error) {
 	customer, err := s.customerService.GetByID(ctx, customerId)
 	if err != nil {
@@ -50,12 +79,45 @@ func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (
 		return domain.ServiceOrder{}, err
 	}
 
+	s.logCreateSuccess(ctx, so.ID, so.Status)
 	return *so, nil
+}
+
+func (s *svc) List(ctx context.Context, params *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error) {
+	var total int64
+	var items []domain.ServiceOrder
+
+	var eg errgroup.Group
+	eg.Go(func() error {
+		t, err := s.repo.Count(ctx, params)
+		total = t
+		return err
+	})
+	eg.Go(func() error {
+		list, err := s.repo.Search(ctx, params)
+		items = list
+		return err
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, fmt.Errorf("fail to list service orders: %w", err)
+	}
+
+	totalPages := int64(math.Ceil(float64(total) / float64(params.PageSize)))
+
+	return &domain.PaginatorResponse[domain.ServiceOrder]{
+		Items:      items,
+		TotalItems: total,
+		TotalPages: totalPages,
+		Page:       params.Page,
+		PageSize:   params.PageSize,
+	}, nil
 }
 
 func (s *svc) ListWorks(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
+		s.logValidationError(ctx, "list_service_order_works", domain.ErrInvalidServiceOrderId)
 		return nil, domain.ErrInvalidServiceOrderId
 	}
 
@@ -80,10 +142,12 @@ func (s *svc) ListWorks(ctx context.Context, serviceOrderID string) ([]domain.Wo
 func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
+		s.logValidationError(ctx, "add_works_to_service_order", domain.ErrInvalidServiceOrderId)
 		return domain.ErrInvalidServiceOrderId
 	}
 
 	if len(workIDs) == 0 {
+		s.logValidationError(ctx, "add_works_to_service_order", domain.ErrEmptyServicesList)
 		return domain.ErrEmptyServicesList
 	}
 
@@ -140,11 +204,13 @@ func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []str
 func (s *svc) RemoveWork(ctx context.Context, serviceOrderID, workID string) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
+		s.logValidationError(ctx, "remove_work_from_service_order", domain.ErrInvalidServiceOrderId)
 		return domain.ErrInvalidServiceOrderId
 	}
 
 	workID = strings.TrimSpace(workID)
 	if workID == "" {
+		s.logValidationError(ctx, "remove_work_from_service_order", domain.ErrInvalidWorkId)
 		return domain.ErrInvalidWorkId
 	}
 
@@ -185,6 +251,7 @@ func (s *svc) RemoveWork(ctx context.Context, serviceOrderID, workID string) err
 func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
+		s.logValidationError(ctx, "list_service_order_supplies", domain.ErrInvalidServiceOrderId)
 		return nil, domain.ErrInvalidServiceOrderId
 	}
 
@@ -202,10 +269,12 @@ func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain
 func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies []domain.AddSupply) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
+		s.logValidationError(ctx, "add_supplies_to_service_order", domain.ErrInvalidServiceOrderId)
 		return domain.ErrInvalidServiceOrderId
 	}
 
 	if len(supplies) == 0 {
+		s.logValidationError(ctx, "add_supplies_to_service_order", domain.ErrEmptyServicesList)
 		return domain.ErrEmptyServicesList
 	}
 
@@ -230,6 +299,7 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 			}
 
 			if sup.Amount <= 0 {
+				s.logValidationError(ctx, "add_supplies_to_service_order", domain.ErrInvalidSupplyAmount)
 				return domain.ErrInvalidSupplyAmount
 			}
 
@@ -329,6 +399,7 @@ func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string)
 			return domain.ErrServiceOrderNotInDiagnosis
 		}
 
+		previousStatus := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL
 
 		// TODO: SEND CUSTOMER NOTIFICATION (EMAIL / SMS / ETC)
@@ -336,6 +407,8 @@ func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string)
 		if err = s.repo.Save(ctx, &so); err != nil {
 			return err
 		}
+
+		s.logStatusTransition(ctx, "send_service_order_to_customer_approval", so.ID, previousStatus, so.Status)
 		return nil
 	})
 
@@ -344,6 +417,28 @@ func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string)
 	}
 
 	return s.reviewOSPricing(ctx, serviceOrderID)
+}
+
+func (s *svc) SendToDiagnosis(ctx context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_RECEIVED {
+			return domain.ErrServiceOrderNotInReceived
+		}
+
+		so.Status = domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS
+
+		return s.repo.Save(ctx, &so)
+	})
 }
 
 func (s *svc) reviewOSPricing(ctx context.Context, serviceOrderID string) error {
@@ -439,10 +534,16 @@ func (s *svc) Accept(c context.Context, serviceOrderID, userID string) error {
 			return domain.ErrServiceOrderNotAwaitingApproval
 		}
 
+		previousStatus := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_IN_PROGRESS
 
+		if err := s.repo.Save(ctx, &so); err != nil {
+			return err
+		}
+
+		s.logStatusTransition(ctx, "accept_service_order", so.ID, previousStatus, so.Status)
 		// TODO: NOTIFY MECHANICAL TO START SERVICE (SMS / EMAIL / WPP)
-		return s.repo.Save(ctx, &so)
+		return nil
 	})
 }
 
@@ -498,6 +599,7 @@ func (s *svc) Reject(c context.Context, serviceOrderID, userID string) error {
 			return domain.ErrServiceOrderNotAwaitingApproval
 		}
 
+		previousStatus := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_REJECTED
 
 		for _, sup := range supplies {
@@ -506,7 +608,12 @@ func (s *svc) Reject(c context.Context, serviceOrderID, userID string) error {
 			}
 		}
 
-		return s.repo.Save(ctx, &so)
+		if err := s.repo.Save(ctx, &so); err != nil {
+			return err
+		}
+
+		s.logStatusTransition(ctx, "reject_service_order", so.ID, previousStatus, so.Status)
+		return nil
 	})
 }
 
@@ -526,10 +633,20 @@ func (s *svc) Deliver(c context.Context, serviceOrderID string) error {
 			return domain.ErrServiceOrderNotCompleted
 		}
 
+		previousStatus := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_DELIVERED
 
-		return s.repo.Save(ctx, &so)
+		if err := s.repo.Save(ctx, &so); err != nil {
+			return err
+		}
+
+		s.logStatusTransition(ctx, "deliver_service_order", so.ID, previousStatus, so.Status)
+		return nil
 	})
+}
+
+func (s *svc) AverageExecutionTime(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	return s.repo.AverageExecutionTimeInHours(ctx, workIDs)
 }
 
 func (s *svc) Cancel(c context.Context, serviceOrderID string) error {
@@ -548,12 +665,46 @@ func (s *svc) Cancel(c context.Context, serviceOrderID string) error {
 			return domain.ErrServiceOrderNotFound
 		}
 
-		if so.Status.IsCancelable() {
+		if !so.Status.IsCancelable() {
 			return domain.ErrServiceOrderNotCancelable
 		}
 
+		previousStatus := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_CANCELLED
 
-		return s.repo.Save(ctx, &so)
+		if err := s.repo.Save(ctx, &so); err != nil {
+			return err
+		}
+
+		s.logStatusTransition(ctx, "cancel_service_order", so.ID, previousStatus, so.Status)
+		return nil
 	})
+}
+
+func (s *svc) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.FullServiceOrder, error) {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.FullServiceOrder{}, domain.ErrInvalidServiceOrderId
+	}
+
+	var res domain.FullServiceOrder
+	eg := errgroup.Group{}
+	eg.Go(func() (err error) {
+		res.ServiceOrder, err = s.repo.FindByID(ctx, serviceOrderID)
+		return
+	})
+	eg.Go(func() (err error) {
+		res.Works, err = s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
+		return
+	})
+	eg.Go(func() (err error) {
+		res.Supplies, err = s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
+		return domain.FullServiceOrder{}, err
+	}
+
+	return res, nil
 }

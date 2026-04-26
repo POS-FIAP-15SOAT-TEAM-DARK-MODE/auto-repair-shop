@@ -91,6 +91,52 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	logger.Of(ctx).Debug("create response", zap.Any("service", user))
+	logger.Of(ctx).Debug("create response",
+		zap.String("operation", "create_user"),
+		zap.String("entity", "user"),
+		zap.String("user_id", user.ID),
+		zap.String("email", user.Email),
+	)
 	c.JSON(http.StatusCreated, mapUserToResponseDTO(user))
+}
+
+func (h *handler) UpdateRole(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param("id")
+	req, err := mapBodyToUpdateRoleRequestDTO(c)
+	if err != nil {
+		status, response := web.Error(json.CheckJsonError(err))
+		logger.Of(ctx).Debug("Failed to bind user role payload",
+			zap.String("operation", "update_user_role"),
+			zap.Error(err),
+			zap.String("entity", "user"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	if err = req.Validate(); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("User role validation failed",
+			zap.String("operation", "update_user_role"),
+			zap.Error(err),
+			zap.String("entity", "user"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	if err = h.service.UpdateRole(ctx, id, req.Role); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Error(err)
+		logger.Of(ctx).Debug("User role update failed in service layer",
+			zap.String("operation", "update_user_role"),
+			zap.Error(err),
+			zap.String("entity", "user"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
+	dbPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -24,6 +25,25 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 		return err
 	}
 
+	var currentDBStatus string
+	err = tx.QueryRowContext(ctx, selectSOStatusQuery, so.ID).Scan(&currentDBStatus)
+
+	isNew := false
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			isNew = true
+		} else {
+			return pgPkg.Error(ctx, err)
+		}
+	}
+
+	statusChanged := isNew || currentDBStatus != so.Status.String()
+	var prevStatus *string
+	if !isNew && currentDBStatus != "" {
+		s := currentDBStatus
+		prevStatus = &s
+	}
+
 	_, err = tx.ExecContext(ctx, insertServiceOrderQuery,
 		so.ID,
 		so.Customer.ID,
@@ -35,13 +55,15 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 		return pgPkg.Error(ctx, err)
 	}
 
-	_, err = tx.ExecContext(ctx, insertServiceOrderStatusQuery,
-		domain.NewHistoryServiceOrderID(),
-		so.ID,
-		domain.GetPreviousStatus(so.Status),
-		so.Status)
-	if err != nil {
-		return pgPkg.Error(ctx, err)
+	if statusChanged {
+		_, err = tx.ExecContext(ctx, insertServiceOrderStatusQuery,
+			domain.NewHistoryServiceOrderID(),
+			so.ID,
+			prevStatus,
+			so.Status.String())
+		if err != nil {
+			return pgPkg.Error(ctx, err)
+		}
 	}
 
 	return nil
@@ -189,6 +211,41 @@ func (r *repository) RemoveSupplyLink(ctx context.Context, serviceOrderID string
 	return qty, nil
 }
 
+func (r *repository) AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	db, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query, args := dbPkg.QueryBuilder(averageExecutionTimeBaseQuery).
+		Add("h_start.new_status =", "IN_PROGRESS").
+		Add("h_end.new_status =", "COMPLETED").
+		AddAny("w.id", workIDs).
+		GroupBy("w.id", "w.name").
+		OrderBy("w.name", dbPkg.ASC).
+		Build()
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []domain.WorkExecutionTime
+	for rows.Next() {
+		var w domain.WorkExecutionTime
+		if err = rows.Scan(&w.WorkID, &w.WorkName, &w.AverageHours); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		result = append(result, w)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	return result, nil
+}
+
 func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
 	db, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
@@ -196,15 +253,17 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	}
 
 	var so domain.ServiceOrder
-	var ct domain.Customer
-	var vh domain.Vehicle
+	so.Customer = new(domain.Customer)
+	so.Customer.User = new(domain.User)
+	so.Vehicle = new(domain.Vehicle)
 	var status string
 	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
-		&so.ID,
-		&status,
-		&so.TotalAmount,
-		&ct.ID,
-		&vh.ID,
+		&so.ID, &status, &so.TotalAmount,
+		&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+		&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+		&so.Customer.User.Name, &so.Customer.User.Email,
+		&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+		&so.Vehicle.Model, &so.Vehicle.Year,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ServiceOrder{}, domain.ErrServiceOrderNotFound
@@ -213,8 +272,76 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	}
 
 	so.Status = domain.StringToServiceOrderStatus(status)
-	so.Customer = &ct
-	so.Vehicle = &vh
 
 	return so, nil
+}
+
+func (r *repository) Count(ctx context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	queryBuilder := dbPkg.QueryBuilder(countServiceOrderQuery)
+	queryBuilder.Add("so.status =", params.Status)
+	queryBuilder.Add("so.customer_id =", params.CustomerID)
+	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
+	query, args := queryBuilder.Build()
+
+	var total int64
+	if err = tx.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+		return 0, pgPkg.Error(ctx, err)
+	}
+
+	return total, nil
+}
+
+func (r *repository) Search(ctx context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
+	tx, err := postgres.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queryBuilder := dbPkg.QueryBuilder(searchServiceOrderQuery).
+		OrderBy("so.created_at", dbPkg.ASC).
+		AddPagination(params.Limit, params.Offset)
+	queryBuilder.Add("so.status =", params.Status)
+	queryBuilder.Add("so.customer_id =", params.CustomerID)
+	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
+	query, args := queryBuilder.Build()
+
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	items := make([]domain.ServiceOrder, 0, params.Limit)
+	for rows.Next() {
+		var so domain.ServiceOrder
+		so.Customer = new(domain.Customer)
+		so.Customer.User = new(domain.User)
+		so.Vehicle = new(domain.Vehicle)
+		var status string
+
+		if err = rows.Scan(
+			&so.ID, &status, &so.TotalAmount,
+			&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+			&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+			&so.Customer.User.Name, &so.Customer.User.Email,
+			&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+			&so.Vehicle.Model, &so.Vehicle.Year,
+		); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+
+		so.Status = domain.StringToServiceOrderStatus(status)
+		items = append(items, so)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+
+	return items, nil
 }

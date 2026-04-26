@@ -116,6 +116,54 @@ func (_c *UserService_Login_Call) RunAndReturn(run func(context.Context, *domain
 	return _c
 }
 
+// UpdateRole provides a mock function with given fields: ctx, id, role
+func (_m *UserService) UpdateRole(ctx context.Context, id string, role domain.Role) error {
+	ret := _m.Called(ctx, id, role)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateRole")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, domain.Role) error); ok {
+		r0 = rf(ctx, id, role)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UserService_UpdateRole_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateRole'
+type UserService_UpdateRole_Call struct {
+	*mock.Call
+}
+
+// UpdateRole is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+//   - role domain.Role
+func (_e *UserService_Expecter) UpdateRole(ctx interface{}, id interface{}, role interface{}) *UserService_UpdateRole_Call {
+	return &UserService_UpdateRole_Call{Call: _e.mock.On("UpdateRole", ctx, id, role)}
+}
+
+func (_c *UserService_UpdateRole_Call) Run(run func(ctx context.Context, id string, role domain.Role)) *UserService_UpdateRole_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(domain.Role))
+	})
+	return _c
+}
+
+func (_c *UserService_UpdateRole_Call) Return(_a0 error) *UserService_UpdateRole_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *UserService_UpdateRole_Call) RunAndReturn(run func(context.Context, string, domain.Role) error) *UserService_UpdateRole_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewUserService creates a new instance of UserService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserService(t interface {
