@@ -1,6 +1,7 @@
 package service_order
 
 const (
+	selectSOStatusQuery     = "SELECT status FROM service_order WHERE id = $1"
 	insertServiceOrderQuery = `
 	INSERT INTO service_order (id, customer_id, vehicle_id, status, total_amount)
 	VALUES ($1, $2, $3, $4, $5)

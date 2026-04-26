@@ -26,7 +26,7 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 	}
 
 	var currentDBStatus string
-	err = tx.QueryRowContext(ctx, "SELECT status FROM service_order WHERE id = $1", so.ID).Scan(&currentDBStatus)
+	err = tx.QueryRowContext(ctx, selectSOStatusQuery, so.ID).Scan(&currentDBStatus)
 
 	isNew := false
 	if err != nil {
