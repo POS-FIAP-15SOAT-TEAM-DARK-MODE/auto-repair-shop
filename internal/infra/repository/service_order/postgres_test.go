@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	postgresdb "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	service_order "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order"
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,9 @@ func TestPostgresRepository_Save(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT INTO service_order").
 		WithArgs(so.ID, so.Customer.ID, so.Vehicle.ID, so.Status.String(), so.TotalAmount).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO service_order_status_history").
+		WithArgs(sqlmock.AnyArg(), so.ID, domain.GetPreviousStatus(so.Status), so.Status.String()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 

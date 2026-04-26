@@ -204,3 +204,8 @@ INSERT INTO "role" (id, name) VALUES ('2', 'MECHANIC');
 INSERT INTO "role" (id, name) VALUES ('3', 'ATTENDANT');
 
 INSERT INTO "role" (id, name) VALUES ('4', 'CUSTOMER');
+
+-- Constraints
+ALTER TABLE service_order_status_history
+ADD CONSTRAINT uq_service_order_status_history_service_order_id_new_status
+UNIQUE (service_order_id, new_status);
