@@ -1464,12 +1464,12 @@ paths:
                 items:
                   $ref: "#/components/schemas/WorkExecutionTimeResponse"
               example:
-                - work_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-                  work_name: Troca de óleo
-                  average_execution_time_hours: 1.5
-                - work_id: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
-                  work_name: Revisão de freios
-                  average_execution_time_hours: 3.2
+                - workId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                  workName: Troca de óleo
+                  averageExecutionTimeHours: 1.5
+                - workId: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+                  workName: Revisão de freios
+                  averageExecutionTimeHours: 3.2
         "401":
           description: Unauthorized (missing or invalid JWT)
         "403":
@@ -1587,14 +1587,14 @@ components:
     WorkExecutionTimeResponse:
       type: object
       properties:
-        work_id:
+        workId:
           type: string
           format: uuid
           description: Work identifier
-        work_name:
+        workName:
           type: string
           description: Name of the billable service
-        average_execution_time_hours:
+        averageExecutionTimeHours:
           type: number
           format: double
           description: Average time in hours for this work to go from IN_PROGRESS to COMPLETED across all service orders

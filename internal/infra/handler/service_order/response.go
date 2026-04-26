@@ -102,9 +102,9 @@ func mapWorksListToResponse(works []domain.Work) listResponse[workItemResponse] 
 }
 
 type workExecutionTimeResponse struct {
-	WorkID               string  `json:"work_id"`
-	WorkName             string  `json:"work_name"`
-	AverageExecutionTime float64 `json:"average_execution_time_hours"`
+	WorkID               string  `json:"workId"`
+	WorkName             string  `json:"workName"`
+	AverageExecutionTime float64 `json:"averageExecutionTimeHours"`
 }
 
 func mapSupplies(supplies []domain.Supply) []supplyItemResponse {
