@@ -157,10 +157,8 @@ func TestHandler_GetStatus(t *testing.T) {
 		},
 		{
 			name:           "error - empty service order id",
-			serviceOrderID: "   ", // trim deve deixar vazio
-			mockSetup: func(m *domainmocks.ServiceOrderService) {
-				// NÃO deve chamar o service
-			},
+			serviceOrderID: "   ",
+			mockSetup:      func(m *domainmocks.ServiceOrderService) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
@@ -201,7 +199,6 @@ func TestHandler_GetStatus(t *testing.T) {
 
 			c.Request = req
 
-			// 🔥 path param
 			c.Params = gin.Params{
 				{Key: serviceOrderIDParam, Value: tt.serviceOrderID},
 			}
