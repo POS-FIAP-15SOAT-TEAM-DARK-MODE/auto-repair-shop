@@ -434,6 +434,63 @@ func (_c *ServiceOrderService_GetFullOSByID_Call) RunAndReturn(run func(context.
 	return _c
 }
 
+// GetStatus provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderService) GetStatus(ctx context.Context, serviceOrderID string) (domain.SERVICE_ORDER_STATUS, error) {
+	ret := _m.Called(ctx, serviceOrderID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStatus")
+	}
+
+	var r0 domain.SERVICE_ORDER_STATUS
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.SERVICE_ORDER_STATUS, error)); ok {
+		return rf(ctx, serviceOrderID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.SERVICE_ORDER_STATUS); ok {
+		r0 = rf(ctx, serviceOrderID)
+	} else {
+		r0 = ret.Get(0).(domain.SERVICE_ORDER_STATUS)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, serviceOrderID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderService_GetStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStatus'
+type ServiceOrderService_GetStatus_Call struct {
+	*mock.Call
+}
+
+// GetStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+func (_e *ServiceOrderService_Expecter) GetStatus(ctx interface{}, serviceOrderID interface{}) *ServiceOrderService_GetStatus_Call {
+	return &ServiceOrderService_GetStatus_Call{Call: _e.mock.On("GetStatus", ctx, serviceOrderID)}
+}
+
+func (_c *ServiceOrderService_GetStatus_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderService_GetStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_GetStatus_Call) Return(_a0 domain.SERVICE_ORDER_STATUS, _a1 error) *ServiceOrderService_GetStatus_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderService_GetStatus_Call) RunAndReturn(run func(context.Context, string) (domain.SERVICE_ORDER_STATUS, error)) *ServiceOrderService_GetStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function with given fields: ctx, params
 func (_m *ServiceOrderService) List(ctx context.Context, params *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error) {
 	ret := _m.Called(ctx, params)

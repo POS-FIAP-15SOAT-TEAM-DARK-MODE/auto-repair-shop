@@ -2056,10 +2056,6 @@ components:
         status:
           type: string
           description: Service order status (e.g. RECEIVED, IN_DIAGNOSIS, etc)
-        updated_at:
-          type: string
-          format: date-time
-          description: Creation timestamp
 
     ServiceOrderVehicleResponse:
       type: object

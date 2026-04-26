@@ -702,3 +702,29 @@ func (s *svc) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.
 
 	return res, nil
 }
+
+func (s *svc) GetStatus(ctx context.Context, serviceOrderID string) (domain.SERVICE_ORDER_STATUS, error) {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return "", domain.ErrInvalidServiceOrderId
+	}
+
+	var statusSO domain.SERVICE_ORDER_STATUS
+	err := s.uow.Execute(ctx, func(ctx context.Context) error {
+		ok, status, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return domain.ErrServiceOrderNotFound
+		}
+		statusSO = status
+		return nil
+	})
+	if err != nil {
+		logger.Of(ctx).Error(fmt.Errorf("error check service order status: %w", err))
+		return "", err
+	}
+
+	return statusSO, nil
+}

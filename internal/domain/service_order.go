@@ -125,6 +125,7 @@ type (
 		Cancel(ctx context.Context, serviceOrderID string) error
 		GetFullOSByID(ctx context.Context, serviceOrderID string) (FullServiceOrder, error)
 		AverageExecutionTime(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
+		GetStatus(ctx context.Context, serviceOrderID string) (SERVICE_ORDER_STATUS, error)
 	}
 
 	ServiceOrderRepository interface {

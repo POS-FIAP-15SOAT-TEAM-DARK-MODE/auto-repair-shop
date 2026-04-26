@@ -465,5 +465,25 @@ func (h *handler) GetFullByID(c *gin.Context) {
 }
 
 func (h *handler) GetStatus(c *gin.Context) {
-	c.Status(http.StatusNotImplemented)
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+	ctx := c.Request.Context()
+
+	statusOS, err := h.svc.GetStatus(ctx, id)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("get full service order by id",
+			zap.String("operation", "get_service_order_status"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.JSON(http.StatusOK, mapResponseDTOFromDomain(domain.ServiceOrder{ID: id, Status: statusOS}))
 }
