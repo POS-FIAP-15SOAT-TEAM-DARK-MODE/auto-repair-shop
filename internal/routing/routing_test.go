@@ -67,6 +67,7 @@ func TestSetupRouter(t *testing.T) {
 	// Service Order
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
 	mockSO.EXPECT().SendToCustomerApproval(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockSO.EXPECT().SendToDiagnosis(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Accept(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Reject(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 	mockSO.EXPECT().Deliver(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
@@ -151,6 +152,7 @@ func TestSetupRouter(t *testing.T) {
 
 		// Service Order
 		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},
+		{goHttp.MethodPut, "/v1/service-order/:id/start-diagnosis", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/send", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/accept", goHttp.StatusNoContent, ""},
 		{goHttp.MethodPut, "/v1/service-order/:id/reject", goHttp.StatusNoContent, ""},
