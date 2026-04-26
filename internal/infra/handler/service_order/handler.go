@@ -42,7 +42,12 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	logger.Of(ctx).Debug("create request", zap.Any("service_order", dto))
+	logger.Of(ctx).Debug("create request",
+		zap.String("operation", "create_service_order"),
+		zap.String("entity", "service_order"),
+		zap.String("client_id", dto.ClientID),
+		zap.String("vehicle_id", dto.VehicleID),
+	)
 	res, err := h.svc.Create(ctx, dto.ClientID, dto.VehicleID)
 	if err != nil {
 		status, response := web.Error(err)
@@ -56,7 +61,12 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	logger.Of(ctx).Debug("create response", zap.Any("service_order", res))
+	logger.Of(ctx).Debug("create response",
+		zap.String("operation", "create_service_order"),
+		zap.String("entity", "service_order"),
+		zap.String("service_order_id", res.ID),
+		zap.String("status", res.Status.String()),
+	)
 	c.JSON(http.StatusCreated, mapResponseDTOFromDomain(res))
 }
 

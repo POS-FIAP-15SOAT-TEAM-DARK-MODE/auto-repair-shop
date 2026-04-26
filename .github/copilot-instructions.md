@@ -124,10 +124,12 @@ PUT    /users/:id/roles                   ADMIN only — update user roles
 - 400 validation error, 401 missing/invalid auth, 403 forbidden, 404 not found, 409 conflict, 422 business rule violation, 500 unexpected
 
 ## Logging
-- Structured JSON logs: `{ timestamp, level, operation, entity_id }`
-- Log: OS creation, every status transition, stock decrements, validation errors
-- Never log: CPF, CNPJ, passwords, tokens (mask or omit entirely)
-- Levels: INFO (normal), WARN (business violations), ERROR (unexpected)
+- Structured JSON logs via Zap with standardized event names for critical operations.
+- Issue #236 implemented: service order events `service_order.created`, `service_order.status_transition`, and `service_order.validation_failed` are available and should be reused.
+- Issue #223 implemented: centralized redaction in logger sanitizes sensitive keys and DSN credentials before writing logs.
+- Prefer explicit safe fields over `zap.Any` for request/domain payloads when data may contain sensitive information.
+- Never log or expose: CPF, CNPJ, passwords, tokens, or other sensitive PII.
+- Levels: INFO (business events), WARN (business violations), ERROR (unexpected).
 
 ## Infrastructure
 - `Dockerfile` for reproducible builds

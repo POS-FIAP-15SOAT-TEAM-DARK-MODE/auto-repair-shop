@@ -91,7 +91,12 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	logger.Of(ctx).Debug("create response", zap.Any("service", user))
+	logger.Of(ctx).Debug("create response",
+		zap.String("operation", "create_user"),
+		zap.String("entity", "user"),
+		zap.String("user_id", user.ID),
+		zap.String("email", user.Email),
+	)
 	c.JSON(http.StatusCreated, mapUserToResponseDTO(user))
 }
 
