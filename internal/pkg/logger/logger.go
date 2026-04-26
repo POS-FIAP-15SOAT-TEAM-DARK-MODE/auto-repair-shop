@@ -18,7 +18,10 @@ type customLogger struct {
 
 type ctxKey struct{}
 
-var globalLog *customLogger
+var (
+	globalLog  *customLogger
+	dsnPattern *regexp.Regexp
+)
 
 func init() {
 	initGlobalLogger()
@@ -26,6 +29,7 @@ func init() {
 
 func initGlobalLogger() {
 	globalLog = &customLogger{initLogger()}
+	dsnPattern = regexp.MustCompile(`://([^:/\s]+):([^@/\s]+)@`)
 }
 
 func initLogger() *zap.Logger {
@@ -142,6 +146,5 @@ func isSensitiveKey(key string) bool {
 }
 
 func redactDSNPassword(value string) string {
-	dsnPattern := regexp.MustCompile(`://([^:/\s]+):([^@/\s]+)@`)
 	return dsnPattern.ReplaceAllString(value, `://$1:[REDACTED]@`)
 }
