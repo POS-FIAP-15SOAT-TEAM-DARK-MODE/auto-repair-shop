@@ -375,6 +375,65 @@ func (_c *ServiceOrderService_GetFullOSByID_Call) RunAndReturn(run func(context.
 	return _c
 }
 
+// List provides a mock function with given fields: ctx, params
+func (_m *ServiceOrderService) List(ctx context.Context, params *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
+	var r0 *domain.PaginatorResponse[domain.ServiceOrder]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) *domain.PaginatorResponse[domain.ServiceOrder]); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.ServiceOrder])
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ServiceOrderFilterParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderService_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type ServiceOrderService_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.ServiceOrderFilterParams
+func (_e *ServiceOrderService_Expecter) List(ctx interface{}, params interface{}) *ServiceOrderService_List_Call {
+	return &ServiceOrderService_List_Call{Call: _e.mock.On("List", ctx, params)}
+}
+
+func (_c *ServiceOrderService_List_Call) Run(run func(ctx context.Context, params *domain.ServiceOrderFilterParams)) *ServiceOrderService_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.ServiceOrderFilterParams))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_List_Call) Return(_a0 *domain.PaginatorResponse[domain.ServiceOrder], _a1 error) *ServiceOrderService_List_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderService_List_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error)) *ServiceOrderService_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListSupplies provides a mock function with given fields: ctx, serviceOrderID
 func (_m *ServiceOrderService) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
 	ret := _m.Called(ctx, serviceOrderID)
@@ -684,61 +743,49 @@ func (_c *ServiceOrderService_SendToCustomerApproval_Call) RunAndReturn(run func
 	return _c
 }
 
-// List provides a mock function with given fields: ctx, params
-func (_m *ServiceOrderService) List(ctx context.Context, params *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error) {
-	ret := _m.Called(ctx, params)
+// SendToDiagnosis provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderService) SendToDiagnosis(ctx context.Context, serviceOrderID string) error {
+	ret := _m.Called(ctx, serviceOrderID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for List")
+		panic("no return value specified for SendToDiagnosis")
 	}
 
-	var r0 *domain.PaginatorResponse[domain.ServiceOrder]
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error)); ok {
-		return rf(ctx, params)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) *domain.PaginatorResponse[domain.ServiceOrder]); ok {
-		r0 = rf(ctx, params)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, serviceOrderID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.ServiceOrder])
-		}
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.ServiceOrderFilterParams) error); ok {
-		r1 = rf(ctx, params)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// ServiceOrderService_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
-type ServiceOrderService_List_Call struct {
+// ServiceOrderService_SendToDiagnosis_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendToDiagnosis'
+type ServiceOrderService_SendToDiagnosis_Call struct {
 	*mock.Call
 }
 
-// List is a helper method to define mock.On call
+// SendToDiagnosis is a helper method to define mock.On call
 //   - ctx context.Context
-//   - params *domain.ServiceOrderFilterParams
-func (_e *ServiceOrderService_Expecter) List(ctx interface{}, params interface{}) *ServiceOrderService_List_Call {
-	return &ServiceOrderService_List_Call{Call: _e.mock.On("List", ctx, params)}
+//   - serviceOrderID string
+func (_e *ServiceOrderService_Expecter) SendToDiagnosis(ctx interface{}, serviceOrderID interface{}) *ServiceOrderService_SendToDiagnosis_Call {
+	return &ServiceOrderService_SendToDiagnosis_Call{Call: _e.mock.On("SendToDiagnosis", ctx, serviceOrderID)}
 }
 
-func (_c *ServiceOrderService_List_Call) Run(run func(ctx context.Context, params *domain.ServiceOrderFilterParams)) *ServiceOrderService_List_Call {
+func (_c *ServiceOrderService_SendToDiagnosis_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderService_SendToDiagnosis_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.ServiceOrderFilterParams))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *ServiceOrderService_List_Call) Return(_a0 *domain.PaginatorResponse[domain.ServiceOrder], _a1 error) *ServiceOrderService_List_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *ServiceOrderService_SendToDiagnosis_Call) Return(_a0 error) *ServiceOrderService_SendToDiagnosis_Call {
+	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ServiceOrderService_List_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error)) *ServiceOrderService_List_Call {
+func (_c *ServiceOrderService_SendToDiagnosis_Call) RunAndReturn(run func(context.Context, string) error) *ServiceOrderService_SendToDiagnosis_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -483,6 +483,39 @@ func (_c *ServiceOrderHandler_SendToCustomerApproval_Call) RunAndReturn(run func
 	return _c
 }
 
+// SendToDiagnosis provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) SendToDiagnosis(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_SendToDiagnosis_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendToDiagnosis'
+type ServiceOrderHandler_SendToDiagnosis_Call struct {
+	*mock.Call
+}
+
+// SendToDiagnosis is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) SendToDiagnosis(_a0 interface{}) *ServiceOrderHandler_SendToDiagnosis_Call {
+	return &ServiceOrderHandler_SendToDiagnosis_Call{Call: _e.mock.On("SendToDiagnosis", _a0)}
+}
+
+func (_c *ServiceOrderHandler_SendToDiagnosis_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_SendToDiagnosis_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_SendToDiagnosis_Call) Return() *ServiceOrderHandler_SendToDiagnosis_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_SendToDiagnosis_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_SendToDiagnosis_Call {
+	_c.Run(run)
+	return _c
+}
+
 // NewServiceOrderHandler creates a new instance of ServiceOrderHandler. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewServiceOrderHandler(t interface {

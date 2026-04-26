@@ -122,6 +122,63 @@ func (_c *ServiceOrderRepository_AddWorkLink_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// Count provides a mock function with given fields: ctx, params
+func (_m *ServiceOrderRepository) Count(ctx context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Count")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) (int64, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) int64); ok {
+		r0 = rf(ctx, params)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ServiceOrderFilterParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderRepository_Count_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Count'
+type ServiceOrderRepository_Count_Call struct {
+	*mock.Call
+}
+
+// Count is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.ServiceOrderFilterParams
+func (_e *ServiceOrderRepository_Expecter) Count(ctx interface{}, params interface{}) *ServiceOrderRepository_Count_Call {
+	return &ServiceOrderRepository_Count_Call{Call: _e.mock.On("Count", ctx, params)}
+}
+
+func (_c *ServiceOrderRepository_Count_Call) Run(run func(ctx context.Context, params *domain.ServiceOrderFilterParams)) *ServiceOrderRepository_Count_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.ServiceOrderFilterParams))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Count_Call) Return(_a0 int64, _a1 error) *ServiceOrderRepository_Count_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) (int64, error)) *ServiceOrderRepository_Count_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ExistsByID provides a mock function with given fields: ctx, id
 func (_m *ServiceOrderRepository) ExistsByID(ctx context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
 	ret := _m.Called(ctx, id)
@@ -239,63 +296,6 @@ func (_c *ServiceOrderRepository_FindByID_Call) Return(_a0 domain.ServiceOrder, 
 }
 
 func (_c *ServiceOrderRepository_FindByID_Call) RunAndReturn(run func(context.Context, string) (domain.ServiceOrder, error)) *ServiceOrderRepository_FindByID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Count provides a mock function with given fields: ctx, params
-func (_m *ServiceOrderRepository) Count(ctx context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
-	ret := _m.Called(ctx, params)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Count")
-	}
-
-	var r0 int64
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) (int64, error)); ok {
-		return rf(ctx, params)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) int64); ok {
-		r0 = rf(ctx, params)
-	} else {
-		r0 = ret.Get(0).(int64)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.ServiceOrderFilterParams) error); ok {
-		r1 = rf(ctx, params)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ServiceOrderRepository_Count_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Count'
-type ServiceOrderRepository_Count_Call struct {
-	*mock.Call
-}
-
-// Count is a helper method to define mock.On call
-//   - ctx context.Context
-//   - params *domain.ServiceOrderFilterParams
-func (_e *ServiceOrderRepository_Expecter) Count(ctx interface{}, params interface{}) *ServiceOrderRepository_Count_Call {
-	return &ServiceOrderRepository_Count_Call{Call: _e.mock.On("Count", ctx, params)}
-}
-
-func (_c *ServiceOrderRepository_Count_Call) Run(run func(ctx context.Context, params *domain.ServiceOrderFilterParams)) *ServiceOrderRepository_Count_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.ServiceOrderFilterParams))
-	})
-	return _c
-}
-
-func (_c *ServiceOrderRepository_Count_Call) Return(_a0 int64, _a1 error) *ServiceOrderRepository_Count_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *ServiceOrderRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) (int64, error)) *ServiceOrderRepository_Count_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -524,6 +524,53 @@ func (_c *ServiceOrderRepository_RemoveWorkLink_Call) RunAndReturn(run func(cont
 	return _c
 }
 
+// Save provides a mock function with given fields: _a0, _a1
+func (_m *ServiceOrderRepository) Save(_a0 context.Context, _a1 *domain.ServiceOrder) error {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Save")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrder) error); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderRepository_Save_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Save'
+type ServiceOrderRepository_Save_Call struct {
+	*mock.Call
+}
+
+// Save is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 *domain.ServiceOrder
+func (_e *ServiceOrderRepository_Expecter) Save(_a0 interface{}, _a1 interface{}) *ServiceOrderRepository_Save_Call {
+	return &ServiceOrderRepository_Save_Call{Call: _e.mock.On("Save", _a0, _a1)}
+}
+
+func (_c *ServiceOrderRepository_Save_Call) Run(run func(_a0 context.Context, _a1 *domain.ServiceOrder)) *ServiceOrderRepository_Save_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.ServiceOrder))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Save_Call) Return(_a0 error) *ServiceOrderRepository_Save_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Save_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrder) error) *ServiceOrderRepository_Save_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Search provides a mock function with given fields: ctx, params
 func (_m *ServiceOrderRepository) Search(ctx context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
 	ret := _m.Called(ctx, params)
@@ -579,53 +626,6 @@ func (_c *ServiceOrderRepository_Search_Call) Return(_a0 []domain.ServiceOrder, 
 }
 
 func (_c *ServiceOrderRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error)) *ServiceOrderRepository_Search_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Save provides a mock function with given fields: _a0, _a1
-func (_m *ServiceOrderRepository) Save(_a0 context.Context, _a1 *domain.ServiceOrder) error {
-	ret := _m.Called(_a0, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Save")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrder) error); ok {
-		r0 = rf(_a0, _a1)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// ServiceOrderRepository_Save_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Save'
-type ServiceOrderRepository_Save_Call struct {
-	*mock.Call
-}
-
-// Save is a helper method to define mock.On call
-//   - _a0 context.Context
-//   - _a1 *domain.ServiceOrder
-func (_e *ServiceOrderRepository_Expecter) Save(_a0 interface{}, _a1 interface{}) *ServiceOrderRepository_Save_Call {
-	return &ServiceOrderRepository_Save_Call{Call: _e.mock.On("Save", _a0, _a1)}
-}
-
-func (_c *ServiceOrderRepository_Save_Call) Run(run func(_a0 context.Context, _a1 *domain.ServiceOrder)) *ServiceOrderRepository_Save_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.ServiceOrder))
-	})
-	return _c
-}
-
-func (_c *ServiceOrderRepository_Save_Call) Return(_a0 error) *ServiceOrderRepository_Save_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *ServiceOrderRepository_Save_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrder) error) *ServiceOrderRepository_Save_Call {
 	_c.Call.Return(run)
 	return _c
 }
