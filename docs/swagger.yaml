@@ -859,6 +859,98 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           description: Internal Server Error
+    get:
+      summary: List service orders
+      description: List service orders with pagination and optional filters by status, customer and vehicle.
+      tags:
+        - ServiceOrder
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+            default: 1
+            minimum: 1
+          description: Page number (1-based).
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            format: int64
+            default: 10
+            minimum: 1
+          description: Number of items per page.
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [NEW, RECEIVED, IN_DIAGNOSIS, AWAITING_APPROVAL, REJECTED, IN_PROGRESS, COMPLETED, DELIVERED, CANCELLED]
+          description: Filter by service order status.
+        - in: query
+          name: customerId
+          schema:
+            type: string
+          description: Filter by customer id.
+        - in: query
+          name: vehicleId
+          schema:
+            type: string
+          description: Filter by vehicle id.
+      responses:
+        "200":
+          description: Successful list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListServiceOrdersResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "500":
+          description: Internal Server Error
+
+  /v1/service-order/{id}:
+    get:
+      summary: Get service order detail
+      description: Returns the full information for the specified service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order id
+      responses:
+        "200":
+          description: Informations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceOrderDetails"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Service order not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
 
   /v1/service-order/{id}/history:
     get:
@@ -1839,6 +1931,59 @@ components:
           format: date-time
           description: Creation timestamp
 
+    ServiceOrderVehicleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        licensePlate:
+          type: string
+        brandModel:
+          type: string
+        year:
+          type: integer
+
+    ServiceOrderListItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        totalValue:
+          type: number
+          format: float
+        customer:
+          $ref: "#/components/schemas/CustomerResponse"
+        vehicle:
+          $ref: "#/components/schemas/ServiceOrderVehicleResponse"
+
+    ListServiceOrdersResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceOrderListItemResponse"
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+      required:
+        - items
+        - totalItems
+        - totalPages
+        - pageSize
+        - page
+
     AddServiceToServiceOrderRequest:
       type: object
       required:
@@ -1866,3 +2011,33 @@ components:
               amount:
                 type: integer
                 description: Amount of supplies to add
+
+    ServiceOrderDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          required: true
+          example: '01KQ2ZNRQQZRQ480K7HEB8YH70'
+        status:
+          type: string
+          required: true
+          example: 'IN_PROGRESS'
+        totalValue:
+          type: number
+          required: true
+          example: 10.50
+        customer:
+          $ref: '#/components/schemas/CustomerResponse'
+        vehicle:
+          $ref: '#/components/schemas/VehicleResponse'
+        works:
+          required: true
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateWorkResponse'
+        supplies:
+          required: true
+          type: array
+          items:
+            $ref: "#/components/schemas/SupplyResponse"

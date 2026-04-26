@@ -2,6 +2,8 @@ package service_order
 
 import (
 	"context"
+	"fmt"
+	"math"
 	"strings"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
@@ -49,6 +51,37 @@ func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (
 	}
 
 	return *so, nil
+}
+
+func (s *svc) List(ctx context.Context, params *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error) {
+	var total int64
+	var items []domain.ServiceOrder
+
+	var eg errgroup.Group
+	eg.Go(func() error {
+		t, err := s.repo.Count(ctx, params)
+		total = t
+		return err
+	})
+	eg.Go(func() error {
+		list, err := s.repo.Search(ctx, params)
+		items = list
+		return err
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, fmt.Errorf("fail to list service orders: %w", err)
+	}
+
+	totalPages := int64(math.Ceil(float64(total) / float64(params.PageSize)))
+
+	return &domain.PaginatorResponse[domain.ServiceOrder]{
+		Items:      items,
+		TotalItems: total,
+		TotalPages: totalPages,
+		Page:       params.Page,
+		PageSize:   params.PageSize,
+	}, nil
 }
 
 func (s *svc) ListWorks(ctx context.Context, serviceOrderID string) ([]domain.Work, error) {
@@ -550,4 +583,32 @@ func (s *svc) Cancel(c context.Context, serviceOrderID string) error {
 
 		return s.repo.Save(ctx, &so)
 	})
+}
+
+func (s *svc) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.FullServiceOrder, error) {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.FullServiceOrder{}, domain.ErrInvalidServiceOrderId
+	}
+
+	var res domain.FullServiceOrder
+	eg := errgroup.Group{}
+	eg.Go(func() (err error) {
+		res.ServiceOrder, err = s.repo.FindByID(ctx, serviceOrderID)
+		return
+	})
+	eg.Go(func() (err error) {
+		res.Works, err = s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
+		return
+	})
+	eg.Go(func() (err error) {
+		res.Supplies, err = s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
+		return
+	})
+
+	if err := eg.Wait(); err != nil {
+		return domain.FullServiceOrder{}, err
+	}
+
+	return res, nil
 }
