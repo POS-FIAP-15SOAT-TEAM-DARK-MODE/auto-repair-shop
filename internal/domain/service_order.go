@@ -150,27 +150,6 @@ func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 	}
 }
 
-func GetPreviousStatus(currentStatus SERVICE_ORDER_STATUS) *SERVICE_ORDER_STATUS {
-	switch currentStatus {
-	case SERVICE_ORDER_STATUS_RECEIVED:
-		return new(SERVICE_ORDER_STATUS_NEW)
-	case SERVICE_ORDER_STATUS_IN_DIAGNOSIS:
-		return new(SERVICE_ORDER_STATUS_RECEIVED)
-	case SERVICE_ORDER_STATUS_AWAITING_APPROVAL:
-		return new(SERVICE_ORDER_STATUS_IN_DIAGNOSIS)
-	case SERVICE_ORDER_STATUS_IN_PROGRESS:
-		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
-	case SERVICE_ORDER_STATUS_COMPLETED:
-		return new(SERVICE_ORDER_STATUS_IN_PROGRESS)
-	case SERVICE_ORDER_STATUS_DELIVERED:
-		return new(SERVICE_ORDER_STATUS_COMPLETED)
-	case SERVICE_ORDER_STATUS_REJECTED:
-		return new(SERVICE_ORDER_STATUS_AWAITING_APPROVAL)
-	default:
-		return nil
-	}
-}
-
 func NewHistoryServiceOrderID() string {
 	return ulid.Make().String()
 }

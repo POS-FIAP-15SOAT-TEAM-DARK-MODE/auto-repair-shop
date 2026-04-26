@@ -25,6 +25,25 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 		return err
 	}
 
+	var currentDBStatus string
+	err = tx.QueryRowContext(ctx, "SELECT status FROM service_order WHERE id = $1", so.ID).Scan(&currentDBStatus)
+
+	isNew := false
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			isNew = true
+		} else {
+			return pgPkg.Error(ctx, err)
+		}
+	}
+
+	statusChanged := isNew || currentDBStatus != so.Status.String()
+	var prevStatus *string
+	if !isNew && currentDBStatus != "" {
+		s := currentDBStatus
+		prevStatus = &s
+	}
+
 	_, err = tx.ExecContext(ctx, insertServiceOrderQuery,
 		so.ID,
 		so.Customer.ID,
@@ -36,13 +55,15 @@ func (r *repository) Save(ctx context.Context, so *domain.ServiceOrder) error {
 		return pgPkg.Error(ctx, err)
 	}
 
-	_, err = tx.ExecContext(ctx, insertServiceOrderStatusQuery,
-		domain.NewHistoryServiceOrderID(),
-		so.ID,
-		domain.GetPreviousStatus(so.Status),
-		so.Status)
-	if err != nil {
-		return pgPkg.Error(ctx, err)
+	if statusChanged {
+		_, err = tx.ExecContext(ctx, insertServiceOrderStatusQuery,
+			domain.NewHistoryServiceOrderID(),
+			so.ID,
+			prevStatus,
+			so.Status.String())
+		if err != nil {
+			return pgPkg.Error(ctx, err)
+		}
 	}
 
 	return nil
