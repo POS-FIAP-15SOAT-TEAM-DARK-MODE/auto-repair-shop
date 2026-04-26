@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
@@ -81,24 +82,24 @@ func withContext(ctx context.Context, l *customLogger) context.Context {
 }
 
 func (l *customLogger) Info(msg string, fields ...zap.Field) {
-	l.Logger.Info(msg, fields...)
+	l.Logger.Info(msg, sanitizeFields(fields)...)
 }
 
 func (l *customLogger) Warn(msg string, fields ...zap.Field) {
-	l.Logger.Warn(msg, fields...)
+	l.Logger.Warn(msg, sanitizeFields(fields)...)
 }
 
 func (l *customLogger) Error(err error, fields ...zap.Field) {
 	fields = append(fields, zap.Error(err))
-	l.Logger.Error(err.Error(), fields...)
+	l.Logger.Error(err.Error(), sanitizeFields(fields)...)
 }
 
 func (l *customLogger) Fatal(msg string, fields ...zap.Field) {
-	l.Logger.Fatal(msg, fields...)
+	l.Logger.Fatal(msg, sanitizeFields(fields)...)
 }
 
 func (l *customLogger) Debug(msg string, fields ...zap.Field) {
-	l.Logger.Debug(msg, fields...)
+	l.Logger.Debug(msg, sanitizeFields(fields)...)
 }
 
 func (l *customLogger) Sync() {
@@ -108,4 +109,39 @@ func (l *customLogger) Sync() {
 			l.Error(err)
 		}
 	}
+}
+
+func sanitizeFields(fields []zap.Field) []zap.Field {
+	sanitized := make([]zap.Field, 0, len(fields))
+	for _, field := range fields {
+		key := strings.ToLower(strings.TrimSpace(field.Key))
+		if isSensitiveKey(key) {
+			sanitized = append(sanitized, zap.String(field.Key, "[REDACTED]"))
+			continue
+		}
+		if field.Type == zapcore.StringType {
+			value := redactDSNPassword(field.String)
+			sanitized = append(sanitized, zap.String(field.Key, value))
+			continue
+		}
+		sanitized = append(sanitized, field)
+	}
+	return sanitized
+}
+
+func isSensitiveKey(key string) bool {
+	return key == "password" ||
+		key == "senha" ||
+		key == "pwd" ||
+		key == "token" ||
+		key == "authorization" ||
+		key == "cpf" ||
+		key == "cnpj" ||
+		key == "document" ||
+		key == "documento"
+}
+
+func redactDSNPassword(value string) string {
+	dsnPattern := regexp.MustCompile(`://([^:/\s]+):([^@/\s]+)@`)
+	return dsnPattern.ReplaceAllString(value, `://$1:[REDACTED]@`)
 }
