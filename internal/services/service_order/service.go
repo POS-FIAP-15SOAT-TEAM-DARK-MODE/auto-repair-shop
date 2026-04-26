@@ -63,6 +63,17 @@ func (s *svc) logStatusTransition(ctx context.Context, operation string, service
 	)
 }
 
+func (s *svc) logWorkStatusTransition(ctx context.Context, operation string, serviceOrderID string, workID string, previousStatus, newStatus domain.WORK_SERVICE_ORDER_STATUS) {
+	logger.Of(ctx).Info("work_service_order.status_transition",
+		zap.String("operation", operation),
+		zap.String("entity", "work_service_order"),
+		zap.String("service_order_id", serviceOrderID),
+		zap.String("work_id", workID),
+		zap.String("previous_status", previousStatus.String()),
+		zap.String("new_status", newStatus.String()),
+	)
+}
+
 func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (domain.ServiceOrder, error) {
 	customer, err := s.customerService.GetByID(ctx, customerId)
 	if err != nil {
@@ -768,6 +779,8 @@ func (s *svc) NextWork(ctx context.Context, serviceOrderID, workID string) error
 		}
 
 		prev := latest.Status
+
+		s.logWorkStatusTransition(ctx, "next_work_service_order", workID, serviceOrderID, prev, next)
 		return s.workSOHistoryRepo.Insert(ctx, serviceOrderID, workID, &prev, next)
 	})
 }
@@ -803,6 +816,8 @@ func (s *svc) CancelWork(ctx context.Context, serviceOrderID, workID string) err
 		}
 
 		prev := latest.Status
+
+		s.logWorkStatusTransition(ctx, "cancel_work_service_order", workID, serviceOrderID, prev, domain.WORK_SERVICE_ORDER_STATUS_CANCELLED)
 		return s.workSOHistoryRepo.Insert(ctx, serviceOrderID, workID, &prev, domain.WORK_SERVICE_ORDER_STATUS_CANCELLED)
 	})
 }
