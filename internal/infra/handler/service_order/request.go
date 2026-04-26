@@ -1,6 +1,8 @@
 package service_order
 
 import (
+	"strconv"
+
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/gin-gonic/gin"
 )
@@ -53,4 +55,30 @@ func mapAddSuppliesBody(c *gin.Context) ([]domain.AddSupply, error) {
 	}
 
 	return sups, nil
+}
+
+func mapListServiceOrderParamsToDomain(c *gin.Context) *domain.ServiceOrderFilterParams {
+	var page, pageSize int64 = 1, 10
+
+	if p := c.Query("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = int64(v)
+		}
+	}
+
+	if ps := c.Query("pageSize"); ps != "" {
+		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
+			pageSize = int64(v)
+		}
+	}
+
+	return &domain.ServiceOrderFilterParams{
+		Page:       page,
+		PageSize:   pageSize,
+		Limit:      pageSize,
+		Offset:     (page - 1) * pageSize,
+		Status:     c.Query("status"),
+		CustomerID: c.Query("customerId"),
+		VehicleID:  c.Query("vehicleId"),
+	}
 }

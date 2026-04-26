@@ -26,6 +26,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 
 	v1.POST("/auth/register", middleware.Auth(role.ADMIN), c.UserHandler.Create)
 	v1.POST("/auth/login", c.UserHandler.Login)
+	v1.PATCH("/users/:id/role", middleware.Auth(role.ADMIN), c.UserHandler.UpdateRole)
 
 	v1.POST("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.Create)
 	v1.GET("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByID)
@@ -50,7 +51,9 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Delete)
 
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
-	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
+	v1.GET("/service-order", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.List)
+	v1.GET("/service-order/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetFullByID)
+	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
 	v1.PUT("/service-order/:id/finish", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.Finish)
 	v1.PUT("/service-order/:id/send", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.SendToCustomerApproval)
 	v1.PUT("/service-order/:id/accept", middleware.Auth(role.CustomerRoles...), c.ServiceOrderHandler.Accept)
