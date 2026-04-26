@@ -901,12 +901,8 @@ paths:
           description: Unauthorized (missing or invalid JWT)
         "403":
           description: Forbidden (insufficient permissions)
-        "422":
-          description: Business rule violation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+        "409":
+          description: Conflict (Doesnt meet the service order status requirements)
         "500":
           description: Internal Server Error
 
