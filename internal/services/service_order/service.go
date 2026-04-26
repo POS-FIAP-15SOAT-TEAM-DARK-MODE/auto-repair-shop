@@ -594,18 +594,15 @@ func (s *svc) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.
 	var res domain.FullServiceOrder
 	eg := errgroup.Group{}
 	eg.Go(func() (err error) {
-		os, err := s.repo.FindByID(ctx, serviceOrderID)
-		res.ServiceOrder = os
+		res.ServiceOrder, err = s.repo.FindByID(ctx, serviceOrderID)
 		return
 	})
 	eg.Go(func() (err error) {
-		wors, err := s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
-		res.Works = wors
+		res.Works, err = s.repo.ListWorksByServiceOrderID(ctx, serviceOrderID)
 		return
 	})
 	eg.Go(func() (err error) {
-		supplies, err := s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
-		res.Supplies = supplies
+		res.Supplies, err = s.repo.ListSuppliesByServiceOrderID(ctx, serviceOrderID)
 		return
 	})
 

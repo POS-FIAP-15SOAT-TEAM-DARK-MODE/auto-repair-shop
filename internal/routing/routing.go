@@ -50,9 +50,9 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Delete)
 
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
-	v1.GET("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.List)
-	v1.GET("/service-order/:id", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.GetFullByID)
-	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
+	v1.GET("/service-order", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.List)
+	v1.GET("/service-order/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetFullByID)
+	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
 	v1.PUT("/service-order/:id/send", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.SendToCustomerApproval)
 	v1.PUT("/service-order/:id/accept", middleware.Auth(role.CustomerRoles...), c.ServiceOrderHandler.Accept)
 	v1.PUT("/service-order/:id/reject", middleware.Auth(role.CustomerRoles...), c.ServiceOrderHandler.Reject)

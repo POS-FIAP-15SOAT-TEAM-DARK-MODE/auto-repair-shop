@@ -206,8 +206,8 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 		&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
 		&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
 		&so.Customer.User.Name, &so.Customer.User.Email,
-		&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Model,
-		&so.Vehicle.Brand, &so.Vehicle.Year,
+		&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+		&so.Vehicle.Model, &so.Vehicle.Year,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ServiceOrder{}, domain.ErrServiceOrderNotFound
@@ -269,23 +269,12 @@ func (r *repository) Search(ctx context.Context, params *domain.ServiceOrderFilt
 		var status string
 
 		if err = rows.Scan(
-			&so.ID,
-			&status,
-			&so.TotalAmount,
-			&so.Customer.ID,
-			&so.Customer.UserID,
-			&so.Customer.Type,
-			&so.Customer.CPF,
-			&so.Customer.CNPJ,
-			&so.Customer.CompanyName,
-			&so.Customer.Phone,
-			&so.Customer.User.Name,
-			&so.Customer.User.Email,
-			&so.Vehicle.ID,
-			&so.Vehicle.LicensePlate,
-			&so.Vehicle.Brand,
-			&so.Vehicle.Model,
-			&so.Vehicle.Year,
+			&so.ID, &status, &so.TotalAmount,
+			&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+			&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+			&so.Customer.User.Name, &so.Customer.User.Email,
+			&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+			&so.Vehicle.Model, &so.Vehicle.Year,
 		); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}

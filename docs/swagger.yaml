@@ -889,9 +889,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ServiceOrderDetails"
+                $ref: "#/components/schemas/ServiceOrderDetails"
         "400":
           description: Invalid request
           content:
