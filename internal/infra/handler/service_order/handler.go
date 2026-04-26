@@ -262,6 +262,28 @@ func (h *handler) SendToCustomerApproval(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *handler) SendToDiagnosis(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	if id == "" {
+		status, response := web.Error(domain.ErrInvalidServiceOrderId)
+		c.JSON(status, response)
+		return
+	}
+
+	if err := h.svc.SendToDiagnosis(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("send service order to diagnosis failed",
+			zap.String("operation", "send_service_order_to_diagnosis"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func (h *handler) Accept(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := strings.TrimSpace(c.Param(serviceOrderIDParam))

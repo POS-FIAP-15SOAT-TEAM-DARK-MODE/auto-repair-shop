@@ -340,6 +340,28 @@ func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string)
 	return s.reviewOSPricing(ctx, serviceOrderID)
 }
 
+func (s *svc) SendToDiagnosis(ctx context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_RECEIVED {
+			return domain.ErrServiceOrderNotInReceived
+		}
+
+		so.Status = domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS
+
+		return s.repo.Save(ctx, &so)
+	})
+}
+
 func (s *svc) reviewOSPricing(ctx context.Context, serviceOrderID string) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {

@@ -101,6 +101,7 @@ type (
 		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
 		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
 		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
+		SendToDiagnosis(ctx context.Context, serviceOrderID string) error
 		Accept(ctx context.Context, serviceOrderID, userID string) error
 		Reject(ctx context.Context, serviceOrderID, userID string) error
 		Deliver(ctx context.Context, serviceOrderID string) error
