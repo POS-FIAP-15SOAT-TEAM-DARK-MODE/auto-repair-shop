@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"time"
 
@@ -74,6 +75,29 @@ func (s *service) Create(ctx context.Context, user *domain.User) error {
 	}
 
 	return nil
+}
+
+func (s *service) UpdateRole(ctx context.Context, id string, role domain.Role) error {
+	if !isValidRole(role) {
+		return domain.ValidationError{Message: "invalid role"}
+	}
+
+	if err := s.uow.Execute(ctx, func(txCtx context.Context) error {
+		if err := s.repo.UpdateRole(txCtx, id, role); err != nil {
+			return fmt.Errorf("repository.UpdateRole failed: %w", err)
+		}
+		return nil
+	}); err != nil {
+		logger.Of(ctx).Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func isValidRole(role domain.Role) bool {
+	validRoles := []domain.Role{domain.ADMIN, domain.ATTENDANT, domain.MECHANIC, domain.CUSTOMER}
+	return slices.Contains(validRoles, role)
 }
 
 func (s *service) createRepositoryStep(user *domain.User) func(context.Context) error {

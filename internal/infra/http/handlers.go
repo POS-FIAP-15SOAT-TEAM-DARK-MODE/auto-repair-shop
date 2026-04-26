@@ -20,6 +20,7 @@ type (
 	UserHandler interface {
 		Create(*gin.Context)
 		Login(*gin.Context)
+		UpdateRole(*gin.Context)
 	}
 
 	CustomerHandler interface {

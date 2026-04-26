@@ -103,6 +103,24 @@ func (u *repo) AssignRole(ctx context.Context, userID string, role domain.Role) 
 	return nil
 }
 
+func (u *repo) UpdateRole(ctx context.Context, userID string, role domain.Role) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteRolesQuery, userID); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	id := uuid.New().String()
+	if _, err = tx.ExecContext(ctx, updateRoleQuery, id, userID, string(role)); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
 func (u *repo) Delete(ctx context.Context, id string) error {
 	tx, err := postgres.GetTransaction(ctx)
 	if err != nil {

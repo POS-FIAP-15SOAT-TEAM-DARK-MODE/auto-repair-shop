@@ -331,6 +331,54 @@ func (_c *UserRepository_Update_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
+// UpdateRole provides a mock function with given fields: ctx, userID, role
+func (_m *UserRepository) UpdateRole(ctx context.Context, userID string, role domain.Role) error {
+	ret := _m.Called(ctx, userID, role)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateRole")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, domain.Role) error); ok {
+		r0 = rf(ctx, userID, role)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UserRepository_UpdateRole_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateRole'
+type UserRepository_UpdateRole_Call struct {
+	*mock.Call
+}
+
+// UpdateRole is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID string
+//   - role domain.Role
+func (_e *UserRepository_Expecter) UpdateRole(ctx interface{}, userID interface{}, role interface{}) *UserRepository_UpdateRole_Call {
+	return &UserRepository_UpdateRole_Call{Call: _e.mock.On("UpdateRole", ctx, userID, role)}
+}
+
+func (_c *UserRepository_UpdateRole_Call) Run(run func(ctx context.Context, userID string, role domain.Role)) *UserRepository_UpdateRole_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(domain.Role))
+	})
+	return _c
+}
+
+func (_c *UserRepository_UpdateRole_Call) Return(_a0 error) *UserRepository_UpdateRole_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *UserRepository_UpdateRole_Call) RunAndReturn(run func(context.Context, string, domain.Role) error) *UserRepository_UpdateRole_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewUserRepository creates a new instance of UserRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewUserRepository(t interface {
