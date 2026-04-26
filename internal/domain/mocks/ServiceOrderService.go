@@ -166,6 +166,65 @@ func (_c *ServiceOrderService_AddWorks_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
+// AverageExecutionTime provides a mock function with given fields: ctx, workIDs
+func (_m *ServiceOrderService) AverageExecutionTime(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	ret := _m.Called(ctx, workIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AverageExecutionTime")
+	}
+
+	var r0 []domain.WorkExecutionTime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]domain.WorkExecutionTime, error)); ok {
+		return rf(ctx, workIDs)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []domain.WorkExecutionTime); ok {
+		r0 = rf(ctx, workIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.WorkExecutionTime)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, workIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderService_AverageExecutionTime_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AverageExecutionTime'
+type ServiceOrderService_AverageExecutionTime_Call struct {
+	*mock.Call
+}
+
+// AverageExecutionTime is a helper method to define mock.On call
+//   - ctx context.Context
+//   - workIDs []string
+func (_e *ServiceOrderService_Expecter) AverageExecutionTime(ctx interface{}, workIDs interface{}) *ServiceOrderService_AverageExecutionTime_Call {
+	return &ServiceOrderService_AverageExecutionTime_Call{Call: _e.mock.On("AverageExecutionTime", ctx, workIDs)}
+}
+
+func (_c *ServiceOrderService_AverageExecutionTime_Call) Run(run func(ctx context.Context, workIDs []string)) *ServiceOrderService_AverageExecutionTime_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_AverageExecutionTime_Call) Return(_a0 []domain.WorkExecutionTime, _a1 error) *ServiceOrderService_AverageExecutionTime_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderService_AverageExecutionTime_Call) RunAndReturn(run func(context.Context, []string) ([]domain.WorkExecutionTime, error)) *ServiceOrderService_AverageExecutionTime_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Cancel provides a mock function with given fields: ctx, serviceOrderID
 func (_m *ServiceOrderService) Cancel(ctx context.Context, serviceOrderID string) error {
 	ret := _m.Called(ctx, serviceOrderID)

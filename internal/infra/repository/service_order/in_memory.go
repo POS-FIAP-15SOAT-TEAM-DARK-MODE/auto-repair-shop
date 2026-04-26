@@ -109,12 +109,11 @@ func (r *memory_repo) RemoveSupplyLink(_ context.Context, serviceOrderID string,
 	return qty, nil
 }
 
-func (r *memory_repo) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
+func (r *memory_repo) FindByID(_ context.Context, id string) (domain.ServiceOrder, error) {
 	so, ok := r.data[id]
 	if !ok {
 		return so, domain.ErrServiceOrderNotFound
 	}
-
 	return so, nil
 }
 
@@ -166,4 +165,8 @@ func (r *memory_repo) Search(_ context.Context, params *domain.ServiceOrderFilte
 	}
 
 	return items, nil
+}
+
+func (r *memory_repo) AverageExecutionTimeInHours(_ context.Context, _ []string) ([]domain.WorkExecutionTime, error) {
+	return []domain.WorkExecutionTime{}, nil
 }

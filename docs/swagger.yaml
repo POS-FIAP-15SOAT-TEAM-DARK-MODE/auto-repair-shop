@@ -1434,6 +1434,53 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/reports/average-execution-time:
+    get:
+      summary: Get average work execution time
+      description: Returns the average execution time in hours for individual works (billable services), calculated as the mean time between each work's IN_PROGRESS and COMPLETED status transitions across all service orders.
+      tags:
+        - Reports
+      security:
+        - SessionToken: []
+      parameters:
+        - in: query
+          name: work_id
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Filter by one or more work IDs. Repeat the parameter for multiple values (?work_id=id1&work_id=id2). Omit to return all works.
+          example: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      responses:
+        "200":
+          description: List of works with their average execution time. Empty array when no works have been completed yet.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkExecutionTimeResponse"
+              example:
+                - workId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                  workName: Troca de óleo
+                  averageExecutionTimeHours: 1.5
+                - workId: yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy
+                  workName: Revisão de freios
+                  averageExecutionTimeHours: 3.2
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   securitySchemes:
     SessionToken:
@@ -1536,6 +1583,21 @@ components:
           items:
             type: string
           description: List of validation/business error messages
+
+    WorkExecutionTimeResponse:
+      type: object
+      properties:
+        workId:
+          type: string
+          format: uuid
+          description: Work identifier
+        workName:
+          type: string
+          description: Name of the billable service
+        averageExecutionTimeHours:
+          type: number
+          format: double
+          description: Average time in hours for this work to go from IN_PROGRESS to COMPLETED across all service orders
 
     CreateCustomerRequest:
       type: object

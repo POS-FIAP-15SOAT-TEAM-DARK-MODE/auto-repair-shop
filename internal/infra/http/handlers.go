@@ -69,6 +69,7 @@ type (
 		Deliver(*gin.Context)
 		Cancel(*gin.Context)
 		GetFullByID(*gin.Context)
+		GetAverageExecutionTime(*gin.Context)
 	}
 
 	ServiceOrderHistoryHandler interface {

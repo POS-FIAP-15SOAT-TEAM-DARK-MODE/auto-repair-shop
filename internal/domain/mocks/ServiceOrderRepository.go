@@ -122,6 +122,65 @@ func (_c *ServiceOrderRepository_AddWorkLink_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// AverageExecutionTimeInHours provides a mock function with given fields: ctx, workIDs
+func (_m *ServiceOrderRepository) AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	ret := _m.Called(ctx, workIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AverageExecutionTimeInHours")
+	}
+
+	var r0 []domain.WorkExecutionTime
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]domain.WorkExecutionTime, error)); ok {
+		return rf(ctx, workIDs)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []domain.WorkExecutionTime); ok {
+		r0 = rf(ctx, workIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.WorkExecutionTime)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, workIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderRepository_AverageExecutionTimeInHours_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AverageExecutionTimeInHours'
+type ServiceOrderRepository_AverageExecutionTimeInHours_Call struct {
+	*mock.Call
+}
+
+// AverageExecutionTimeInHours is a helper method to define mock.On call
+//   - ctx context.Context
+//   - workIDs []string
+func (_e *ServiceOrderRepository_Expecter) AverageExecutionTimeInHours(ctx interface{}, workIDs interface{}) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+	return &ServiceOrderRepository_AverageExecutionTimeInHours_Call{Call: _e.mock.On("AverageExecutionTimeInHours", ctx, workIDs)}
+}
+
+func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) Run(run func(ctx context.Context, workIDs []string)) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) Return(_a0 []domain.WorkExecutionTime, _a1 error) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) RunAndReturn(run func(context.Context, []string) ([]domain.WorkExecutionTime, error)) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Count provides a mock function with given fields: ctx, params
 func (_m *ServiceOrderRepository) Count(ctx context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
 	ret := _m.Called(ctx, params)
