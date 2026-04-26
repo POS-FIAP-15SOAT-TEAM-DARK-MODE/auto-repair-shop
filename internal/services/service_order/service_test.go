@@ -262,6 +262,66 @@ func TestRemoveSupply_ServiceOrderNotNew(t *testing.T) {
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotInDiagnosis)
 }
 
+// --- Finish tests ---
+
+func TestFinish_EmptyServiceOrderID(t *testing.T) {
+	s := newBasicService(t)
+	err := s.Finish(context.Background(), "   ")
+	assert.ErrorIs(t, err, domain.ErrInvalidServiceOrderId)
+}
+
+func TestFinish_RepositoryFindFailure(t *testing.T) {
+	executor := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{}, domain.ErrServiceOrderNotFound)
+
+	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewCustomerService(t), mocks.NewVehicleService(t))
+	err := s.Finish(context.Background(), "so-1")
+	assert.ErrorIs(t, err, domain.ErrServiceOrderNotFound)
+}
+
+func TestFinish_ServiceOrderNotInProgress(t *testing.T) {
+	executor := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{ID: "so-1", Status: domain.SERVICE_ORDER_STATUS_NEW}, nil)
+
+	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewCustomerService(t), mocks.NewVehicleService(t))
+	err := s.Finish(context.Background(), "so-1")
+	assert.ErrorIs(t, err, domain.ErrServiceOrderNotInProgress)
+}
+
+func TestFinish_Success(t *testing.T) {
+	executor := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{ID: "so-1", Status: domain.SERVICE_ORDER_STATUS_IN_PROGRESS}, nil)
+	repo.EXPECT().Save(mock.Anything, mock.MatchedBy(func(so *domain.ServiceOrder) bool {
+		return so.ID == "so-1" && so.Status == domain.SERVICE_ORDER_STATUS_COMPLETED
+	})).Return(nil)
+
+	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewCustomerService(t), mocks.NewVehicleService(t))
+	err := s.Finish(context.Background(), "so-1")
+	assert.NoError(t, err)
+}
+
+func TestFinish_SaveFailure(t *testing.T) {
+	executor := uowmocks.NewExecutor(t)
+	repo := mocks.NewServiceOrderRepository(t)
+
+	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
+	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{ID: "so-1", Status: domain.SERVICE_ORDER_STATUS_IN_PROGRESS}, nil)
+	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(assert.AnError)
+
+	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewCustomerService(t), mocks.NewVehicleService(t))
+	err := s.Finish(context.Background(), "so-1")
+	assert.ErrorIs(t, err, assert.AnError)
+}
+
 // --- SendToDiagnosis tests ---
 
 func TestSendToDiagnosis_EmptyServiceOrderID(t *testing.T) {

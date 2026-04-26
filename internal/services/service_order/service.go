@@ -413,6 +413,31 @@ func (s *svc) SendToCustomerApproval(ctx context.Context, serviceOrderID string)
 	return s.reviewOSPricing(ctx, serviceOrderID)
 }
 
+func (s *svc) Finish(ctx context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_IN_PROGRESS {
+			return domain.ErrServiceOrderNotInProgress
+		}
+
+		previousStatus := so.Status
+		so.Status = domain.SERVICE_ORDER_STATUS_COMPLETED
+
+		s.logStatusTransition(ctx, "finish_service_order", so.ID, previousStatus, so.Status)
+
+		return s.repo.Save(ctx, &so)
+	})
+}
+
 func (s *svc) SendToDiagnosis(ctx context.Context, serviceOrderID string) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
@@ -429,7 +454,10 @@ func (s *svc) SendToDiagnosis(ctx context.Context, serviceOrderID string) error 
 			return domain.ErrServiceOrderNotInReceived
 		}
 
+		previousStatus := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS
+
+		s.logStatusTransition(ctx, "send_service_order_to_diagnosis", so.ID, previousStatus, so.Status)
 
 		return s.repo.Save(ctx, &so)
 	})
