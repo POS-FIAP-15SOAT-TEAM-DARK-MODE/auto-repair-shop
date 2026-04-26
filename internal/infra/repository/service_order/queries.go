@@ -24,12 +24,34 @@ const (
 		so.id,
 		so.status,
 		so.total_amount,
-		c.id as cId,
-		v.id as vId
+		c.id as cId, c.user_id, c.type,
+	    COALESCE(c.cpf, ''), COALESCE(c.cnpj, ''), COALESCE(c.company_name, ''), c.phone,
+	    u.name, u.email,
+		v.id as vId, v.license_plate, v.brand,
+		v.model, v.year
 	FROM service_order so
 	JOIN customer c ON c.id = so.customer_id
+	JOIN "user" u ON u.id = c.user_id
 	JOIN vehicle v ON v.id = so.vehicle_id
 	WHERE so.id = $1
+	`
+
+	countServiceOrderQuery = `SELECT COUNT(*) FROM service_order so`
+
+	searchServiceOrderQuery = `
+	SELECT
+		so.id,
+		so.status,
+		so.total_amount,
+		c.id as cId, c.user_id, c.type,
+		COALESCE(c.cpf, ''), COALESCE(c.cnpj, ''), COALESCE(c.company_name, ''), c.phone,
+		u.name, u.email,
+		v.id as vId, v.license_plate, v.brand,
+		v.model, v.year
+	FROM service_order so
+	JOIN customer c ON c.id = so.customer_id
+	JOIN "user" u ON u.id = c.user_id
+	JOIN vehicle v ON v.id = so.vehicle_id
 	`
 
 	listWorksByServiceOrderQuery = `
@@ -71,16 +93,14 @@ WHERE service_order_id = $1 AND supply_id = $2
 RETURNING quantity
 `
 
-	averageExecutionTimeQuery = `
-SELECT COALESCE(
-    AVG(EXTRACT(EPOCH FROM (h_end.created_at - h_start.created_at)) / 3600),
-    0
-) AS avg_hours
+	averageExecutionTimeBaseQuery = `
+SELECT
+    w.id,
+    w.name,
+    COALESCE(AVG(EXTRACT(EPOCH FROM (h_end.created_at - h_start.created_at)) / 3600), 0) AS avg_hours
 FROM work_service_order_status_history h_start
 JOIN work_service_order_status_history h_end
     ON h_start.work_id = h_end.work_id
     AND h_start.service_order_id = h_end.service_order_id
-WHERE h_start.new_status = 'IN_PROGRESS'
-  AND h_end.new_status   = 'COMPLETED'
-`
+JOIN work w ON w.id = h_start.work_id`
 )

@@ -122,27 +122,29 @@ func (_c *ServiceOrderRepository_AddWorkLink_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// AverageExecutionTimeInHours provides a mock function with given fields: ctx
-func (_m *ServiceOrderRepository) AverageExecutionTimeInHours(ctx context.Context) (float64, error) {
-	ret := _m.Called(ctx)
+// AverageExecutionTimeInHours provides a mock function with given fields: ctx, workIDs
+func (_m *ServiceOrderRepository) AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	ret := _m.Called(ctx, workIDs)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AverageExecutionTimeInHours")
 	}
 
-	var r0 float64
+	var r0 []domain.WorkExecutionTime
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (float64, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]domain.WorkExecutionTime, error)); ok {
+		return rf(ctx, workIDs)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) float64); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []domain.WorkExecutionTime); ok {
+		r0 = rf(ctx, workIDs)
 	} else {
-		r0 = ret.Get(0).(float64)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.WorkExecutionTime)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, workIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -157,23 +159,81 @@ type ServiceOrderRepository_AverageExecutionTimeInHours_Call struct {
 
 // AverageExecutionTimeInHours is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *ServiceOrderRepository_Expecter) AverageExecutionTimeInHours(ctx interface{}) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
-	return &ServiceOrderRepository_AverageExecutionTimeInHours_Call{Call: _e.mock.On("AverageExecutionTimeInHours", ctx)}
+//   - workIDs []string
+func (_e *ServiceOrderRepository_Expecter) AverageExecutionTimeInHours(ctx interface{}, workIDs interface{}) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+	return &ServiceOrderRepository_AverageExecutionTimeInHours_Call{Call: _e.mock.On("AverageExecutionTimeInHours", ctx, workIDs)}
 }
 
-func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) Run(run func(ctx context.Context)) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) Run(run func(ctx context.Context, workIDs []string)) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].([]string))
 	})
 	return _c
 }
 
-func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) Return(_a0 float64, _a1 error) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) Return(_a0 []domain.WorkExecutionTime, _a1 error) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) RunAndReturn(run func(context.Context) (float64, error)) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+func (_c *ServiceOrderRepository_AverageExecutionTimeInHours_Call) RunAndReturn(run func(context.Context, []string) ([]domain.WorkExecutionTime, error)) *ServiceOrderRepository_AverageExecutionTimeInHours_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Count provides a mock function with given fields: ctx, params
+func (_m *ServiceOrderRepository) Count(ctx context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Count")
+	}
+
+	var r0 int64
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) (int64, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) int64); ok {
+		r0 = rf(ctx, params)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ServiceOrderFilterParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderRepository_Count_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Count'
+type ServiceOrderRepository_Count_Call struct {
+	*mock.Call
+}
+
+// Count is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.ServiceOrderFilterParams
+func (_e *ServiceOrderRepository_Expecter) Count(ctx interface{}, params interface{}) *ServiceOrderRepository_Count_Call {
+	return &ServiceOrderRepository_Count_Call{Call: _e.mock.On("Count", ctx, params)}
+}
+
+func (_c *ServiceOrderRepository_Count_Call) Run(run func(ctx context.Context, params *domain.ServiceOrderFilterParams)) *ServiceOrderRepository_Count_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.ServiceOrderFilterParams))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Count_Call) Return(_a0 int64, _a1 error) *ServiceOrderRepository_Count_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Count_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) (int64, error)) *ServiceOrderRepository_Count_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -566,6 +626,65 @@ func (_c *ServiceOrderRepository_Save_Call) Return(_a0 error) *ServiceOrderRepos
 }
 
 func (_c *ServiceOrderRepository_Save_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrder) error) *ServiceOrderRepository_Save_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Search provides a mock function with given fields: ctx, params
+func (_m *ServiceOrderRepository) Search(ctx context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Search")
+	}
+
+	var r0 []domain.ServiceOrder
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) []domain.ServiceOrder); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.ServiceOrder)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ServiceOrderFilterParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderRepository_Search_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Search'
+type ServiceOrderRepository_Search_Call struct {
+	*mock.Call
+}
+
+// Search is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.ServiceOrderFilterParams
+func (_e *ServiceOrderRepository_Expecter) Search(ctx interface{}, params interface{}) *ServiceOrderRepository_Search_Call {
+	return &ServiceOrderRepository_Search_Call{Call: _e.mock.On("Search", ctx, params)}
+}
+
+func (_c *ServiceOrderRepository_Search_Call) Run(run func(ctx context.Context, params *domain.ServiceOrderFilterParams)) *ServiceOrderRepository_Search_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.ServiceOrderFilterParams))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Search_Call) Return(_a0 []domain.ServiceOrder, _a1 error) *ServiceOrderRepository_Search_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderRepository_Search_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error)) *ServiceOrderRepository_Search_Call {
 	_c.Call.Return(run)
 	return _c
 }

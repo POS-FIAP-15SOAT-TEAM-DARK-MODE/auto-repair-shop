@@ -166,27 +166,29 @@ func (_c *ServiceOrderService_AddWorks_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
-// AverageExecutionTime provides a mock function with given fields: ctx
-func (_m *ServiceOrderService) AverageExecutionTime(ctx context.Context) (float64, error) {
-	ret := _m.Called(ctx)
+// AverageExecutionTime provides a mock function with given fields: ctx, workIDs
+func (_m *ServiceOrderService) AverageExecutionTime(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	ret := _m.Called(ctx, workIDs)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AverageExecutionTime")
 	}
 
-	var r0 float64
+	var r0 []domain.WorkExecutionTime
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (float64, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]domain.WorkExecutionTime, error)); ok {
+		return rf(ctx, workIDs)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) float64); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []domain.WorkExecutionTime); ok {
+		r0 = rf(ctx, workIDs)
 	} else {
-		r0 = ret.Get(0).(float64)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.WorkExecutionTime)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, workIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -201,23 +203,24 @@ type ServiceOrderService_AverageExecutionTime_Call struct {
 
 // AverageExecutionTime is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *ServiceOrderService_Expecter) AverageExecutionTime(ctx interface{}) *ServiceOrderService_AverageExecutionTime_Call {
-	return &ServiceOrderService_AverageExecutionTime_Call{Call: _e.mock.On("AverageExecutionTime", ctx)}
+//   - workIDs []string
+func (_e *ServiceOrderService_Expecter) AverageExecutionTime(ctx interface{}, workIDs interface{}) *ServiceOrderService_AverageExecutionTime_Call {
+	return &ServiceOrderService_AverageExecutionTime_Call{Call: _e.mock.On("AverageExecutionTime", ctx, workIDs)}
 }
 
-func (_c *ServiceOrderService_AverageExecutionTime_Call) Run(run func(ctx context.Context)) *ServiceOrderService_AverageExecutionTime_Call {
+func (_c *ServiceOrderService_AverageExecutionTime_Call) Run(run func(ctx context.Context, workIDs []string)) *ServiceOrderService_AverageExecutionTime_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].([]string))
 	})
 	return _c
 }
 
-func (_c *ServiceOrderService_AverageExecutionTime_Call) Return(_a0 float64, _a1 error) *ServiceOrderService_AverageExecutionTime_Call {
+func (_c *ServiceOrderService_AverageExecutionTime_Call) Return(_a0 []domain.WorkExecutionTime, _a1 error) *ServiceOrderService_AverageExecutionTime_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *ServiceOrderService_AverageExecutionTime_Call) RunAndReturn(run func(context.Context) (float64, error)) *ServiceOrderService_AverageExecutionTime_Call {
+func (_c *ServiceOrderService_AverageExecutionTime_Call) RunAndReturn(run func(context.Context, []string) ([]domain.WorkExecutionTime, error)) *ServiceOrderService_AverageExecutionTime_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -370,6 +373,122 @@ func (_c *ServiceOrderService_Deliver_Call) Return(_a0 error) *ServiceOrderServi
 }
 
 func (_c *ServiceOrderService_Deliver_Call) RunAndReturn(run func(context.Context, string) error) *ServiceOrderService_Deliver_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetFullOSByID provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderService) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.FullServiceOrder, error) {
+	ret := _m.Called(ctx, serviceOrderID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFullOSByID")
+	}
+
+	var r0 domain.FullServiceOrder
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (domain.FullServiceOrder, error)); ok {
+		return rf(ctx, serviceOrderID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) domain.FullServiceOrder); ok {
+		r0 = rf(ctx, serviceOrderID)
+	} else {
+		r0 = ret.Get(0).(domain.FullServiceOrder)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, serviceOrderID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderService_GetFullOSByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetFullOSByID'
+type ServiceOrderService_GetFullOSByID_Call struct {
+	*mock.Call
+}
+
+// GetFullOSByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+func (_e *ServiceOrderService_Expecter) GetFullOSByID(ctx interface{}, serviceOrderID interface{}) *ServiceOrderService_GetFullOSByID_Call {
+	return &ServiceOrderService_GetFullOSByID_Call{Call: _e.mock.On("GetFullOSByID", ctx, serviceOrderID)}
+}
+
+func (_c *ServiceOrderService_GetFullOSByID_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderService_GetFullOSByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_GetFullOSByID_Call) Return(_a0 domain.FullServiceOrder, _a1 error) *ServiceOrderService_GetFullOSByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderService_GetFullOSByID_Call) RunAndReturn(run func(context.Context, string) (domain.FullServiceOrder, error)) *ServiceOrderService_GetFullOSByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// List provides a mock function with given fields: ctx, params
+func (_m *ServiceOrderService) List(ctx context.Context, params *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error) {
+	ret := _m.Called(ctx, params)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
+	var r0 *domain.PaginatorResponse[domain.ServiceOrder]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error)); ok {
+		return rf(ctx, params)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.ServiceOrderFilterParams) *domain.PaginatorResponse[domain.ServiceOrder]); ok {
+		r0 = rf(ctx, params)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.PaginatorResponse[domain.ServiceOrder])
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.ServiceOrderFilterParams) error); ok {
+		r1 = rf(ctx, params)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ServiceOrderService_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type ServiceOrderService_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - ctx context.Context
+//   - params *domain.ServiceOrderFilterParams
+func (_e *ServiceOrderService_Expecter) List(ctx interface{}, params interface{}) *ServiceOrderService_List_Call {
+	return &ServiceOrderService_List_Call{Call: _e.mock.On("List", ctx, params)}
+}
+
+func (_c *ServiceOrderService_List_Call) Run(run func(ctx context.Context, params *domain.ServiceOrderFilterParams)) *ServiceOrderService_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*domain.ServiceOrderFilterParams))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_List_Call) Return(_a0 *domain.PaginatorResponse[domain.ServiceOrder], _a1 error) *ServiceOrderService_List_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *ServiceOrderService_List_Call) RunAndReturn(run func(context.Context, *domain.ServiceOrderFilterParams) (*domain.PaginatorResponse[domain.ServiceOrder], error)) *ServiceOrderService_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

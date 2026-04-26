@@ -3,6 +3,8 @@ package db
 import (
 	"fmt"
 	"strings"
+
+	"github.com/lib/pq"
 )
 
 type queryBuilder struct {
@@ -10,6 +12,7 @@ type queryBuilder struct {
 	counter        int64
 	conditions     []string
 	args           []any
+	groupByFields  []string
 	limit          int64
 	offset         int64
 	orderField     string
@@ -49,6 +52,24 @@ func (q *queryBuilder) Add(condition string, value any) *queryBuilder {
 	return q
 }
 
+// AddAny adds "condition = ANY($N)" to the WHERE clause using a PostgreSQL array parameter.
+// Skipped when values is empty — safe to call unconditionally for optional filters.
+func (q *queryBuilder) AddAny(condition string, values []string) *queryBuilder {
+	if len(values) == 0 {
+		return q
+	}
+	q.counter++
+	q.conditions = append(q.conditions, fmt.Sprintf("%s = ANY($%d)", condition, q.counter))
+	q.args = append(q.args, pq.Array(values))
+	return q
+}
+
+// GroupBy adds a GROUP BY clause with the given fields, emitted after WHERE and before ORDER BY.
+func (q *queryBuilder) GroupBy(fields ...string) *queryBuilder {
+	q.groupByFields = append(q.groupByFields, fields...)
+	return q
+}
+
 func (q *queryBuilder) AddPagination(limit, offset int64) *queryBuilder {
 	q.limit = limit
 	q.offset = offset
@@ -73,6 +94,11 @@ func (q *queryBuilder) Build() (string, []any) {
 			}
 			sb.WriteString(cond)
 		}
+	}
+
+	if len(q.groupByFields) > 0 {
+		sb.WriteString(" GROUP BY ")
+		sb.WriteString(strings.Join(q.groupByFields, ", "))
 	}
 
 	if q.orderField != "" {

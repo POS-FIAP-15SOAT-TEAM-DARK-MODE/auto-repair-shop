@@ -283,32 +283,49 @@ func expectReviewOSPricing(executor *uowmocks.Executor, repo *mocks.ServiceOrder
 
 // --- AverageExecutionTime tests ---
 
-func TestAverageExecutionTime_ReturnsValueFromRepo(t *testing.T) {
+func TestAverageExecutionTime_ReturnsAllWorks(t *testing.T) {
+	expected := []domain.WorkExecutionTime{
+		{WorkID: "w-1", WorkName: "Troca de óleo", AverageHours: 1.5},
+		{WorkID: "w-2", WorkName: "Revisão de freios", AverageHours: 3.0},
+	}
 	repo := mocks.NewServiceOrderRepository(t)
-	repo.EXPECT().AverageExecutionTimeInHours(mock.Anything).Return(4.5, nil)
+	repo.EXPECT().AverageExecutionTimeInHours(mock.Anything, []string{}).Return(expected, nil)
 
 	s := newBasicServiceWith(t, repo)
-	avg, err := s.AverageExecutionTime(context.Background())
+	result, err := s.AverageExecutionTime(context.Background(), []string{})
 	assert.NoError(t, err)
-	assert.Equal(t, 4.5, avg)
+	assert.Equal(t, expected, result)
 }
 
-func TestAverageExecutionTime_ReturnsZeroWhenNoCompletedOrders(t *testing.T) {
+func TestAverageExecutionTime_FilterByWorkIDs(t *testing.T) {
+	expected := []domain.WorkExecutionTime{
+		{WorkID: "w-1", WorkName: "Troca de óleo", AverageHours: 1.5},
+	}
 	repo := mocks.NewServiceOrderRepository(t)
-	repo.EXPECT().AverageExecutionTimeInHours(mock.Anything).Return(0.0, nil)
+	repo.EXPECT().AverageExecutionTimeInHours(mock.Anything, []string{"w-1"}).Return(expected, nil)
 
 	s := newBasicServiceWith(t, repo)
-	avg, err := s.AverageExecutionTime(context.Background())
+	result, err := s.AverageExecutionTime(context.Background(), []string{"w-1"})
 	assert.NoError(t, err)
-	assert.Equal(t, 0.0, avg)
+	assert.Equal(t, expected, result)
+}
+
+func TestAverageExecutionTime_ReturnsEmptyWhenNoCompletedWorks(t *testing.T) {
+	repo := mocks.NewServiceOrderRepository(t)
+	repo.EXPECT().AverageExecutionTimeInHours(mock.Anything, []string{}).Return([]domain.WorkExecutionTime{}, nil)
+
+	s := newBasicServiceWith(t, repo)
+	result, err := s.AverageExecutionTime(context.Background(), []string{})
+	assert.NoError(t, err)
+	assert.Empty(t, result)
 }
 
 func TestAverageExecutionTime_PropagatesRepositoryError(t *testing.T) {
 	repo := mocks.NewServiceOrderRepository(t)
-	repo.EXPECT().AverageExecutionTimeInHours(mock.Anything).Return(0.0, domain.ErrInfraConflict)
+	repo.EXPECT().AverageExecutionTimeInHours(mock.Anything, []string{}).Return(nil, domain.ErrInfraConflict)
 
 	s := newBasicServiceWith(t, repo)
-	_, err := s.AverageExecutionTime(context.Background())
+	_, err := s.AverageExecutionTime(context.Background(), []string{})
 	assert.ErrorIs(t, err, domain.ErrInfraConflict)
 }
 

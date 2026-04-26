@@ -53,6 +53,22 @@ type (
 		ID     string
 		Amount int
 	}
+
+	FullServiceOrder struct {
+		ServiceOrder
+		Works    []Work
+		Supplies []Supply
+	}
+
+	ServiceOrderFilterParams struct {
+		Page       int64
+		PageSize   int64
+		Limit      int64
+		Offset     int64
+		Status     string
+		CustomerID string
+		VehicleID  string
+	}
 )
 
 func (so *ServiceOrder) ResetPricing() {
@@ -94,6 +110,7 @@ func (so *ServiceOrder) SumSupplyValue(supply Supply) {
 type (
 	ServiceOrderService interface {
 		Create(ctx context.Context, customerId, vehicleId string) (ServiceOrder, error)
+		List(ctx context.Context, params *ServiceOrderFilterParams) (*PaginatorResponse[ServiceOrder], error)
 		ListWorks(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error
 		RemoveWork(ctx context.Context, serviceOrderID, workID string) error
@@ -105,22 +122,31 @@ type (
 		Reject(ctx context.Context, serviceOrderID, userID string) error
 		Deliver(ctx context.Context, serviceOrderID string) error
 		Cancel(ctx context.Context, serviceOrderID string) error
-		AverageExecutionTime(ctx context.Context) (float64, error)
+		GetFullOSByID(ctx context.Context, serviceOrderID string) (FullServiceOrder, error)
+		AverageExecutionTime(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
 	}
 
 	ServiceOrderRepository interface {
 		Save(context.Context, *ServiceOrder) error
 		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
 		FindByID(ctx context.Context, id string) (ServiceOrder, error)
+		Search(ctx context.Context, params *ServiceOrderFilterParams) ([]ServiceOrder, error)
+		Count(ctx context.Context, params *ServiceOrderFilterParams) (int64, error)
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
 		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Supply, error)
 		AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error
 		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) (int, error)
-		AverageExecutionTimeInHours(ctx context.Context) (float64, error)
+		AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
 	}
 )
+
+type WorkExecutionTime struct {
+	WorkID       string
+	WorkName     string
+	AverageHours float64
+}
 
 func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
 	return &ServiceOrder{
