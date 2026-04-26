@@ -63,6 +63,7 @@ type (
 		SendToCustomerApproval(*gin.Context)
 		Accept(*gin.Context)
 		Reject(*gin.Context)
+		Deliver(*gin.Context)
 		Cancel(*gin.Context)
 	}
 
