@@ -1014,6 +1014,33 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/start-diagnosis:
+    put:
+      summary: Send service order to the in diagnosis status
+      description: Send an existent service order from received to in diagnosis
+      tags:
+        - ServiceOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Id of service order to send to diagnosis
+      responses:
+        "204":
+          description: Service Order successfully sent to in diagnosis status
+        "400":
+          description: Invalid Body Content
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "409":
+          description: Conflict (Doesnt meet the service order status requirements)
+        "500":
+          description: Internal Server Error
+
   /v1/service-order/{id}/send:
       put:
         summary: Send service order to consumer approval

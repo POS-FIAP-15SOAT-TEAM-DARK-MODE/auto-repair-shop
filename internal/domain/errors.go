@@ -51,6 +51,7 @@ var (
 	ErrInvalidServiceOrderId           = errors.New("invalid service order id")
 	ErrServiceOrderNotFound            = errors.New("service order not found")
 	ErrServiceOrderNotNew              = errors.New("service order isn't at NEW state")
+	ErrServiceOrderNotInReceived       = errors.New("service order isn't in RECEIVED state")
 	ErrServiceOrderNotInDiagnosis      = errors.New("service order isn't at IN_DIAGNOSIS state")
 	ErrServiceOrderNotAwaitingApproval = errors.New("service order isn't at AWAITING_APPROVAL state")
 	ErrServiceOrderNotCompleted        = errors.New("service order isn't at COMPLETED state")
