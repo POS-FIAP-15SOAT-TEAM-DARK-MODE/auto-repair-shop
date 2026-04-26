@@ -36,6 +36,24 @@ const (
 	WHERE so.id = $1
 	`
 
+	countServiceOrderQuery = `SELECT COUNT(*) FROM service_order so`
+
+	searchServiceOrderQuery = `
+	SELECT
+		so.id,
+		so.status,
+		so.total_amount,
+		c.id as cId, c.user_id, c.type,
+		COALESCE(c.cpf, ''), COALESCE(c.cnpj, ''), COALESCE(c.company_name, ''), c.phone,
+		u.name, u.email,
+		v.id as vId, v.license_plate, v.brand,
+		v.model, v.year
+	FROM service_order so
+	JOIN customer c ON c.id = so.customer_id
+	JOIN "user" u ON u.id = c.user_id
+	JOIN vehicle v ON v.id = so.vehicle_id
+	`
+
 	listWorksByServiceOrderQuery = `
 SELECT w.id, w.name, w.description, sow.unit_price, w.status
 FROM service_order_work sow

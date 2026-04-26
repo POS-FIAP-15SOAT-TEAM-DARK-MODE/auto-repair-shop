@@ -170,3 +170,46 @@ func mapServiceOrderDetailResponse(order domain.FullServiceOrder) serviceOrderDe
 		Supplies:   mapSupplies(order.Supplies),
 	}
 }
+
+type serviceOrderListItemResponse struct {
+	ID         string             `json:"id"`
+	Status     string             `json:"status"`
+	TotalValue float64            `json:"totalValue"`
+	Customer   customerResponse   `json:"customer"`
+	Vehicle    vehicleResponseDTO `json:"vehicle"`
+}
+
+func mapServiceOrderListItemResponse(so domain.ServiceOrder) serviceOrderListItemResponse {
+	var customer customerResponse
+	var vehicle vehicleResponseDTO
+
+	if so.Customer != nil {
+		customer = mapCustomerResponse(*so.Customer)
+	}
+	if so.Vehicle != nil {
+		vehicle = mapVehicleResponse(*so.Vehicle)
+	}
+
+	return serviceOrderListItemResponse{
+		ID:         so.ID,
+		Status:     so.Status.String(),
+		TotalValue: so.TotalAmount.InexactFloat64(),
+		Customer:   customer,
+		Vehicle:    vehicle,
+	}
+}
+
+func mapServiceOrderListResponse(page *domain.PaginatorResponse[domain.ServiceOrder]) listResponse[serviceOrderListItemResponse] {
+	items := make([]serviceOrderListItemResponse, 0, len(page.Items))
+	for _, so := range page.Items {
+		items = append(items, mapServiceOrderListItemResponse(so))
+	}
+
+	return listResponse[serviceOrderListItemResponse]{
+		Items:      items,
+		TotalItems: page.TotalItems,
+		TotalPages: page.TotalPages,
+		PageSize:   page.PageSize,
+		Page:       page.Page,
+	}
+}

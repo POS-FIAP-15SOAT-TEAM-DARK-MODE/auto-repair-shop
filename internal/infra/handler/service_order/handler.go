@@ -60,6 +60,19 @@ func (h *handler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, mapResponseDTOFromDomain(res))
 }
 
+func (h *handler) List(c *gin.Context) {
+	ctx := c.Request.Context()
+	params := mapListServiceOrderParamsToDomain(c)
+	response, err := h.svc.List(ctx, params)
+	if err != nil {
+		status, resp := web.Error(err)
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, mapServiceOrderListResponse(response))
+}
+
 func (h *handler) GetWorks(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := strings.TrimSpace(c.Param(serviceOrderIDParam))

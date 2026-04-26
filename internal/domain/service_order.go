@@ -59,6 +59,16 @@ type (
 		Works    []Work
 		Supplies []Supply
 	}
+
+	ServiceOrderFilterParams struct {
+		Page       int64
+		PageSize   int64
+		Limit      int64
+		Offset     int64
+		Status     string
+		CustomerID string
+		VehicleID  string
+	}
 )
 
 func (so *ServiceOrder) ResetPricing() {
@@ -100,6 +110,7 @@ func (so *ServiceOrder) SumSupplyValue(supply Supply) {
 type (
 	ServiceOrderService interface {
 		Create(ctx context.Context, customerId, vehicleId string) (ServiceOrder, error)
+		List(ctx context.Context, params *ServiceOrderFilterParams) (*PaginatorResponse[ServiceOrder], error)
 		ListWorks(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error
 		RemoveWork(ctx context.Context, serviceOrderID, workID string) error
@@ -118,6 +129,8 @@ type (
 		Save(context.Context, *ServiceOrder) error
 		ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
 		FindByID(ctx context.Context, id string) (ServiceOrder, error)
+		Search(ctx context.Context, params *ServiceOrderFilterParams) ([]ServiceOrder, error)
+		Count(ctx context.Context, params *ServiceOrderFilterParams) (int64, error)
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
