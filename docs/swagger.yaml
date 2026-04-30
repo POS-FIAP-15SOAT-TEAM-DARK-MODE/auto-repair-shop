@@ -1263,6 +1263,104 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/work/{workId}/next:
+    put:
+      summary: Advance work status
+      description: Advances the status of a work item within a service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order ID
+        - in: path
+          name: workId
+          required: true
+          schema:
+            type: string
+          description: Work ID
+      responses:
+        "204":
+          description: Work status advanced successfully
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Work has no history in this service order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Work is already completed or in an invalid state for this transition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
+  /v1/service-order/{id}/work/{workId}/cancel:
+    put:
+      summary: Cancel a work item
+      description: Cancels a work item within a service order.
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order ID
+        - in: path
+          name: workId
+          required: true
+          schema:
+            type: string
+          description: Work ID
+      responses:
+        "204":
+          description: Work cancelled successfully
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "404":
+          description: Work has no history in this service order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Work is already completed or cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
   /v1/service-order/{id}/services:
     get:
       summary: Get all services of a service order

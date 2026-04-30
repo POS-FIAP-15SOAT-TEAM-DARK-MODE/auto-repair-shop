@@ -22,6 +22,25 @@ RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED �
 
 `REJECTED` is a terminal state reached when the customer rejects the budget (from `AWAITING_APPROVAL`).
 
+## Work Status Lifecycle (within a Service Order)
+
+Each work item linked to a service order follows its own lifecycle:
+
+```
+AWAITING_START → IN_PROGRESS → COMPLETED
+                     ↓               ↓
+                 CANCELLED       CANCELLED  (can cancel from any non-terminal status)
+```
+
+| Status          | Description                                          |
+|-----------------|------------------------------------------------------|
+| `AWAITING_START`| Work linked to the SO, not yet started               |
+| `IN_PROGRESS`   | Work is being executed by the mechanic               |
+| `COMPLETED`     | Work was successfully finished                        |
+| `CANCELLED`     | Work was cancelled (terminal state)                  |
+
+Every status change is recorded as an immutable entry in `work_service_order_status_history`, preserving the full audit trail.
+
 ## Project Structure
 
 ```
@@ -199,14 +218,25 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 
 ### Service Orders (SO)
 
-| Method | Path                    | Roles                          |
-|--------|-------------------------|--------------------------------|
-| POST   | `/v1/so`                | ADMIN, ATTENDANT               |
-| GET    | `/v1/so`                | ADMIN, ATTENDANT, MECHANIC     |
-| GET    | `/v1/so/:id`            | ADMIN, ATTENDANT, MECHANIC     |
-| PATCH  | `/v1/so/:id/status`     | ADMIN, ATTENDANT, MECHANIC     |
-| POST   | `/v1/so/:id/approve`    | CUSTOMER (own SO only)         |
-| POST   | `/v1/so/:id/reject`     | CUSTOMER (own SO only)         |
+| Method | Path                                          | Roles                               |
+|--------|-----------------------------------------------|-------------------------------------|
+| POST   | `/v1/service-order`                           | ADMIN, ATTENDANT                    |
+| GET    | `/v1/service-order`                           | ADMIN, ATTENDANT, MECHANIC          |
+| GET    | `/v1/service-order/:id`                       | ADMIN, ATTENDANT, MECHANIC          |
+| PUT    | `/v1/service-order/:id/start-diagnosis`       | ADMIN, ATTENDANT, MECHANIC          |
+| PUT    | `/v1/service-order/:id/send`                  | ADMIN, ATTENDANT, MECHANIC          |
+| PUT    | `/v1/service-order/:id/accept`                | CUSTOMER (own SO only)              |
+| PUT    | `/v1/service-order/:id/reject`                | CUSTOMER (own SO only)              |
+| PUT    | `/v1/service-order/:id/deliver`               | ADMIN, ATTENDANT                    |
+| PUT    | `/v1/service-order/:id/cancel`                | ADMIN, ATTENDANT                    |
+| GET    | `/v1/service-order/:id/history`               | ADMIN, ATTENDANT, MECHANIC          |
+
+### Work Status Transitions (within a SO)
+
+| Method | Path                                                | Roles                      |
+|--------|-----------------------------------------------------|----------------------------|
+| PUT    | `/v1/service-order/:id/work/:workId/next`           | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/work/:workId/cancel`         | ADMIN, ATTENDANT, MECHANIC |
 
 ### Admin
 

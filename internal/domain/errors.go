@@ -90,6 +90,14 @@ var (
 	ErrInvalidVehicleId            = errors.New("invalid vehicle id")
 )
 
+// Work service order history errors
+var (
+	ErrWorkServiceOrderNotFound         = errors.New("work has no history in this service order")
+	ErrWorkServiceOrderAlreadyCompleted = errors.New("work has already been completed")
+	ErrWorkServiceOrderAlreadyCancelled = errors.New("work has already been cancelled")
+	ErrWorkServiceOrderInvalidStatus    = errors.New("invalid work status transition")
+)
+
 // Supply errors
 var (
 	ErrInvalidSupplyID            = errors.New("invalid supply id")

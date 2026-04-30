@@ -125,7 +125,8 @@ func isNotFoundError(err error) bool {
 		errors.Is(err, domain.ErrSupplyNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderWorkNotFound) ||
-		errors.Is(err, domain.ErrServiceOrderSupplyNotFound)
+		errors.Is(err, domain.ErrServiceOrderSupplyNotFound) ||
+		errors.Is(err, domain.ErrWorkServiceOrderNotFound)
 }
 
 func isUnauthorizedError(err error) bool {
@@ -148,7 +149,10 @@ func isConflictError(err error) bool {
 		errors.Is(err, domain.ErrServiceOrderNotInProgress) ||
 		errors.Is(err, domain.ErrServiceOrderNotCompleted) ||
 		errors.Is(err, domain.ErrServiceOrderNotCancelable) ||
-		errors.Is(err, domain.ErrServiceOrderNotAwaitingApproval)
+		errors.Is(err, domain.ErrServiceOrderNotAwaitingApproval) ||
+		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCompleted) ||
+		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCancelled) ||
+		errors.Is(err, domain.ErrWorkServiceOrderInvalidStatus)
 }
 
 func isUnprocessableEntityError(err error) bool {

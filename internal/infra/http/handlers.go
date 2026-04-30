@@ -71,6 +71,8 @@ type (
 		Cancel(*gin.Context)
 		GetFullByID(*gin.Context)
 		GetAverageExecutionTime(*gin.Context)
+		NextWork(*gin.Context)
+		CancelWork(*gin.Context)
 	}
 
 	ServiceOrderHistoryHandler interface {

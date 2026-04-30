@@ -14,12 +14,14 @@ import (
 )
 
 type svc struct {
-	uow             uow.Executor
-	repo            domain.ServiceOrderRepository
-	workRepo        domain.WorkRepository
-	supplyRepo      domain.SupplyRepository
-	customerService domain.CustomerService
-	vehicleService  domain.VehicleService
+	uow               uow.Executor
+	repo              domain.ServiceOrderRepository
+	workRepo          domain.WorkRepository
+	supplyRepo        domain.SupplyRepository
+	workHistoryRepo   domain.ServiceOrderHistoryRepository
+	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository
+	customerService   domain.CustomerService
+	vehicleService    domain.VehicleService
 }
 
 func Service(
@@ -27,9 +29,11 @@ func Service(
 	repo domain.ServiceOrderRepository,
 	workRepo domain.WorkRepository,
 	supplyRepo domain.SupplyRepository,
+	workHistoryRepo domain.ServiceOrderHistoryRepository,
+	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository,
 	customerService domain.CustomerService,
 	vehicleService domain.VehicleService) *svc {
-	return &svc{uow, repo, workRepo, supplyRepo, customerService, vehicleService}
+	return &svc{uow, repo, workRepo, supplyRepo, workHistoryRepo, workSOHistoryRepo, customerService, vehicleService}
 }
 
 func (s *svc) logValidationError(ctx context.Context, operation string, err error) {
@@ -54,6 +58,17 @@ func (s *svc) logStatusTransition(ctx context.Context, operation string, service
 		zap.String("operation", operation),
 		zap.String("entity", "service_order"),
 		zap.String("service_order_id", serviceOrderID),
+		zap.String("previous_status", previousStatus.String()),
+		zap.String("new_status", newStatus.String()),
+	)
+}
+
+func (s *svc) logWorkStatusTransition(ctx context.Context, operation string, serviceOrderID string, workID string, previousStatus, newStatus domain.WORK_SERVICE_ORDER_STATUS) {
+	logger.Of(ctx).Info("work_service_order.status_transition",
+		zap.String("operation", operation),
+		zap.String("entity", "work_service_order"),
+		zap.String("service_order_id", serviceOrderID),
+		zap.String("work_id", workID),
 		zap.String("previous_status", previousStatus.String()),
 		zap.String("new_status", newStatus.String()),
 	)
@@ -175,6 +190,10 @@ func (s *svc) AddWorks(ctx context.Context, serviceOrderID string, workIDs []str
 			}
 
 			if e = s.repo.AddWorkLink(ctx, serviceOrderID, w.ID, w.Price); e != nil {
+				return e
+			}
+
+			if e = s.workSOHistoryRepo.Insert(ctx, serviceOrderID, w.ID, nil, domain.WORK_SERVICE_ORDER_STATUS_AWAITING_START); e != nil {
 				return e
 			}
 		}
@@ -729,4 +748,76 @@ func (s *svc) GetFullOSByID(ctx context.Context, serviceOrderID string) (domain.
 	}
 
 	return res, nil
+}
+
+func (s *svc) NextWork(ctx context.Context, serviceOrderID, workID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	workID = strings.TrimSpace(workID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+	if workID == "" {
+		return domain.ErrInvalidWorkId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		results, err := s.workSOHistoryRepo.Search(ctx, domain.SearchWorkSOHistoryParams{
+			ServiceOrderID: serviceOrderID,
+			WorkID:         workID,
+		})
+		if err != nil {
+			return err
+		}
+		if len(results) == 0 {
+			return domain.ErrWorkServiceOrderNotFound
+		}
+
+		latest := results[0]
+		next, err := latest.NextStatus()
+		if err != nil {
+			return err
+		}
+
+		prev := latest.Status
+
+		s.logWorkStatusTransition(ctx, "next_work_service_order", workID, serviceOrderID, prev, next)
+		return s.workSOHistoryRepo.Insert(ctx, serviceOrderID, workID, &prev, next)
+	})
+}
+
+func (s *svc) CancelWork(ctx context.Context, serviceOrderID, workID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	workID = strings.TrimSpace(workID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+	if workID == "" {
+		return domain.ErrInvalidWorkId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		results, err := s.workSOHistoryRepo.Search(ctx, domain.SearchWorkSOHistoryParams{
+			ServiceOrderID: serviceOrderID,
+			WorkID:         workID,
+		})
+		if err != nil {
+			return err
+		}
+		if len(results) == 0 {
+			return domain.ErrWorkServiceOrderNotFound
+		}
+
+		latest := results[0]
+		if latest.Status == domain.WORK_SERVICE_ORDER_STATUS_COMPLETED {
+			return domain.ErrWorkServiceOrderAlreadyCompleted
+		}
+		if latest.Status == domain.WORK_SERVICE_ORDER_STATUS_CANCELLED {
+			return domain.ErrWorkServiceOrderAlreadyCancelled
+		}
+
+		prev := latest.Status
+
+		s.logWorkStatusTransition(ctx, "cancel_work_service_order", workID, serviceOrderID, prev, domain.WORK_SERVICE_ORDER_STATUS_CANCELLED)
+		return s.workSOHistoryRepo.Insert(ctx, serviceOrderID, workID, &prev, domain.WORK_SERVICE_ORDER_STATUS_CANCELLED)
+	})
 }

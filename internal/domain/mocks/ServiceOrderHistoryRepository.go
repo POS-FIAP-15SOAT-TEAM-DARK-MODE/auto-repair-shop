@@ -22,6 +22,55 @@ func (_m *ServiceOrderHistoryRepository) EXPECT() *ServiceOrderHistoryRepository
 	return &ServiceOrderHistoryRepository_Expecter{mock: &_m.Mock}
 }
 
+// InsertWorkHistory provides a mock function with given fields: ctx, serviceOrderID, workID, newStatus
+func (_m *ServiceOrderHistoryRepository) InsertWorkHistory(ctx context.Context, serviceOrderID string, workID string, newStatus domain.SERVICE_ORDER_STATUS) error {
+	ret := _m.Called(ctx, serviceOrderID, workID, newStatus)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertWorkHistory")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, domain.SERVICE_ORDER_STATUS) error); ok {
+		r0 = rf(ctx, serviceOrderID, workID, newStatus)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderHistoryRepository_InsertWorkHistory_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertWorkHistory'
+type ServiceOrderHistoryRepository_InsertWorkHistory_Call struct {
+	*mock.Call
+}
+
+// InsertWorkHistory is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - workID string
+//   - newStatus domain.SERVICE_ORDER_STATUS
+func (_e *ServiceOrderHistoryRepository_Expecter) InsertWorkHistory(ctx interface{}, serviceOrderID interface{}, workID interface{}, newStatus interface{}) *ServiceOrderHistoryRepository_InsertWorkHistory_Call {
+	return &ServiceOrderHistoryRepository_InsertWorkHistory_Call{Call: _e.mock.On("InsertWorkHistory", ctx, serviceOrderID, workID, newStatus)}
+}
+
+func (_c *ServiceOrderHistoryRepository_InsertWorkHistory_Call) Run(run func(ctx context.Context, serviceOrderID string, workID string, newStatus domain.SERVICE_ORDER_STATUS)) *ServiceOrderHistoryRepository_InsertWorkHistory_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(domain.SERVICE_ORDER_STATUS))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHistoryRepository_InsertWorkHistory_Call) Return(_a0 error) *ServiceOrderHistoryRepository_InsertWorkHistory_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderHistoryRepository_InsertWorkHistory_Call) RunAndReturn(run func(context.Context, string, string, domain.SERVICE_ORDER_STATUS) error) *ServiceOrderHistoryRepository_InsertWorkHistory_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Search provides a mock function with given fields: ctx, params
 func (_m *ServiceOrderHistoryRepository) Search(ctx context.Context, params *domain.SearchServiceOrderHistoryParams) ([]domain.ServiceOrderHistoryItem, error) {
 	ret := _m.Called(ctx, params)
