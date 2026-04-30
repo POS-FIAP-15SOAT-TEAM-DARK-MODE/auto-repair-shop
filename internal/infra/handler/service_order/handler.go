@@ -467,8 +467,8 @@ func (h *handler) Cancel(c *gin.Context) {
 
 func (h *handler) NextWork(c *gin.Context) {
 	ctx := c.Request.Context()
-	soID := strings.TrimSpace(c.Param(serviceOrderIDParam))
-	workID := strings.TrimSpace(c.Param(workIDParam))
+	soID := c.Param(serviceOrderIDParam)
+	workID := c.Param(workIDParam)
 
 	if err := h.svc.NextWork(ctx, soID, workID); err != nil {
 		status, response := web.Error(err)
@@ -486,8 +486,8 @@ func (h *handler) NextWork(c *gin.Context) {
 
 func (h *handler) CancelWork(c *gin.Context) {
 	ctx := c.Request.Context()
-	soID := strings.TrimSpace(c.Param(serviceOrderIDParam))
-	workID := strings.TrimSpace(c.Param(workIDParam))
+	soID := c.Param(serviceOrderIDParam)
+	workID := c.Param(workIDParam)
 
 	if err := h.svc.CancelWork(ctx, soID, workID); err != nil {
 		status, response := web.Error(err)
