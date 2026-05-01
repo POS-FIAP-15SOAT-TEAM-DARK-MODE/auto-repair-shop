@@ -535,7 +535,7 @@ func TestService_GetStatus_Success(t *testing.T) {
 		ExistsByID(ctx, serviceOrderID).
 		Return(true, expectedStatus, nil)
 
-	service := Service(exec, repo, nil, nil, nil, nil)
+	service := Service(exec, repo, nil, nil, nil, nil, nil, nil)
 
 	result, err := service.GetStatus(ctx, serviceOrderID)
 	if err != nil {
@@ -553,7 +553,7 @@ func TestService_GetStatus_InvalidID(t *testing.T) {
 	exec := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
 
-	service := Service(exec, repo, nil, nil, nil, nil)
+	service := Service(exec, repo, nil, nil, nil, nil, nil, nil)
 
 	result, err := service.GetStatus(ctx, "   ")
 
@@ -597,7 +597,7 @@ func TestService_GetStatus_RepositoryError(t *testing.T) {
 		ExistsByID(ctx, serviceOrderID).
 		Return(false, "", expectedErr)
 
-	service := Service(exec, repo, nil, nil, nil, nil)
+	service := Service(exec, repo, nil, nil, nil, nil, nil, nil)
 
 	result, err := service.GetStatus(ctx, serviceOrderID)
 
@@ -637,7 +637,7 @@ func TestService_GetStatus_NotFound(t *testing.T) {
 		ExistsByID(ctx, serviceOrderID).
 		Return(false, "", nil)
 
-	service := Service(exec, repo, nil, nil, nil, nil)
+	service := Service(exec, repo, nil, nil, nil, nil, nil, nil)
 
 	result, err := service.GetStatus(ctx, serviceOrderID)
 
@@ -668,7 +668,7 @@ func TestService_GetStatus_UowError(t *testing.T) {
 		Execute(ctx, mock.Anything).
 		Return(expectedErr)
 
-	service := Service(exec, repo, nil, nil, nil, nil)
+	service := Service(exec, repo, nil, nil, nil, nil, nil, nil)
 
 	result, err := service.GetStatus(ctx, serviceOrderID)
 
@@ -684,7 +684,6 @@ func TestService_GetStatus_UowError(t *testing.T) {
 		t.Fatalf("expected empty result, got %v", result)
 	}
 
-	// 🔥 repo NÃO deve ser chamado
 	repo.AssertNotCalled(t, "ExistsByID", mock.Anything, mock.Anything)
 }
 
