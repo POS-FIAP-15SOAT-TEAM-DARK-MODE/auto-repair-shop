@@ -821,3 +821,29 @@ func (s *svc) CancelWork(ctx context.Context, serviceOrderID, workID string) err
 		return s.workSOHistoryRepo.Insert(ctx, serviceOrderID, workID, &prev, domain.WORK_SERVICE_ORDER_STATUS_CANCELLED)
 	})
 }
+
+func (s *svc) GetStatus(ctx context.Context, serviceOrderID string) (domain.SERVICE_ORDER_STATUS, error) {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return "", domain.ErrInvalidServiceOrderId
+	}
+
+	var statusSO domain.SERVICE_ORDER_STATUS
+	err := s.uow.Execute(ctx, func(ctx context.Context) error {
+		ok, status, err := s.repo.ExistsByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return domain.ErrServiceOrderNotFound
+		}
+		statusSO = status
+		return nil
+	})
+	if err != nil {
+		logger.Of(ctx).Error(fmt.Errorf("error check service order status: %w", err))
+		return "", err
+	}
+
+	return statusSO, nil
+}

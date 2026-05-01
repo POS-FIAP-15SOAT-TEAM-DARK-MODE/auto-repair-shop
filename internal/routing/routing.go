@@ -75,5 +75,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 
 	v1.GET("/reports/average-execution-time", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.GetAverageExecutionTime)
 
+	v1.GET("/service-order/:id/status", c.ServiceOrderHandler.GetStatus)
+
 	return router
 }

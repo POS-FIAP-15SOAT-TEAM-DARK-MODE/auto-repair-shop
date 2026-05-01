@@ -128,6 +128,7 @@ type (
 		AverageExecutionTime(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
 		NextWork(ctx context.Context, serviceOrderID, workID string) error
 		CancelWork(ctx context.Context, serviceOrderID, workID string) error
+		GetStatus(ctx context.Context, serviceOrderID string) (SERVICE_ORDER_STATUS, error)
 	}
 
 	ServiceOrderRepository interface {

@@ -525,3 +525,23 @@ func (h *handler) GetFullByID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, mapServiceOrderDetailResponse(os))
 }
+
+func (h *handler) GetStatus(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param(serviceOrderIDParam)
+
+	statusOS, err := h.svc.GetStatus(ctx, id)
+	if err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("get full service order by id",
+			zap.String("operation", "get_service_order_status"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+	domainServiceOrder := domain.ServiceOrder{ID: id, Status: statusOS}
+
+	c.JSON(http.StatusOK, mapResponseDTOFromDomain(domainServiceOrder))
+}

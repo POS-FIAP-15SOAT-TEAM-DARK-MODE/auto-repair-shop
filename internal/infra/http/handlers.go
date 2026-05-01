@@ -73,6 +73,7 @@ type (
 		GetAverageExecutionTime(*gin.Context)
 		NextWork(*gin.Context)
 		CancelWork(*gin.Context)
+		GetStatus(*gin.Context)
 	}
 
 	ServiceOrderHistoryHandler interface {
