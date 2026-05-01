@@ -811,6 +811,53 @@ func (_c *ServiceOrderService_NextWork_Call) RunAndReturn(run func(context.Conte
 	return _c
 }
 
+// Receive provides a mock function with given fields: ctx, serviceOrderID
+func (_m *ServiceOrderService) Receive(ctx context.Context, serviceOrderID string) error {
+	ret := _m.Called(ctx, serviceOrderID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Receive")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, serviceOrderID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_Receive_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Receive'
+type ServiceOrderService_Receive_Call struct {
+	*mock.Call
+}
+
+// Receive is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+func (_e *ServiceOrderService_Expecter) Receive(ctx interface{}, serviceOrderID interface{}) *ServiceOrderService_Receive_Call {
+	return &ServiceOrderService_Receive_Call{Call: _e.mock.On("Receive", ctx, serviceOrderID)}
+}
+
+func (_c *ServiceOrderService_Receive_Call) Run(run func(ctx context.Context, serviceOrderID string)) *ServiceOrderService_Receive_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_Receive_Call) Return(_a0 error) *ServiceOrderService_Receive_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_Receive_Call) RunAndReturn(run func(context.Context, string) error) *ServiceOrderService_Receive_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Reject provides a mock function with given fields: ctx, serviceOrderID, userID
 func (_m *ServiceOrderService) Reject(ctx context.Context, serviceOrderID string, userID string) error {
 	ret := _m.Called(ctx, serviceOrderID, userID)

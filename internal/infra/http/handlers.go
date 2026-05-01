@@ -62,6 +62,7 @@ type (
 		GetSupplies(*gin.Context)
 		AddSupplies(*gin.Context)
 		DeleteSupply(*gin.Context)
+		Receive(*gin.Context)
 		SendToCustomerApproval(*gin.Context)
 		SendToDiagnosis(*gin.Context)
 		Finish(*gin.Context)
