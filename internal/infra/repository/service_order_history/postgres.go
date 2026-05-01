@@ -67,6 +67,21 @@ func (r *repository) Search(ctx context.Context, params *domain.SearchServiceOrd
 	return histories, nil
 }
 
+func (r *repository) InsertWorkHistory(ctx context.Context, serviceOrderID, workID string, newStatus domain.SERVICE_ORDER_STATUS) error {
+	tx, err := postgres.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, insertWorkServiceOrderHistory,
+		domain.NewHistoryServiceOrderID(),
+		workID,
+		serviceOrderID,
+		newStatus.String(),
+	)
+	return pgPkg.Error(ctx, err)
+}
+
 func (r *repository) SearchWorkTransitionsByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.WorkTransitionGroup, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {

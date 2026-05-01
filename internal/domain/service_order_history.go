@@ -39,6 +39,7 @@ type (
 	ServiceOrderHistoryRepository interface {
 		Search(ctx context.Context, params *SearchServiceOrderHistoryParams) ([]ServiceOrderHistoryItem, error)
 		SearchWorkTransitionsByServiceOrderID(ctx context.Context, serviceOrderID string) ([]WorkTransitionGroup, error)
+		InsertWorkHistory(ctx context.Context, serviceOrderID, workID string, newStatus SERVICE_ORDER_STATUS) error
 	}
 )
 

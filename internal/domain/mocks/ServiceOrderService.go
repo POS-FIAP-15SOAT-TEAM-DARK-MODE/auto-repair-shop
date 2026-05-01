@@ -272,6 +272,54 @@ func (_c *ServiceOrderService_Cancel_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
+// CancelWork provides a mock function with given fields: ctx, serviceOrderID, workID
+func (_m *ServiceOrderService) CancelWork(ctx context.Context, serviceOrderID string, workID string) error {
+	ret := _m.Called(ctx, serviceOrderID, workID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CancelWork")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, serviceOrderID, workID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_CancelWork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CancelWork'
+type ServiceOrderService_CancelWork_Call struct {
+	*mock.Call
+}
+
+// CancelWork is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - workID string
+func (_e *ServiceOrderService_Expecter) CancelWork(ctx interface{}, serviceOrderID interface{}, workID interface{}) *ServiceOrderService_CancelWork_Call {
+	return &ServiceOrderService_CancelWork_Call{Call: _e.mock.On("CancelWork", ctx, serviceOrderID, workID)}
+}
+
+func (_c *ServiceOrderService_CancelWork_Call) Run(run func(ctx context.Context, serviceOrderID string, workID string)) *ServiceOrderService_CancelWork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_CancelWork_Call) Return(_a0 error) *ServiceOrderService_CancelWork_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_CancelWork_Call) RunAndReturn(run func(context.Context, string, string) error) *ServiceOrderService_CancelWork_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Create provides a mock function with given fields: ctx, customerId, vehicleId
 func (_m *ServiceOrderService) Create(ctx context.Context, customerId string, vehicleId string) (domain.ServiceOrder, error) {
 	ret := _m.Called(ctx, customerId, vehicleId)
@@ -711,6 +759,54 @@ func (_c *ServiceOrderService_ListWorks_Call) Return(_a0 []domain.Work, _a1 erro
 }
 
 func (_c *ServiceOrderService_ListWorks_Call) RunAndReturn(run func(context.Context, string) ([]domain.Work, error)) *ServiceOrderService_ListWorks_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// NextWork provides a mock function with given fields: ctx, serviceOrderID, workID
+func (_m *ServiceOrderService) NextWork(ctx context.Context, serviceOrderID string, workID string) error {
+	ret := _m.Called(ctx, serviceOrderID, workID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NextWork")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, serviceOrderID, workID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ServiceOrderService_NextWork_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NextWork'
+type ServiceOrderService_NextWork_Call struct {
+	*mock.Call
+}
+
+// NextWork is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceOrderID string
+//   - workID string
+func (_e *ServiceOrderService_Expecter) NextWork(ctx interface{}, serviceOrderID interface{}, workID interface{}) *ServiceOrderService_NextWork_Call {
+	return &ServiceOrderService_NextWork_Call{Call: _e.mock.On("NextWork", ctx, serviceOrderID, workID)}
+}
+
+func (_c *ServiceOrderService_NextWork_Call) Run(run func(ctx context.Context, serviceOrderID string, workID string)) *ServiceOrderService_NextWork_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderService_NextWork_Call) Return(_a0 error) *ServiceOrderService_NextWork_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ServiceOrderService_NextWork_Call) RunAndReturn(run func(context.Context, string, string) error) *ServiceOrderService_NextWork_Call {
 	_c.Call.Return(run)
 	return _c
 }

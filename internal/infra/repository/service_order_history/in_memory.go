@@ -23,3 +23,7 @@ func (r *memory_repo) Search(_ context.Context, params *domain.SearchServiceOrde
 func (r *memory_repo) SearchWorkTransitionsByServiceOrderID(_ context.Context, _ string) ([]domain.WorkTransitionGroup, error) {
 	return []domain.WorkTransitionGroup{}, nil
 }
+
+func (r *memory_repo) InsertWorkHistory(_ context.Context, _, _ string, _ domain.SERVICE_ORDER_STATUS) error {
+	return nil
+}

@@ -166,7 +166,7 @@ CREATE TABLE work_service_order_status_history (
     id VARCHAR(26) PRIMARY KEY,
     work_id VARCHAR(36) NOT NULL REFERENCES work (id) ON DELETE CASCADE,
     service_order_id VARCHAR(26) NOT NULL REFERENCES service_order (id) ON DELETE CASCADE,
-    previous_status VARCHAR(50) NOT NULL,
+    previous_status VARCHAR(50),
     new_status VARCHAR(50) NOT NULL,
     created_at TIMESTAMP
     WITH
