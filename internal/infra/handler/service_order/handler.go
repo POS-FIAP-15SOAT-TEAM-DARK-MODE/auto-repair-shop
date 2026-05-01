@@ -528,7 +528,7 @@ func (h *handler) GetFullByID(c *gin.Context) {
 
 func (h *handler) GetStatus(c *gin.Context) {
 	ctx := c.Request.Context()
-	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
+	id := c.Param(serviceOrderIDParam)
 
 	statusOS, err := h.svc.GetStatus(ctx, id)
 	if err != nil {
