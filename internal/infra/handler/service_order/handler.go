@@ -527,13 +527,8 @@ func (h *handler) GetFullByID(c *gin.Context) {
 }
 
 func (h *handler) GetStatus(c *gin.Context) {
-	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
-	if id == "" {
-		status, response := web.Error(domain.ErrInvalidServiceOrderId)
-		c.JSON(status, response)
-		return
-	}
 	ctx := c.Request.Context()
+	id := strings.TrimSpace(c.Param(serviceOrderIDParam))
 
 	statusOS, err := h.svc.GetStatus(ctx, id)
 	if err != nil {
