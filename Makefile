@@ -9,7 +9,6 @@ test:
 
 coverage:
 	LOG_LEVEL=PANIC go test ./... -covermode=atomic -coverprofile=coverage.out
-	go tool cover -html=coverage.out
 
 sonarqube-run: coverage
 	sonar-scanner \
