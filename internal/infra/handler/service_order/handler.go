@@ -309,6 +309,24 @@ func (h *handler) Finish(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *handler) Receive(c *gin.Context) {
+	ctx := c.Request.Context()
+	id := c.Param(serviceOrderIDParam)
+
+	if err := h.svc.Receive(ctx, id); err != nil {
+		status, response := web.Error(err)
+		logger.Of(ctx).Debug("receive service order failed",
+			zap.String("operation", "receive_service_order"),
+			zap.Error(err),
+			zap.String("entity", "service_order"),
+		)
+		c.JSON(status, response)
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func (h *handler) SendToDiagnosis(c *gin.Context) {
 	ctx := c.Request.Context()
 	id := strings.TrimSpace(c.Param(serviceOrderIDParam))

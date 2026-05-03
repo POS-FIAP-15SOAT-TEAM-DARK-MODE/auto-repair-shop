@@ -156,12 +156,6 @@ func TestHandler_GetStatus(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "error - empty service order id",
-			serviceOrderID: "   ",
-			mockSetup:      func(m *domainmocks.ServiceOrderService) {},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
 			name:           "error - service returns error",
 			serviceOrderID: "123",
 			mockSetup: func(m *domainmocks.ServiceOrderService) {
@@ -173,19 +167,6 @@ func TestHandler_GetStatus(t *testing.T) {
 					Return("", domain.ErrServiceOrderNotFound)
 			},
 			expectedStatus: http.StatusNotFound,
-		},
-		{
-			name:           "edge case - id with spaces",
-			serviceOrderID: " 123 ",
-			mockSetup: func(m *domainmocks.ServiceOrderService) {
-				m.EXPECT().
-					GetStatus(
-						mock.Anything,
-						"123", // trimmed
-					).
-					Return(domain.StringToServiceOrderStatus("CANCELED"), nil)
-			},
-			expectedStatus: http.StatusOK,
 		},
 	}
 

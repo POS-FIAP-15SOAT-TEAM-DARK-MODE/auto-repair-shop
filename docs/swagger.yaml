@@ -1041,6 +1041,43 @@ paths:
         "500":
           description: Internal Server Error
 
+  /v1/service-order/{id}/received:
+    put:
+      summary: Mark service order as received
+      description: Transitions a service order from NEW to RECEIVED status
+      tags:
+        - ServiceOrder
+      security:
+        - SessionToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Service order ID
+      responses:
+        "204":
+          description: Service order marked as received
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+        "403":
+          description: Forbidden (insufficient permissions)
+        "409":
+          description: Conflict (service order is not in NEW status)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal Server Error
+
   /v1/service-order/{id}/start-diagnosis:
     put:
       summary: Send service order to the in diagnosis status

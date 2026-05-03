@@ -457,6 +457,31 @@ func (s *svc) Finish(ctx context.Context, serviceOrderID string) error {
 	})
 }
 
+func (s *svc) Receive(ctx context.Context, serviceOrderID string) error {
+	serviceOrderID = strings.TrimSpace(serviceOrderID)
+	if serviceOrderID == "" {
+		return domain.ErrInvalidServiceOrderId
+	}
+
+	return s.uow.Execute(ctx, func(ctx context.Context) error {
+		so, err := s.repo.FindByID(ctx, serviceOrderID)
+		if err != nil {
+			return err
+		}
+
+		if so.Status != domain.SERVICE_ORDER_STATUS_NEW {
+			return domain.ErrServiceOrderNotNew
+		}
+
+		previousStatus := so.Status
+		so.Status = domain.SERVICE_ORDER_STATUS_RECEIVED
+
+		s.logStatusTransition(ctx, "receive_service_order", so.ID, previousStatus, so.Status)
+
+		return s.repo.Save(ctx, &so)
+	})
+}
+
 func (s *svc) SendToDiagnosis(ctx context.Context, serviceOrderID string) error {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {

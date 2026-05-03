@@ -582,6 +582,39 @@ func (_c *ServiceOrderHandler_NextWork_Call) RunAndReturn(run func(*gin.Context)
 	return _c
 }
 
+// Receive provides a mock function with given fields: _a0
+func (_m *ServiceOrderHandler) Receive(_a0 *gin.Context) {
+	_m.Called(_a0)
+}
+
+// ServiceOrderHandler_Receive_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Receive'
+type ServiceOrderHandler_Receive_Call struct {
+	*mock.Call
+}
+
+// Receive is a helper method to define mock.On call
+//   - _a0 *gin.Context
+func (_e *ServiceOrderHandler_Expecter) Receive(_a0 interface{}) *ServiceOrderHandler_Receive_Call {
+	return &ServiceOrderHandler_Receive_Call{Call: _e.mock.On("Receive", _a0)}
+}
+
+func (_c *ServiceOrderHandler_Receive_Call) Run(run func(_a0 *gin.Context)) *ServiceOrderHandler_Receive_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(*gin.Context))
+	})
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Receive_Call) Return() *ServiceOrderHandler_Receive_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *ServiceOrderHandler_Receive_Call) RunAndReturn(run func(*gin.Context)) *ServiceOrderHandler_Receive_Call {
+	_c.Run(run)
+	return _c
+}
+
 // Reject provides a mock function with given fields: _a0
 func (_m *ServiceOrderHandler) Reject(_a0 *gin.Context) {
 	_m.Called(_a0)

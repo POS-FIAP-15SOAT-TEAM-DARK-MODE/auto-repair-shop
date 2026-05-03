@@ -17,7 +17,7 @@ Monolithic layered backend for an auto repair shop management system. Manages se
 ## SO Status Lifecycle
 
 ```
-RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
+NEW → RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
 ```
 
 `REJECTED` is a terminal state reached when the customer rejects the budget (from `AWAITING_APPROVAL`).

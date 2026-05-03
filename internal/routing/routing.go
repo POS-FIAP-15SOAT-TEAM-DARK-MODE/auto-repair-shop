@@ -53,7 +53,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
 	v1.POST("/service-order/:id/services", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.AddWork)
 	v1.DELETE("/service-order/:id/services/:serviceId", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.DeleteWork)
-	// TODO: SEND OS TO DIAGNOSIS (change status to RECEIVED) (AttendantRoles)
+	v1.PUT("/service-order/:id/received", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Receive)
 	v1.PUT("/service-order/:id/start-diagnosis", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.SendToDiagnosis)
 	v1.POST("/service-order/:id/supplies", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.AddSupplies)
 	v1.DELETE("/service-order/:id/supplies/:supplyId", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.DeleteSupply)
