@@ -8,8 +8,14 @@ test:
 	LOG_LEVEL=PANIC go test ./... --race -v
 
 coverage:
-	LOG_LEVEL=PANIC go test ./... --coverprofile=coverage.out
-	go tool cover -html=coverage.out
+	LOG_LEVEL=PANIC go test ./... -covermode=atomic -coverprofile=coverage.out
+
+sonarqube-run: coverage
+	sonar-scanner \
+	  -Dsonar.projectKey=auto-repair-shop \
+	  -Dsonar.sources=. \
+	  -Dsonar.host.url=http://localhost:9000 \
+	  -Dsonar.token=${SONARQUBE_PROJECT_TOKEN}
 
 docker-up:
 	docker-compose up --build
