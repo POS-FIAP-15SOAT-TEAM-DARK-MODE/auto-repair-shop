@@ -62,22 +62,21 @@ internal/
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/)
 - Make
 
-## Contributing
-To contribute with the project you should install pre-commit:
+## Environment Variables
 
-```bash
-# 1. Make sure you have Python installed
-python3 --version # or (on Windows) python --version
-
-# 1.1 If you do not have Python installed:
-brew install python # or (on Windows) download from https://www.python.org/downloads/
-
-# 2. Install pre-commit using pip
-pip install pre-commit
-
-# 3. Install the pre-commit hooks for this repository
-pre-commit install
-```
+| Variable                  | Description                                         |
+|---------------------------|-----------------------------------------------------|
+| `SONARQUBE_USERNAME`      | SonarQube username                                  |
+| `SONARQUBE_PASSWORD`      | SonarQube password                                  |
+| `SONARQUBE_PROJECT_TOKEN` | SonarQube project token                             |
+| `POSTGRES_USER`           | PostgreSQL username                                 |
+| `POSTGRES_PASSWORD`       | PostgreSQL password                                 |
+| `POSTGRES_DB`             | PostgreSQL database name                            |
+| `POSTGRES_HOST`           | PostgreSQL host (`db` in Docker, `localhost` local) |
+| `POSTGRES_PORT`           | PostgreSQL port (default: 5432)                     |
+| `JWT_SECRET`              | Secret key for JWT signing                          |
+| `JWT_EXPIRES_IN`          | Token expiration duration (e.g. `24h`)              |
+| `BCRYPT_COST`             | bcrypt hashing cost factor (min 12 in production)   |
 
 ## Getting Started
 
@@ -117,34 +116,9 @@ make migrate-up
 make run
 ```
 
-### Useful Commands
-
-```bash
-# Run tests
-make test
-
-# Generate coverage report
-make coverage
-
-# Stop Docker containers
-make docker-down
-```
-
-The server starts on port `${PORT:-8080}` (default: 8080).
-
-## Swagger UI
-
-You can access the service Swagger UI in your browser to view and test the available endpoints:
-
-http://localhost:8080/swagger/index.html
-
-The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute requests directly against the running server.
-
-## Database Migrations
+### 4) Migrations
 
 Migrations are managed using `golang-migrate` and stored in the `/migrations` directory. Each migration consists of `.up.sql` (apply) and `.down.sql` (rollback) files.
-
-### Migration Commands
 
 ```bash
 # Install golang-migrate CLI (first time only)
@@ -160,20 +134,6 @@ make migrate-down
 make migrate-status
 ```
 
-### Metodo de Criptografia
-Senhas de usuários são protegidas usando bcrypt (golang.org/x/crypto/bcrypt).
-
-Detalhes principais:
-- Tipo: hash one‑way (não é reversível). O resultado inclui salt interno e metadados.
-- Implementação: usamos `bcrypt.GenerateFromPassword` ao criar/atualizar senhas e `bcrypt.CompareHashAndPassword` para validação.
-- Fator de custo: controlado pela variável de ambiente `BCRYPT_COST` (ver seção Environment Variables). Recomenda‑se um custo mínimo de 12 em produção — aumente conforme a capacidade da infra.
-
-Notas:
-- Para customers criados automaticamente, a senha padrão (CPF/CNPJ) também é imediatamente hasheada antes de persistir.
-- Bcrypt já aplica salt de forma segura; não é necessário gerir salt manualmente.
-
-### Adding New Migrations
-
 When adding schema changes, create migration files following the naming convention:
 ```
 NNNNNN_description.up.sql
@@ -182,78 +142,117 @@ NNNNNN_description.down.sql
 
 Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status.up.sql`).
 
-## Environment Variables
+### Useful Commands
 
-| Variable            | Description                                      |
-|---------------------|--------------------------------------------------|
-| `PORT`              | Server port (default: 8080)                      |
-| `POSTGRES_USER`     | PostgreSQL username                              |
-| `POSTGRES_PASSWORD` | PostgreSQL password                              |
-| `POSTGRES_DB`       | PostgreSQL database name                          |
-| `POSTGRES_HOST`     | PostgreSQL host (`db` in Docker, `localhost` local) |
-| `POSTGRES_PORT`     | PostgreSQL port (default: 5432)                  |
-| `JWT_SECRET`        | Secret key for JWT signing                        |
-| `JWT_EXPIRES_IN`    | Token expiration duration (e.g. `24h`)           |
-| `BCRYPT_COST`       | bcrypt hashing cost factor                        |
-| `LOG_LEVEL`         | Application log level (default: `INFO`)           |
+```bash
+# Run tests
+make test
+
+# Generate coverage report
+make coverage
+
+# Stop Docker containers
+make docker-down
+```
+
+The server starts on port `${PORT:-8080}` (default: 8080).
+
+## Contributing
+
+To contribute to the project you should install pre-commit:
+
+```bash
+# 1. Make sure you have Python installed
+python3 --version # or (on Windows) python --version
+
+# 1.1 If you do not have Python installed:
+brew install python # or (on Windows) download from https://www.python.org/downloads/
+
+# 2. Install pre-commit using pip
+pip install pre-commit
+
+# 3. Install the pre-commit hooks for this repository
+pre-commit install
+```
+
+## Swagger UI
+
+You can access the service Swagger UI in your browser to view and test the available endpoints:
+
+http://localhost:8080/swagger/index.html
+
+The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute requests directly against the running server.
 
 ## API Endpoints
 
 ### Public
 
-| Method | Path                 | Description         |
-|--------|----------------------|---------------------|
-| POST   | `/v1/auth/login`     | Get JWT             |
-| GET    | `/v1/so/:id/status`  | Customer SO tracking  |
+| Method | Path                 | Description          |
+|--------|----------------------|----------------------|
+| POST   | `/v1/auth/login`     | Get JWT              |
+| GET    | `/v1/so/:id/status`  | Customer SO tracking |
 
 ### Customers
 
-| Method | Path                  | Roles               |
-|--------|-----------------------|----------------------|
-| POST   | `/v1/customers`       | ADMIN, ATTENDANT     |
-| GET    | `/v1/customers`       | ADMIN, ATTENDANT     |
-| GET    | `/v1/customers/:id`   | ADMIN, ATTENDANT     |
-| PUT    | `/v1/customers/:id`   | ADMIN, ATTENDANT     |
-| DELETE | `/v1/customers/:id`   | ADMIN                |
+| Method | Path                  | Roles            |
+|--------|-----------------------|------------------|
+| POST   | `/v1/customers`       | ADMIN, ATTENDANT |
+| GET    | `/v1/customers`       | ADMIN, ATTENDANT |
+| GET    | `/v1/customers/:id`   | ADMIN, ATTENDANT |
+| PUT    | `/v1/customers/:id`   | ADMIN, ATTENDANT |
+| DELETE | `/v1/customers/:id`   | ADMIN            |
 
 ### Service Orders (SO)
 
-| Method | Path                                          | Roles                               |
-|--------|-----------------------------------------------|-------------------------------------|
-| POST   | `/v1/service-order`                           | ADMIN, ATTENDANT                    |
-| GET    | `/v1/service-order`                           | ADMIN, ATTENDANT, MECHANIC          |
-| GET    | `/v1/service-order/:id`                       | ADMIN, ATTENDANT, MECHANIC          |
-| PUT    | `/v1/service-order/:id/start-diagnosis`       | ADMIN, ATTENDANT, MECHANIC          |
-| PUT    | `/v1/service-order/:id/send`                  | ADMIN, ATTENDANT, MECHANIC          |
-| PUT    | `/v1/service-order/:id/accept`                | CUSTOMER (own SO only)              |
-| PUT    | `/v1/service-order/:id/reject`                | CUSTOMER (own SO only)              |
-| PUT    | `/v1/service-order/:id/deliver`               | ADMIN, ATTENDANT                    |
-| PUT    | `/v1/service-order/:id/cancel`                | ADMIN, ATTENDANT                    |
-| GET    | `/v1/service-order/:id/history`               | ADMIN, ATTENDANT, MECHANIC          |
+| Method | Path                                          | Roles                      |
+|--------|-----------------------------------------------|----------------------------|
+| POST   | `/v1/service-order`                           | ADMIN, ATTENDANT           |
+| GET    | `/v1/service-order`                           | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id`                       | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/start-diagnosis`       | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/send`                  | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/accept`                | CUSTOMER (own SO only)     |
+| PUT    | `/v1/service-order/:id/reject`                | CUSTOMER (own SO only)     |
+| PUT    | `/v1/service-order/:id/deliver`               | ADMIN, ATTENDANT           |
+| PUT    | `/v1/service-order/:id/cancel`                | ADMIN, ATTENDANT           |
+| GET    | `/v1/service-order/:id/history`               | ADMIN, ATTENDANT, MECHANIC |
 
 ### Work Status Transitions (within a SO)
 
-| Method | Path                                                | Roles                      |
-|--------|-----------------------------------------------------|----------------------------|
-| PUT    | `/v1/service-order/:id/work/:workId/next`           | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/work/:workId/cancel`         | ADMIN, ATTENDANT, MECHANIC |
+| Method | Path                                              | Roles                      |
+|--------|---------------------------------------------------|----------------------------|
+| PUT    | `/v1/service-order/:id/work/:workId/next`         | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/work/:workId/cancel`       | ADMIN, ATTENDANT, MECHANIC |
 
 ### Admin
 
-| Method | Path                           | Roles              |
-|--------|--------------------------------|---------------------|
-| POST   | `/v1/users`                    | ADMIN               |
-| PUT    | `/v1/users/:id/roles`          | ADMIN               |
-| GET    | `/v1/reports/average-time`     | ADMIN, ATTENDANT    |
+| Method | Path                       | Roles            |
+|--------|----------------------------|------------------|
+| POST   | `/v1/users`                | ADMIN            |
+| PUT    | `/v1/users/:id/roles`      | ADMIN            |
+| GET    | `/v1/reports/average-time` | ADMIN, ATTENDANT |
 
 ## RBAC Roles
 
-| Role       | Description                                          |
-|------------|------------------------------------------------------|
-| ADMIN      | Unrestricted access (exclusive, cannot combine)      |
-| ATTENDANT  | Customers, vehicles, SO, budgets, reports            |
-| MECHANIC   | SO queries, add services/parts, status transitions   |
-| CUSTOMER   | Own SO tracking and budget approve/reject only       |
+| Role      | Description                                        |
+|-----------|----------------------------------------------------|
+| ADMIN     | Unrestricted access (exclusive, cannot combine)    |
+| ATTENDANT | Customers, vehicles, SO, budgets, reports          |
+| MECHANIC  | SO queries, add services/parts, status transitions |
+| CUSTOMER  | Own SO tracking and budget approve/reject only     |
+
+## Password Encryption
+
+User passwords are protected using bcrypt (`golang.org/x/crypto/bcrypt`).
+
+Key details:
+- **Type:** one-way hash (not reversible). The output includes an internal salt and metadata.
+- **Implementation:** `bcrypt.GenerateFromPassword` is used when creating or updating passwords; `bcrypt.CompareHashAndPassword` is used for validation.
+- **Cost factor:** controlled by the `BCRYPT_COST` environment variable (see Environment Variables). A minimum cost of 12 is recommended in production — increase it according to your infrastructure capacity.
+
+Notes:
+- For automatically created customers, the default password (CPF/CNPJ) is immediately hashed before being persisted.
+- bcrypt applies a salt securely by default; there is no need to manage salts manually.
 
 ## License
 
