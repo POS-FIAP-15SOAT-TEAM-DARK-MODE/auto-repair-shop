@@ -66,8 +66,24 @@ services:
           cpus: "0.5"
           memory: 512M
 
+  sonarqube:
+    image: sonarqube:latest
+    ports:
+      - "9000:9000"
+    networks:
+      - backend
+    environment:
+      - SONARQUBE_JDBC_USERNAME=${SONARQUBE_USERNAME}
+      - SONARQUBE_JDBC_PASSWORD=${SONARQUBE_PASSWORD}
+      - SONARQUBE_JDBC_URL=postgressql://db:5432/sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
 volumes:
   postgres_data:
+  sonarqube_data:
+  sonarqube_extensions:
 
 networks:
   backend:
