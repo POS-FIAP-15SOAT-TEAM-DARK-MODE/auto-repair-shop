@@ -187,50 +187,91 @@ The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute
 
 ### Public
 
-| Method | Path                 | Description          |
-|--------|----------------------|----------------------|
-| POST   | `/v1/auth/login`     | Get JWT              |
-| GET    | `/v1/so/:id/status`  | Customer SO tracking |
+| Method | Path                          | Description          |
+|--------|-------------------------------|----------------------|
+| POST   | `/v1/auth/login`              | Get JWT              |
+| GET    | `/v1/service-order/:id/status`| Customer SO tracking |
+
+### Users
+
+| Method | Path                  | Roles |
+|--------|-----------------------|-------|
+| POST   | `/v1/auth/register`   | ADMIN |
+| PATCH  | `/v1/users/:id/role`  | ADMIN |
 
 ### Customers
 
-| Method | Path                  | Roles            |
-|--------|-----------------------|------------------|
-| POST   | `/v1/customers`       | ADMIN, ATTENDANT |
-| GET    | `/v1/customers`       | ADMIN, ATTENDANT |
-| GET    | `/v1/customers/:id`   | ADMIN, ATTENDANT |
-| PUT    | `/v1/customers/:id`   | ADMIN, ATTENDANT |
-| DELETE | `/v1/customers/:id`   | ADMIN            |
+| Method | Path                | Roles            |
+|--------|---------------------|------------------|
+| POST   | `/v1/customers`     | ADMIN, ATTENDANT |
+| GET    | `/v1/customers`     | ADMIN, ATTENDANT |
+| GET    | `/v1/customers/:id` | ADMIN, ATTENDANT |
+| PUT    | `/v1/customers/:id` | ADMIN, ATTENDANT |
+| DELETE | `/v1/customers/:id` | ADMIN, ATTENDANT |
+
+### Works
+
+| Method | Path            | Roles                      |
+|--------|-----------------|----------------------------|
+| GET    | `/v1/works`     | ADMIN, ATTENDANT, MECHANIC |
+| POST   | `/v1/works`     | ADMIN, ATTENDANT           |
+| PUT    | `/v1/works/:id` | ADMIN, ATTENDANT           |
+| DELETE | `/v1/works/:id` | ADMIN, ATTENDANT           |
+
+### Vehicles
+
+| Method | Path                         | Roles                      |
+|--------|------------------------------|----------------------------|
+| GET    | `/v1/vehicles`               | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/vehicles/:customerId`   | ADMIN, ATTENDANT, MECHANIC |
+| POST   | `/v1/vehicles`               | ADMIN, ATTENDANT           |
+| PUT    | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
+| DELETE | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
+
+### Supplies
+
+| Method | Path               | Roles                      |
+|--------|--------------------|----------------------------|
+| GET    | `/v1/supplies`     | ADMIN, ATTENDANT, MECHANIC |
+| POST   | `/v1/supplies`     | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/supplies/:id` | ADMIN, ATTENDANT, MECHANIC |
+| DELETE | `/v1/supplies/:id` | ADMIN, ATTENDANT, MECHANIC |
 
 ### Service Orders (SO)
 
-| Method | Path                                          | Roles                      |
-|--------|-----------------------------------------------|----------------------------|
-| POST   | `/v1/service-order`                           | ADMIN, ATTENDANT           |
-| GET    | `/v1/service-order`                           | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/service-order/:id`                       | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/start-diagnosis`       | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/send`                  | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/accept`                | CUSTOMER (own SO only)     |
-| PUT    | `/v1/service-order/:id/reject`                | CUSTOMER (own SO only)     |
-| PUT    | `/v1/service-order/:id/deliver`               | ADMIN, ATTENDANT           |
-| PUT    | `/v1/service-order/:id/cancel`                | ADMIN, ATTENDANT           |
-| GET    | `/v1/service-order/:id/history`               | ADMIN, ATTENDANT, MECHANIC |
+| Method | Path                                              | Roles                      |
+|--------|---------------------------------------------------|----------------------------|
+| POST   | `/v1/service-order`                               | ADMIN, ATTENDANT           |
+| GET    | `/v1/service-order`                               | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id`                           | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/received`                  | ADMIN, ATTENDANT           |
+| PUT    | `/v1/service-order/:id/start-diagnosis`           | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/send`                      | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/accept`                    | CUSTOMER (own SO only)     |
+| PUT    | `/v1/service-order/:id/reject`                    | CUSTOMER (own SO only)     |
+| PUT    | `/v1/service-order/:id/finish`                    | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/deliver`                   | ADMIN, ATTENDANT           |
+| PUT    | `/v1/service-order/:id/cancel`                    | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id/history`                   | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id/services`                  | ADMIN, ATTENDANT, MECHANIC |
+| POST   | `/v1/service-order/:id/services`                  | ADMIN, ATTENDANT           |
+| DELETE | `/v1/service-order/:id/services/:serviceId`       | ADMIN, ATTENDANT           |
+| GET    | `/v1/service-order/:id/supplies`                  | ADMIN, ATTENDANT, MECHANIC |
+| POST   | `/v1/service-order/:id/supplies`                  | ADMIN, MECHANIC            |
+| DELETE | `/v1/service-order/:id/supplies/:supplyId`        | ADMIN, MECHANIC            |
 
 ### Work Status Transitions (within a SO)
 
-| Method | Path                                              | Roles                      |
-|--------|---------------------------------------------------|----------------------------|
-| PUT    | `/v1/service-order/:id/work/:workId/next`         | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/work/:workId/cancel`       | ADMIN, ATTENDANT, MECHANIC |
+| Method | Path                                          | Roles           |
+|--------|-----------------------------------------------|-----------------|
+| PUT    | `/v1/service-order/:id/work/:workId/next`     | ADMIN, MECHANIC |
+| PUT    | `/v1/service-order/:id/work/:workId/cancel`   | ADMIN, MECHANIC |
 
-### Admin
+### Reports
 
-| Method | Path                       | Roles            |
-|--------|----------------------------|------------------|
-| POST   | `/v1/users`                | ADMIN            |
-| PUT    | `/v1/users/:id/roles`      | ADMIN            |
-| GET    | `/v1/reports/average-time` | ADMIN, ATTENDANT |
+| Method | Path                                  | Roles            |
+|--------|---------------------------------------|------------------|
+| GET    | `/v1/reports/average-execution-time`  | ADMIN, ATTENDANT |
 
 ## RBAC Roles
 
