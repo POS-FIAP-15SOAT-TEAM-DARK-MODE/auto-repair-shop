@@ -10,10 +10,10 @@ import (
 )
 
 type memory_repo struct {
-	data map[string]domain.ServiceOrder
-	// serviceOrderID -> ordered list of works linked to that order (price = snapshot at link time)
+	data            map[string]domain.ServiceOrder
 	worksByOrder    map[string][]domain.Work
 	suppliesByOrder map[string][]domain.Supply
+	onStatusChange  func(soID string, prev *domain.SERVICE_ORDER_STATUS, newStatus domain.SERVICE_ORDER_STATUS)
 }
 
 func MemoryRepository() domain.ServiceOrderRepository {
@@ -24,7 +24,27 @@ func MemoryRepository() domain.ServiceOrderRepository {
 	}
 }
 
+// MemoryRepositoryWithHistory creates an in-memory repo that notifies onStatusChange on every
+// status transition so that history can be recorded alongside the state change.
+func MemoryRepositoryWithHistory(onStatusChange func(soID string, prev *domain.SERVICE_ORDER_STATUS, newStatus domain.SERVICE_ORDER_STATUS)) domain.ServiceOrderRepository {
+	return &memory_repo{
+		data:            make(map[string]domain.ServiceOrder),
+		worksByOrder:    make(map[string][]domain.Work),
+		suppliesByOrder: make(map[string][]domain.Supply),
+		onStatusChange:  onStatusChange,
+	}
+}
+
 func (r *memory_repo) Save(_ context.Context, so *domain.ServiceOrder) error {
+	if r.onStatusChange != nil {
+		old, exists := r.data[so.ID]
+		if !exists {
+			r.onStatusChange(so.ID, nil, so.Status)
+		} else if old.Status != so.Status {
+			prev := old.Status
+			r.onStatusChange(so.ID, &prev, so.Status)
+		}
+	}
 	r.data[so.ID] = *so
 	return nil
 }
