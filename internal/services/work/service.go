@@ -44,36 +44,21 @@ func (s *service) saveRepositoryStep(work *domain.Work) func(context.Context) er
 	}
 }
 
-func (s *service) List(c context.Context, params *domain.ListWorkParams) (*domain.PaginatorResponse[domain.Work], error) {
-	var response *domain.PaginatorResponse[domain.Work]
-	if err := s.uow.Execute(c, func(ctx context.Context) error {
-		r, err := s.getPaginatedList(ctx, params)
-		if err != nil {
-			return err
-		}
-		response = r
-		return nil
-	}); err != nil {
-		logger.Of(c).Error(err)
-		return nil, err
-	}
-
-	return response, nil
-}
-
-func (s *service) getPaginatedList(ctx context.Context, params *domain.ListWorkParams) (*domain.PaginatorResponse[domain.Work], error) {
+func (s *service) List(ctx context.Context, params *domain.ListWorkParams) (*domain.PaginatorResponse[domain.Work], error) {
 	p := params.SearchWorkParams()
-
-	var total int64
-	var items []domain.Work
 	var eg errgroup.Group
+	response := &domain.PaginatorResponse[domain.Work]{
+		Page:     params.Page,
+		PageSize: params.PageSize,
+	}
 
 	eg.Go(func() error {
 		t, err := s.repo.Count(ctx, p)
 		if err != nil {
 			return err
 		}
-		total = t
+		response.TotalItems = t
+		response.TotalPages = int64(math.Ceil(float64(t) / float64(params.PageSize)))
 		return nil
 	})
 
@@ -82,7 +67,7 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListWorkP
 		if err != nil {
 			return err
 		}
-		items = list
+		response.Items = list
 		return err
 	})
 
@@ -90,13 +75,7 @@ func (s *service) getPaginatedList(ctx context.Context, params *domain.ListWorkP
 		return nil, fmt.Errorf("fail to list works: %w", err)
 	}
 
-	return &domain.PaginatorResponse[domain.Work]{
-		Items:      items,
-		TotalItems: total,
-		TotalPages: int64(math.Ceil(float64(total) / float64(params.PageSize))),
-		Page:       params.Page,
-		PageSize:   params.PageSize,
-	}, nil
+	return response, nil
 }
 
 func (s *service) Delete(c context.Context, id string) error {

@@ -233,12 +233,6 @@ func TestService_List_Success(t *testing.T) {
 		Search(mock.Anything, mock.AnythingOfType("*domain.SearchWorkParams")).
 		Return(expectedItems, nil)
 
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
-
 	appService := Service(exec, repo)
 
 	got, err := appService.List(ctx, params)
@@ -278,11 +272,15 @@ func TestService_List_UoWError(t *testing.T) {
 	repo := domainmocks.NewWorkRepository(t)
 
 	params := &domain.ListWorkParams{Page: 1, PageSize: 10}
-	expectedErr := errors.New("uow execute failed")
+	expectedErr := errors.New("count db error")
 
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		Return(expectedErr)
+	repo.EXPECT().
+		Count(mock.Anything, mock.AnythingOfType("*domain.SearchWorkParams")).
+		Return(int64(0), expectedErr)
+
+	repo.EXPECT().
+		Search(mock.Anything, mock.AnythingOfType("*domain.SearchWorkParams")).
+		Return([]domain.Work{}, nil).Maybe()
 
 	appService := Service(exec, repo)
 
@@ -303,7 +301,6 @@ func TestService_List_UoWError(t *testing.T) {
 func TestService_List_CountError(t *testing.T) {
 	ctx := context.Background()
 
-	exec := uowmocks.NewExecutor(t)
 	repo := domainmocks.NewWorkRepository(t)
 
 	params := &domain.ListWorkParams{Page: 1, PageSize: 10}
@@ -317,13 +314,7 @@ func TestService_List_CountError(t *testing.T) {
 		Search(mock.Anything, mock.AnythingOfType("*domain.SearchWorkParams")).
 		Return([]domain.Work{}, nil).Maybe()
 
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
-
-	appService := Service(exec, repo)
+	appService := Service(nil, repo)
 
 	got, err := appService.List(ctx, params)
 	if err == nil {
@@ -342,7 +333,6 @@ func TestService_List_CountError(t *testing.T) {
 func TestService_List_SearchError(t *testing.T) {
 	ctx := context.Background()
 
-	exec := uowmocks.NewExecutor(t)
 	repo := domainmocks.NewWorkRepository(t)
 
 	params := &domain.ListWorkParams{Page: 1, PageSize: 10}
@@ -356,13 +346,7 @@ func TestService_List_SearchError(t *testing.T) {
 		Search(mock.Anything, mock.AnythingOfType("*domain.SearchWorkParams")).
 		Return(nil, expectedErr).Maybe()
 
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
-
-	appService := Service(exec, repo)
+	appService := Service(nil, repo)
 
 	got, err := appService.List(ctx, params)
 	if err == nil {
@@ -381,7 +365,6 @@ func TestService_List_SearchError(t *testing.T) {
 func TestService_List_EmptyResult(t *testing.T) {
 	ctx := context.Background()
 
-	exec := uowmocks.NewExecutor(t)
 	repo := domainmocks.NewWorkRepository(t)
 
 	params := &domain.ListWorkParams{Page: 1, PageSize: 10}
@@ -394,13 +377,7 @@ func TestService_List_EmptyResult(t *testing.T) {
 		Search(mock.Anything, mock.AnythingOfType("*domain.SearchWorkParams")).
 		Return([]domain.Work{}, nil)
 
-	exec.EXPECT().
-		Execute(ctx, mock.Anything).
-		RunAndReturn(func(_ context.Context, steps ...uow.Step) error {
-			return steps[0](ctx)
-		})
-
-	appService := Service(exec, repo)
+	appService := Service(nil, repo)
 
 	got, err := appService.List(ctx, params)
 	if err != nil {
