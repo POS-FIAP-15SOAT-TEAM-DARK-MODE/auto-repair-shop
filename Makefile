@@ -7,6 +7,10 @@ run:
 test:
 	LOG_LEVEL=PANIC go test ./... --race -v
 
+test-integration: export BCRYPT_COST=4
+test-integration:
+	go test -tags=integration ./internal/integration/... -v
+
 coverage:
 	LOG_LEVEL=PANIC go test ./... --coverprofile=coverage.out
 	go tool cover -html=coverage.out
