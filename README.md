@@ -36,7 +36,7 @@ AWAITING_START → IN_PROGRESS → COMPLETED
 |-----------------|------------------------------------------------------|
 | `AWAITING_START`| Work linked to the SO, not yet started               |
 | `IN_PROGRESS`   | Work is being executed by the mechanic               |
-| `COMPLETED`     | Work was successfully finished                        |
+| `COMPLETED`     | Work was successfully finished                       |
 | `CANCELLED`     | Work was cancelled (terminal state)                  |
 
 Every status change is recorded as an immutable entry in `work_service_order_status_history`, preserving the full audit trail.
