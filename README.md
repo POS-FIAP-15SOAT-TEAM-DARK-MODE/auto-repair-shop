@@ -18,9 +18,12 @@ Monolithic layered backend for an auto repair shop management system. Manages se
 
 ```
 NEW → RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
+  └──────────────────────────────────────────────────────────────────────────→ CANCELLED
+                               AWAITING_APPROVAL → REJECTED
 ```
 
 `REJECTED` is a terminal state reached when the customer rejects the budget (from `AWAITING_APPROVAL`).
+`CANCELLED` is a terminal state available from cancelable statuses.
 
 ## Work Status Lifecycle (within a Service Order)
 
@@ -49,9 +52,12 @@ cmd/
 internal/
   domain/           # Domain models (framework-free)
   infra/
-    container/      # Dependency injection container
-    factory/        # Container factory
+    db/             # Database clients, uow, and seed
+    factory/        # Dependency wiring
     handler/        # HTTP handlers
+    http/           # Handlers wrapper and middlewares
+    repository/     # Repository implementations
+    server/         # HTTP server bootstrap
   routing/          # Route definitions
   services/         # Business logic layer
 ```
@@ -160,17 +166,17 @@ make migrate-down
 make migrate-status
 ```
 
-### Metodo de Criptografia
-Senhas de usuários são protegidas usando bcrypt (golang.org/x/crypto/bcrypt).
+### Encryption Method
+User passwords are protected using bcrypt (`golang.org/x/crypto/bcrypt`).
 
-Detalhes principais:
-- Tipo: hash one‑way (não é reversível). O resultado inclui salt interno e metadados.
-- Implementação: usamos `bcrypt.GenerateFromPassword` ao criar/atualizar senhas e `bcrypt.CompareHashAndPassword` para validação.
-- Fator de custo: controlado pela variável de ambiente `BCRYPT_COST` (ver seção Environment Variables). Recomenda‑se um custo mínimo de 12 em produção — aumente conforme a capacidade da infra.
+Key details:
+- Type: one-way hash (not reversible). The output includes an internal salt and metadata.
+- Implementation: we use `bcrypt.GenerateFromPassword` when creating/updating passwords and `bcrypt.CompareHashAndPassword` for validation.
+- Cost factor: controlled by the `BCRYPT_COST` environment variable (see Environment Variables section). A minimum cost of 12 is recommended for production; increase it based on infrastructure capacity.
 
-Notas:
-- Para customers criados automaticamente, a senha padrão (CPF/CNPJ) também é imediatamente hasheada antes de persistir.
-- Bcrypt já aplica salt de forma segura; não é necessário gerir salt manualmente.
+Notes:
+- For automatically created customers, the default password (CPF/CNPJ) is also immediately hashed before persisting.
+- bcrypt already applies salt securely; manual salt management is not required.
 
 ### Adding New Migrations
 
@@ -201,59 +207,61 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 
 ### Public
 
-| Method | Path                 | Description         |
-|--------|----------------------|---------------------|
-| POST   | `/v1/auth/login`     | Get JWT             |
-| GET    | `/v1/so/:id/status`  | Customer SO tracking  |
+| Method | Path                            | Description          |
+|--------|---------------------------------|----------------------|
+| POST   | `/v1/auth/login`                | Get JWT              |
+| GET    | `/v1/service-order/:id/status`  | Customer SO tracking |
 
 ### Customers
 
-| Method | Path                  | Roles               |
-|--------|-----------------------|----------------------|
-| POST   | `/v1/customers`       | ADMIN, ATTENDANT     |
-| GET    | `/v1/customers`       | ADMIN, ATTENDANT     |
-| GET    | `/v1/customers/:id`   | ADMIN, ATTENDANT     |
-| PUT    | `/v1/customers/:id`   | ADMIN, ATTENDANT     |
-| DELETE | `/v1/customers/:id`   | ADMIN                |
+| Method | Path                  | Roles            |
+|--------|-----------------------|------------------|
+| POST   | `/v1/customers`       | ADMIN, ATTENDANT |
+| GET    | `/v1/customers`       | ADMIN, ATTENDANT |
+| GET    | `/v1/customers/:id`   | ADMIN, ATTENDANT |
+| PUT    | `/v1/customers/:id`   | ADMIN, ATTENDANT |
+| DELETE | `/v1/customers/:id`   | ADMIN, ATTENDANT |
 
 ### Service Orders (SO)
 
-| Method | Path                                          | Roles                               |
-|--------|-----------------------------------------------|-------------------------------------|
-| POST   | `/v1/service-order`                           | ADMIN, ATTENDANT                    |
-| GET    | `/v1/service-order`                           | ADMIN, ATTENDANT, MECHANIC          |
-| GET    | `/v1/service-order/:id`                       | ADMIN, ATTENDANT, MECHANIC          |
-| PUT    | `/v1/service-order/:id/start-diagnosis`       | ADMIN, ATTENDANT, MECHANIC          |
-| PUT    | `/v1/service-order/:id/send`                  | ADMIN, ATTENDANT, MECHANIC          |
-| PUT    | `/v1/service-order/:id/accept`                | CUSTOMER (own SO only)              |
-| PUT    | `/v1/service-order/:id/reject`                | CUSTOMER (own SO only)              |
-| PUT    | `/v1/service-order/:id/deliver`               | ADMIN, ATTENDANT                    |
-| PUT    | `/v1/service-order/:id/cancel`                | ADMIN, ATTENDANT                    |
-| GET    | `/v1/service-order/:id/history`               | ADMIN, ATTENDANT, MECHANIC          |
+| Method | Path                                    | Roles                      |
+|--------|-----------------------------------------|----------------------------|
+| POST   | `/v1/service-order`                     | ADMIN, ATTENDANT           |
+| GET    | `/v1/service-order`                     | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id`                 | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/received`        | ADMIN, ATTENDANT           |
+| PUT    | `/v1/service-order/:id/start-diagnosis` | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/send`            | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/accept`          | ADMIN, CUSTOMER (own SO)   |
+| PUT    | `/v1/service-order/:id/reject`          | ADMIN, CUSTOMER (own SO)   |
+| PUT    | `/v1/service-order/:id/finish`          | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/deliver`         | ADMIN, ATTENDANT           |
+| PUT    | `/v1/service-order/:id/cancel`          | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id/history`         | ADMIN, ATTENDANT, MECHANIC |
 
 ### Work Status Transitions (within a SO)
 
-| Method | Path                                                | Roles                      |
-|--------|-----------------------------------------------------|----------------------------|
-| PUT    | `/v1/service-order/:id/work/:workId/next`           | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/work/:workId/cancel`         | ADMIN, ATTENDANT, MECHANIC |
+| Method | Path                                        | Roles            |
+|--------|---------------------------------------------|------------------|
+| PUT    | `/v1/service-order/:id/work/:workId/next`   | ADMIN, MECHANIC  |
+| PUT    | `/v1/service-order/:id/work/:workId/cancel` | ADMIN, MECHANIC  |
 
 ### Admin
 
-| Method | Path                           | Roles              |
-|--------|--------------------------------|---------------------|
-| POST   | `/v1/users`                    | ADMIN               |
-| PUT    | `/v1/users/:id/roles`          | ADMIN               |
-| GET    | `/v1/reports/average-time`     | ADMIN, ATTENDANT    |
+| Method | Path                                 | Roles            |
+|--------|--------------------------------------|------------------|
+| POST   | `/v1/auth/register`                  | ADMIN            |
+| PATCH  | `/v1/users/:id/role`                 | ADMIN            |
+| GET    | `/v1/reports/average-execution-time` | ADMIN, ATTENDANT |
 
 ## RBAC Roles
 
-| Role       | Description                                          |
-|------------|------------------------------------------------------|
-| ADMIN      | Unrestricted access (exclusive, cannot combine)      |
-| ATTENDANT  | Customers, vehicles, SO, budgets, reports            |
-| MECHANIC   | SO queries, add services/parts, status transitions   |
-| CUSTOMER   | Own SO tracking and budget approve/reject only       |
+| Role       | Description                                                                  |
+|------------|------------------------------------------------------------------------------|
+| ADMIN      | Full access, including user management and role updates                      |
+| ATTENDANT  | Customers, vehicles, works, service orders, supplies, and execution reports  |
+| MECHANIC   | Service order execution flow, supplies, and work status transitions          |
+| CUSTOMER   | Own service order status tracking and budget approve/reject only             |
 
 ## License
 
