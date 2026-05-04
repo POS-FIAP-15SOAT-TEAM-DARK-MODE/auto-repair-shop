@@ -52,6 +52,60 @@ func TestQueryBuilder_OrderBy(t *testing.T) {
 	})
 }
 
+func TestQueryBuilder_AddAny(t *testing.T) {
+	t.Run("skipped when empty slice", func(t *testing.T) {
+		qb := db.QueryBuilder("SELECT * FROM t")
+		qb.AddAny("status", []string{})
+		query, args := qb.Build()
+		assert.Equal(t, "SELECT * FROM t", query)
+		assert.Empty(t, args)
+	})
+
+	t.Run("adds ANY condition", func(t *testing.T) {
+		qb := db.QueryBuilder("SELECT * FROM t")
+		qb.AddAny("status", []string{"NEW", "ACTIVE"})
+		query, args := qb.Build()
+		assert.Equal(t, "SELECT * FROM t WHERE status = ANY($1)", query)
+		assert.Len(t, args, 1)
+	})
+
+	t.Run("combined with Add and pagination", func(t *testing.T) {
+		qb := db.QueryBuilder("SELECT * FROM t")
+		qb.Add("name =", "John")
+		qb.AddAny("role", []string{"ADMIN", "MECHANIC"})
+		qb.AddPagination(5, 0)
+		query, args := qb.Build()
+		assert.Equal(t, "SELECT * FROM t WHERE name = $1 AND role = ANY($2) LIMIT $3", query)
+		assert.Len(t, args, 3)
+	})
+}
+
+func TestQueryBuilder_GroupBy(t *testing.T) {
+	t.Run("single field", func(t *testing.T) {
+		qb := db.QueryBuilder("SELECT status, COUNT(*) FROM t")
+		qb.GroupBy("status")
+		query, _ := qb.Build()
+		assert.Equal(t, "SELECT status, COUNT(*) FROM t GROUP BY status", query)
+	})
+
+	t.Run("multiple fields", func(t *testing.T) {
+		qb := db.QueryBuilder("SELECT a, b, COUNT(*) FROM t")
+		qb.GroupBy("a", "b")
+		query, _ := qb.Build()
+		assert.Equal(t, "SELECT a, b, COUNT(*) FROM t GROUP BY a, b", query)
+	})
+
+	t.Run("group by with where and order by", func(t *testing.T) {
+		qb := db.QueryBuilder("SELECT status, COUNT(*) FROM t")
+		qb.Add("active =", true)
+		qb.GroupBy("status")
+		qb.OrderBy("status", db.ASC)
+		query, args := qb.Build()
+		assert.Equal(t, "SELECT status, COUNT(*) FROM t WHERE active = $1 GROUP BY status ORDER BY status ASC", query)
+		assert.Equal(t, []any{true}, args)
+	})
+}
+
 func TestQueryBuilder_Complex(t *testing.T) {
 	qb := db.QueryBuilder("SELECT * FROM table")
 	qb.Add("status =", "ACTIVE")

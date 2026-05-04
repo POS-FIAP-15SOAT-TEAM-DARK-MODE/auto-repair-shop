@@ -207,3 +207,75 @@ func TestValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestListSupplyParams_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		params  domain.ListSupplyParams
+		wantErr error
+	}{
+		{name: "empty version is valid", params: domain.ListSupplyParams{}, wantErr: nil},
+		{name: "numeric version is valid", params: domain.ListSupplyParams{Version: "3"}, wantErr: nil},
+		{name: "non-numeric version is invalid", params: domain.ListSupplyParams{Version: "abc"}, wantErr: domain.ErrInvalidSupplyVersion},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.params.Validate()
+			assert.ErrorIs(t, err, tt.wantErr)
+		})
+	}
+}
+
+func TestSupply_Validate_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name    string
+		supply  *domain.Supply
+		wantErr error
+	}{
+		{
+			name: "negative stock",
+			supply: &domain.Supply{
+				Name:          "Brake Pad",
+				Description:   "High performance brake pad",
+				UnitPrice:     decimal.NewFromInt(10),
+				StockQuantity: -1,
+				Version:       1,
+			},
+			wantErr: domain.ErrInvalidSupplyStockQuantity,
+		},
+		{
+			name: "negative version",
+			supply: &domain.Supply{
+				Name:          "Brake Pad",
+				Description:   "High performance brake pad",
+				UnitPrice:     decimal.NewFromInt(10),
+				StockQuantity: 10,
+				Version:       -1,
+			},
+			wantErr: domain.ErrInvalidSupplyVersion,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.supply.Validate()
+			assert.ErrorIs(t, err, tt.wantErr)
+		})
+	}
+}
+
+func TestListSupplyParams_Offset(t *testing.T) {
+	tests := []struct {
+		name       string
+		params     domain.ListSupplyParams
+		wantOffset int64
+	}{
+		{name: "page 1", params: domain.ListSupplyParams{Page: 1, PageSize: 10}, wantOffset: 0},
+		{name: "page 2", params: domain.ListSupplyParams{Page: 2, PageSize: 10}, wantOffset: 10},
+		{name: "page 3 size 25", params: domain.ListSupplyParams{Page: 3, PageSize: 25}, wantOffset: 50},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.wantOffset, tt.params.Offset())
+		})
+	}
+}

@@ -223,3 +223,36 @@ func TestNormalizeLicensePlate(t *testing.T) {
 		})
 	}
 }
+
+func TestListVehicleParams_SearchVehicleParams(t *testing.T) {
+	tests := []struct {
+		name       string
+		params     ListVehicleParams
+		wantOffset int64
+		wantLimit  int64
+		wantCustID string
+	}{
+		{
+			name:       "page 1",
+			params:     ListVehicleParams{Page: 1, PageSize: 10, CustomerID: "cust-1"},
+			wantOffset: 0,
+			wantLimit:  10,
+			wantCustID: "cust-1",
+		},
+		{
+			name:       "page 2",
+			params:     ListVehicleParams{Page: 2, PageSize: 5, CustomerID: "cust-2"},
+			wantOffset: 5,
+			wantLimit:  5,
+			wantCustID: "cust-2",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sp := tt.params.SearchVehicleParams()
+			assert.Equal(t, tt.wantOffset, sp.Offset)
+			assert.Equal(t, tt.wantLimit, sp.Limit)
+			assert.Equal(t, tt.wantCustID, sp.CustomerId)
+		})
+	}
+}

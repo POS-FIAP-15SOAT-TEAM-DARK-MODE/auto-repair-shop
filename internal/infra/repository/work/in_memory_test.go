@@ -83,3 +83,22 @@ func TestMemoryRepository_Delete(t *testing.T) {
 	count, _ := repo.Count(ctx, &domain.SearchWorkParams{})
 	assert.Equal(t, int64(0), count)
 }
+
+func TestMemoryRepository_FindByID(t *testing.T) {
+	repo := work.MemoryRepository()
+	ctx := context.Background()
+
+	w, _ := domain.NewWork("Oil Change", "Description", "100.00", domain.ACTIVE)
+	_ = repo.Save(ctx, w)
+
+	t.Run("found", func(t *testing.T) {
+		found, err := repo.FindByID(ctx, w.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, w.ID, found.ID)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		_, err := repo.FindByID(ctx, "nonexistent-id")
+		assert.ErrorIs(t, err, domain.ErrWorkNotFound)
+	})
+}

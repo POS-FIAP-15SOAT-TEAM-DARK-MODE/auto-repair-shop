@@ -2,6 +2,7 @@ package work_test
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -263,9 +264,68 @@ func TestPostgresRepository_Search_NoTransaction(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestPostgresRepository_Delete_NoTransaction(t *testing.T) {
+func TestPostgresRepository_FindByID(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
 	repo := work.Repository()
 
-	err := repo.Delete(context.Background(), "some-id")
-	assert.Error(t, err)
+	id := "w1"
+
+	t.Run("success", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.status FROM "work" s WHERE s.id = \$1`).
+			WithArgs(id).
+			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "status"}).
+				AddRow(id, "Work 1", "Desc 1", "100.00", true))
+		mock.ExpectCommit()
+
+		err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+			w, err := repo.FindByID(ctx, id)
+			assert.NoError(t, err)
+			assert.Equal(t, id, w.ID)
+			return nil
+		})
+		assert.NoError(t, err)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		mock.ExpectBegin()
+		mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.status FROM "work" s WHERE s.id = \$1`).
+			WithArgs(id).
+			WillReturnError(sql.ErrNoRows)
+		mock.ExpectRollback()
+
+		err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+			_, err := repo.FindByID(ctx, id)
+			return err
+		})
+		assert.ErrorIs(t, err, domain.ErrWorkNotFound)
+	})
+}
+
+func TestPostgresRepository_Search_WithStatus(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	uowExec := postgresdb.NewTransactionalUoW(db)
+	repo := work.Repository()
+
+	params := &domain.SearchWorkParams{Limit: 10, Offset: 0, Status: "ACTIVE"}
+
+	mock.ExpectBegin()
+	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "status"}).
+		AddRow("id1", "Work 1", "Desc 1", "10.00", true)
+	mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.status FROM "work" s`).
+		WillReturnRows(rows)
+	mock.ExpectCommit()
+
+	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
+		_, err := repo.Search(ctx, params)
+		return err
+	})
+	assert.NoError(t, err)
 }

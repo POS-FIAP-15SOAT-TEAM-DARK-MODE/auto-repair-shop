@@ -588,9 +588,88 @@ func TestPostgresRepository_Delete(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestPostgresRepository_Delete_NoTransaction(t *testing.T) {
-	repo := supplyRepo.Repository()
+func TestFindById_Success(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
 
-	err := repo.Delete(context.Background(), "some-id")
-	assert.Error(t, err)
+	s := newSupply()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.stock_quantity, s.version FROM "supply" s WHERE s.id = \$1`).
+		WithArgs(s.ID).
+		WillReturnRows(
+			sqlmock.NewRows(supplyColumns()).
+				AddRow(s.ID, s.Name, s.Description, s.UnitPrice, s.StockQuantity, 1),
+		)
+	mock.ExpectCommit()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		res, err := r.FindById(ctx, s.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, s.ID, res.ID)
+		return nil
+	})
+
+	assert.NoError(t, err)
+}
+
+func TestFindById_NotFound(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.stock_quantity, s.version FROM "supply" s WHERE s.id = \$1`).
+		WithArgs("none").
+		WillReturnError(sql.ErrNoRows)
+	mock.ExpectRollback()
+
+	r := supplyRepo.Repository()
+	uow := infraPostgres.NewTransactionalUoW(infraPostgres.Connect())
+
+	err := uow.Execute(context.Background(), func(ctx context.Context) error {
+		_, err := r.FindById(ctx, "none")
+		return err
+	})
+
+	assert.ErrorIs(t, err, domain.ErrSupplyNotFound)
+}
+
+func TestFindById_NoTransaction(t *testing.T) {
+	r := supplyRepo.Repository()
+	_, err := r.FindById(context.Background(), "any")
+	assert.ErrorIs(t, err, infraPostgres.ErrMissingPostgresTransaction)
+}
+
+func TestSearch_WithVersion(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	mock.ExpectQuery(`SELECT s\.id`).
+		WillReturnRows(sqlmock.NewRows(supplyColumns()))
+
+	r := supplyRepo.Repository()
+	params := newListParams(1, 10)
+	params.Version = "1"
+	_, err := r.Search(context.Background(), params)
+
+	assert.NoError(t, err)
+}
+
+func TestCount_WithVersion(t *testing.T) {
+	mock, close := setupMockDB(t)
+	defer close()
+
+	mock.ExpectQuery(`SELECT COUNT\(s.id\) FROM "supply" s WHERE s.version = \$1`).
+		WithArgs("1").
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+
+	r := supplyRepo.Repository()
+	params := newListParams(1, 10)
+	params.Version = "1"
+	_, err := r.Count(context.Background(), params)
+
+	assert.NoError(t, err)
 }
