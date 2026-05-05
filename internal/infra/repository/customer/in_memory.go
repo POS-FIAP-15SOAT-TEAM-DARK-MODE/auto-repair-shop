@@ -17,6 +17,11 @@ func MemoryRepository() domain.CustomerRepository {
 }
 
 func (r *memory_repo) Create(_ context.Context, c *domain.Customer) error {
+	for _, existing := range r.data {
+		if (c.CPF != "" && existing.CPF == c.CPF) || (c.CNPJ != "" && existing.CNPJ == c.CNPJ) {
+			return domain.ErrDataConflict
+		}
+	}
 	r.data[c.ID] = *c
 	return nil
 }
@@ -34,10 +39,9 @@ func (r *memory_repo) GetByDocument(ctx context.Context, document string) (domai
 func (r *memory_repo) GetByID(ctx context.Context, id string) (domain.Customer, error) {
 	c, ok := r.data[id]
 	if !ok {
-		return c, nil
+		return domain.Customer{}, domain.ErrCustomerNotFound
 	}
-
-	return domain.Customer{}, domain.ErrCustomerNotFound
+	return c, nil
 }
 
 func (r *memory_repo) Update(_ context.Context, id, phone string) error {

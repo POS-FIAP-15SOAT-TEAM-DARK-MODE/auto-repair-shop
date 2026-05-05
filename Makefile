@@ -19,9 +19,20 @@ run:
 test:
 	$(SET_ENV_PREFIX) LOG_LEVEL=PANIC $(ENV_SEPARATOR) go test ./... --race -v
 
+test-integration: export BCRYPT_COST=4
+test-integration:
+	go test -tags=integration ./internal/integration/... -v
+
 coverage:
 	$(SET_ENV_PREFIX) LOG_LEVEL=PANIC $(ENV_SEPARATOR) go test ./... --coverprofile=coverage.out
 	go tool cover -html=coverage.out
+
+sonarqube-run: coverage
+	sonar-scanner \
+	  -Dsonar.projectKey=auto-repair-shop \
+	  -Dsonar.sources=. \
+	  -Dsonar.host.url=http://localhost:9000 \
+	  -Dsonar.token=${SONARQUBE_PROJECT_TOKEN}
 
 docker-up:
 	docker-compose up --build

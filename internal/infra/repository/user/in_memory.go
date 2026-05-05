@@ -19,6 +19,11 @@ func MemoryRepository() domain.UserRepository {
 }
 
 func (r *memory_repo) Create(_ context.Context, u *domain.User) error {
+	for _, existing := range r.data {
+		if existing.Email == u.Email {
+			return domain.ErrDataConflict
+		}
+	}
 	r.data[u.ID] = *u
 	return nil
 }
