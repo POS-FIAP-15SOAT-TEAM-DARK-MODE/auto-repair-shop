@@ -13,7 +13,7 @@ run:
 
 test:
 ifeq ($(USE_WINDOWS),1)
-	set CGO_ENABLED=1 && set LOG_LEVEL=PANIC && go test ./... --race -v
+	set LOG_LEVEL=PANIC && go test ./... -v
 else
 	LOG_LEVEL=PANIC go test ./... --race -v
 endif
