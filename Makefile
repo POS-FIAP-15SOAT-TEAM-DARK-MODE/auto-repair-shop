@@ -1,30 +1,38 @@
 -include .env
 export
 
-OS := $(shell uname -s)
-
+# Detect if running on Windows
 ifeq ($(OS),Windows_NT)
-    SET_ENV_PREFIX := set
-    ENV_SEPARATOR := &
-    SHELL := cmd
-    .SHELLFLAGS := /C
+    USE_WINDOWS := 1
 else
-    SET_ENV_PREFIX := export
-    ENV_SEPARATOR := ;
+    USE_WINDOWS :=
 endif
 
 run:
 	go run cmd/service/main.go
 
 test:
-	$(SET_ENV_PREFIX) LOG_LEVEL=PANIC $(ENV_SEPARATOR) go test ./... --race -v
+ifeq ($(USE_WINDOWS),1)
+	set LOG_LEVEL=PANIC && go test ./... --race -v
+else
+	LOG_LEVEL=PANIC go test ./... --race -v
+endif
 
 test-integration:
-	$(SET_ENV_PREFIX) BCRYPT_COST=4 $(ENV_SEPARATOR) go test -tags=integration ./internal/integration/... -v
+ifeq ($(USE_WINDOWS),1)
+	set BCRYPT_COST=4 && go test -tags=integration ./internal/integration/... -v
+else
+	BCRYPT_COST=4 go test -tags=integration ./internal/integration/... -v
+endif
 
 coverage:
-	$(SET_ENV_PREFIX) LOG_LEVEL=PANIC $(ENV_SEPARATOR) go test ./... --coverprofile=coverage.out
+ifeq ($(USE_WINDOWS),1)
+	set LOG_LEVEL=PANIC && go test ./... --coverprofile=coverage.out
 	go tool cover -html=coverage.out
+else
+	LOG_LEVEL=PANIC go test ./... --coverprofile=coverage.out
+	go tool cover -html=coverage.out
+endif
 
 sonarqube-run: coverage
 	sonar-scanner \
