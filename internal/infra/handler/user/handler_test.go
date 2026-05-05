@@ -27,10 +27,10 @@ func TestUserHandler_Create_Success(t *testing.T) {
 	router.POST("/auth/register", h.Create)
 
 	body := map[string]string{
-		"name":             "Test User",
-		"email":            "test@example.com",
-		"password":         "Secret@123",
-		"confirm_password": "Secret@123",
+		"name":            "Test User",
+		"email":           "test@example.com",
+		"password":        "Secret@123",
+		"confirmPassword": "Secret@123",
 	}
 	jsonBody, _ := json.Marshal(body)
 
@@ -63,10 +63,10 @@ func TestUserHandler_Create_PasswordMismatch(t *testing.T) {
 	router.POST("/auth/register", h.Create)
 
 	body := map[string]string{
-		"name":             "Test User",
-		"email":            "test@example.com",
-		"password":         "Secret@123",
-		"confirm_password": "mismatch",
+		"name":            "Test User",
+		"email":           "test@example.com",
+		"password":        "Secret@123",
+		"confirmPassword": "mismatch",
 	}
 	jsonBody, _ := json.Marshal(body)
 
@@ -89,10 +89,10 @@ func TestUserHandler_Create_ServiceError(t *testing.T) {
 	router.POST("/auth/register", h.Create)
 
 	body := map[string]string{
-		"name":             "Test User",
-		"email":            "test@example.com",
-		"password":         "Secret@123",
-		"confirm_password": "Secret@123",
+		"name":            "Test User",
+		"email":           "test@example.com",
+		"password":        "Secret@123",
+		"confirmPassword": "Secret@123",
 	}
 	jsonBody, _ := json.Marshal(body)
 

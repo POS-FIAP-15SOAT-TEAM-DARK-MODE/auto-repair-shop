@@ -42,7 +42,7 @@ type (
 		Email       string              `json:"email"`
 		Type        domain.CustomerType `json:"type"`
 		Document    string              `json:"document"`
-		CompanyName string              `json:"company_name,omitempty"`
+		CompanyName string              `json:"companyName,omitempty"`
 		Phone       string              `json:"phone"`
 	}
 

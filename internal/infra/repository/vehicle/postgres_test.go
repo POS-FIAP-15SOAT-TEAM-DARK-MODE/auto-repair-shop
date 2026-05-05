@@ -303,7 +303,7 @@ func TestVehicleRepository_Count_Success_NoFilter(t *testing.T) {
 
 	params := &domain.SearchVehicleParams{}
 
-	query := `SELECT COUNT(*) FROM vehicles`
+	query := `SELECT COUNT(id) FROM vehicle`
 	mock.ExpectQuery(regexp.QuoteMeta(query)).
 		WillReturnRows(
 			sqlmock.NewRows([]string{"count"}).AddRow(10),
@@ -327,7 +327,7 @@ func TestVehicleRepository_Count_WithCustomerFilter(t *testing.T) {
 		CustomerId: "cust-1",
 	}
 
-	query := `SELECT COUNT(*) FROM vehicles WHERE customer_id =`
+	query := `SELECT COUNT(id) FROM vehicle WHERE customer_id =`
 	mock.ExpectQuery(regexp.QuoteMeta(query)).
 		WithArgs(params.CustomerId).
 		WillReturnRows(

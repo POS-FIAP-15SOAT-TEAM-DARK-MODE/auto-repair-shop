@@ -41,7 +41,7 @@ type customerResponse struct {
 	Email       string `json:"email"`
 	Type        string `json:"type"`
 	Document    string `json:"document"`
-	CompanyName string `json:"company_name,omitempty"`
+	CompanyName string `json:"companyName,omitempty"`
 	Phone       string `json:"phone"`
 }
 
@@ -178,13 +178,13 @@ func createCustomer(t *testing.T, name, email, cpf, phone string) customerRespon
 func createCompanyCustomer(t *testing.T, name, email, cnpj, companyName, phone string) customerResponse {
 	t.Helper()
 	body := map[string]any{
-		"name":         name,
-		"email":        email,
-		"password":     "Test@12345",
-		"type":         "COMPANY",
-		"document":     cnpj,
-		"company_name": companyName,
-		"phone":        phone,
+		"name":        name,
+		"email":       email,
+		"password":    "Test@12345",
+		"type":        "COMPANY",
+		"document":    cnpj,
+		"companyName": companyName,
+		"phone":       phone,
 	}
 	resp := doRequest(t, http.MethodPost, "/v1/customers", body, attendantToken(t))
 	if resp.StatusCode != http.StatusCreated {
@@ -238,7 +238,7 @@ func createServiceOrder(t *testing.T, customerID, vehicleID string) serviceOrder
 func addWorkToSO(t *testing.T, soID string, workIDs []string, tok string) {
 	t.Helper()
 	body := map[string]any{"services": workIDs}
-	resp := doRequest(t, http.MethodPost, fmt.Sprintf("/v1/service-order/%s/services", soID), body, tok)
+	resp := doRequest(t, http.MethodPost, fmt.Sprintf("/v1/service-order/%s/works", soID), body, tok)
 	require.Equal(t, http.StatusNoContent, resp.StatusCode,
 		"addWorkToSO: unexpected status %d", resp.StatusCode)
 	resp.Body.Close()

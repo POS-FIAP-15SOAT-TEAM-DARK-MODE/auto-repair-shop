@@ -66,7 +66,8 @@ var (
 // Customer errors
 var (
 	ErrPhoneRequired            = errors.New("phone is required")
-	ErrCompanyNameRequired      = errors.New("company_name is required for COMPANY type")
+	ErrCompanyNameRequired      = errors.New("companyName is required for COMPANY type")
+	ErrCompanyNameNotAllowed    = errors.New("companyName is not allowed for INDIVIDUAL type")
 	ErrInvalidCustomerType      = errors.New("invalid customer type")
 	ErrInvalidCPF               = errors.New("invalid CPF")
 	ErrInvalidCNPJ              = errors.New("invalid CNPJ")

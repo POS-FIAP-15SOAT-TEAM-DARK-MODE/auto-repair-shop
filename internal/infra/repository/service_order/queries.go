@@ -36,7 +36,7 @@ const (
 	WHERE so.id = $1
 	`
 
-	countServiceOrderQuery = `SELECT COUNT(*) FROM service_order so`
+	countServiceOrderQuery = `SELECT COUNT(so.id) FROM service_order so`
 
 	searchServiceOrderQuery = `
 	SELECT

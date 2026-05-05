@@ -146,24 +146,17 @@ func TestPostgresRepository_Search(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
 	params := &domain.SearchWorkParams{Limit: 10, Offset: 0}
 
-	mock.ExpectBegin()
 	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "status"}).
 		AddRow("id1", "Work 1", "Desc 1", "10.00", true)
 	mock.ExpectQuery("SELECT s.id, s.name, s.description, s.unit_price, s.status FROM \"work\"").
 		WillReturnRows(rows)
-	mock.ExpectCommit()
 
-	var results []domain.Work
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		results, err = repo.Search(ctx, params)
-		return err
-	})
+	results, err := repo.Search(context.Background(), params)
 
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
@@ -175,22 +168,15 @@ func TestPostgresRepository_Count(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
 	params := &domain.SearchWorkParams{}
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT COUNT\\(s.id\\) FROM \"work\"").
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(5))
-	mock.ExpectCommit()
 
-	var total int64
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
+	total, err := repo.Count(context.Background(), params)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(5), total)
@@ -201,22 +187,15 @@ func TestPostgresRepository_Count_Error(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
 	params := &domain.SearchWorkParams{}
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT COUNT\\(s.id\\) FROM \"work\"").
 		WillReturnError(assert.AnError)
-	mock.ExpectRollback()
 
-	var total int64
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
+	total, err := repo.Count(context.Background(), params)
 
 	assert.Error(t, err)
 	assert.Equal(t, int64(0), total)
@@ -227,22 +206,15 @@ func TestPostgresRepository_Count_WithStatus(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
 	params := &domain.SearchWorkParams{Status: "ACTIVE"}
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT COUNT\\(s.id\\) FROM \"work\"").
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
-	mock.ExpectCommit()
 
-	var total int64
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		var err error
-		total, err = repo.Count(ctx, params)
-		return err
-	})
+	total, err := repo.Count(context.Background(), params)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(3), total)
@@ -257,10 +229,18 @@ func TestPostgresRepository_Save_NoTransaction(t *testing.T) {
 }
 
 func TestPostgresRepository_Search_NoTransaction(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
-	_, err := repo.Search(context.Background(), &domain.SearchWorkParams{Limit: 10})
-	assert.Error(t, err)
+	mock.ExpectQuery("SELECT s.id, s.name, s.description, s.unit_price, s.status FROM \"work\"").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "status"}))
+
+	_, err = repo.Search(context.Background(), &domain.SearchWorkParams{Limit: 10})
+	assert.NoError(t, err)
 }
 
 func TestPostgresRepository_Delete_NoTransaction(t *testing.T) {

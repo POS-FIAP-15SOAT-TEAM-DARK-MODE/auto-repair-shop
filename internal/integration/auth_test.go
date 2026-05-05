@@ -87,10 +87,10 @@ func TestProtectedEndpoint_InvalidToken(t *testing.T) {
 
 func TestRegisterUser_AsAdmin(t *testing.T) {
 	body := map[string]string{
-		"name":             "Test Technician",
-		"email":            "tech.register@test.com",
-		"password":         "Tech@12345",
-		"confirm_password": "Tech@12345",
+		"name":            "Test Technician",
+		"email":           "tech.register@test.com",
+		"password":        "Tech@12345",
+		"confirmPassword": "Tech@12345",
 	}
 	resp := doRequest(t, http.MethodPost, "/v1/auth/register", body, adminToken(t))
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
@@ -103,10 +103,10 @@ func TestRegisterUser_AsAdmin(t *testing.T) {
 
 func TestRegisterUser_Unauthorized_NonAdmin(t *testing.T) {
 	body := map[string]string{
-		"name":             "Sneaky User",
-		"email":            "sneaky@test.com",
-		"password":         "Sneaky@12345",
-		"confirm_password": "Sneaky@12345",
+		"name":            "Sneaky User",
+		"email":           "sneaky@test.com",
+		"password":        "Sneaky@12345",
+		"confirmPassword": "Sneaky@12345",
 	}
 	resp := doRequest(t, http.MethodPost, "/v1/auth/register", body, attendantToken(t))
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -114,10 +114,10 @@ func TestRegisterUser_Unauthorized_NonAdmin(t *testing.T) {
 
 func TestRegisterUser_PasswordMismatch(t *testing.T) {
 	body := map[string]string{
-		"name":             "Test User",
-		"email":            "mismatch@test.com",
-		"password":         "Test@12345",
-		"confirm_password": "Different@12345",
+		"name":            "Test User",
+		"email":           "mismatch@test.com",
+		"password":        "Test@12345",
+		"confirmPassword": "Different@12345",
 	}
 	resp := doRequest(t, http.MethodPost, "/v1/auth/register", body, adminToken(t))
 	// ErrUserPasswordDontMatch is mapped to 400 Bad Request.
@@ -129,7 +129,7 @@ func TestUpdateUserRole_AsAdmin(t *testing.T) {
 	// Create a user first.
 	createBody := map[string]string{
 		"name": "Role Update User", "email": "roleupdate@test.com",
-		"password": "Test@12345", "confirm_password": "Test@12345",
+		"password": "Test@12345", "confirmPassword": "Test@12345",
 	}
 	createResp := doRequest(t, http.MethodPost, "/v1/auth/register", createBody, adminToken(t))
 	require.Equal(t, http.StatusCreated, createResp.StatusCode)
