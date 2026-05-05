@@ -72,7 +72,7 @@ func TestCreate(t *testing.T) {
 			body: map[string]any{
 				"name": "Empresa SA", "email": "empresa@example.com",
 				"password": "Senha@123", "type": "COMPANY",
-				"document": "11.222.333/0001-81", "company_name": "Empresa SA", "phone": "1133334444",
+				"document": "11.222.333/0001-81", "companyName": "Empresa SA", "phone": "1133334444",
 			},
 			mockSetup: func(svc *domainmocks.CustomerService) {
 				svc.EXPECT().Create(mock.Anything, mock.AnythingOfType("domain.Customer")).Return(nil)

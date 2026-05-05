@@ -252,10 +252,10 @@ func TestCreateCustomerToDomain_COMPANY_MissingCompanyName(t *testing.T) {
 		domain.CompanyCustomerType, "11.222.333/0001-81", "", "11999999999",
 	)
 	if err == nil {
-		t.Fatal("expected error when company_name is missing for COMPANY type")
+		t.Fatal("expected error when companyName is missing for COMPANY type")
 	}
-	if !strings.Contains(err.Error(), "company_name") {
-		t.Errorf("expected error message to mention 'company_name', got: %s", err.Error())
+	if !strings.Contains(err.Error(), "companyName") {
+		t.Errorf("expected error message to mention 'companyName', got: %s", err.Error())
 	}
 }
 
@@ -265,7 +265,7 @@ func TestCreateCustomerToDomain_COMPANY_BlankCompanyName(t *testing.T) {
 		domain.CompanyCustomerType, "11.222.333/0001-81", "   ", "11999999999",
 	)
 	if err == nil {
-		t.Fatal("expected error when company_name is blank")
+		t.Fatal("expected error when companyName is blank")
 	}
 }
 

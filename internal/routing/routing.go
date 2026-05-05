@@ -51,8 +51,8 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Delete)
 
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
-	v1.POST("/service-order/:id/services", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.AddWork)
-	v1.DELETE("/service-order/:id/services/:serviceId", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.DeleteWork)
+	v1.POST("/service-order/:id/works", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.AddWork)
+	v1.DELETE("/service-order/:id/works/:serviceId", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.DeleteWork)
 	v1.PUT("/service-order/:id/received", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Receive)
 	v1.PUT("/service-order/:id/start-diagnosis", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.SendToDiagnosis)
 	v1.POST("/service-order/:id/supplies", middleware.Auth(role.MechanicRoles...), c.ServiceOrderHandler.AddSupplies)
@@ -69,7 +69,7 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.GET("/service-order", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.List)
 	v1.GET("/service-order/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetFullByID)
 	v1.GET("/service-order/:id/history", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHistoryHandler.GetHistoryByID)
-	v1.GET("/service-order/:id/services", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetWorks)
+	v1.GET("/service-order/:id/works", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetWorks)
 	v1.GET("/service-order/:id/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.ServiceOrderHandler.GetSupplies)
 	v1.GET("/reports/average-execution-time", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.GetAverageExecutionTime)
 

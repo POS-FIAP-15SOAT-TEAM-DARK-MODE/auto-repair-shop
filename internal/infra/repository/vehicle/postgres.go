@@ -76,7 +76,7 @@ func (r *vehicleRepository) Update(ctx context.Context, vehicle *domain.Vehicle)
 		return err
 	}
 
-	_, err = tx.ExecContext(
+	affected, err := tx.ExecContext(
 		ctx,
 		updateVehicle,
 		vehicle.ID,
@@ -88,6 +88,14 @@ func (r *vehicleRepository) Update(ctx context.Context, vehicle *domain.Vehicle)
 	)
 	if err != nil {
 		return pgPkg.Error(ctx, err)
+	}
+
+	if amount, e := affected.RowsAffected(); amount == 0 {
+		if e != nil {
+			return pgPkg.Error(ctx, e)
+		}
+
+		return domain.ErrVehicleNotFound
 	}
 
 	return nil

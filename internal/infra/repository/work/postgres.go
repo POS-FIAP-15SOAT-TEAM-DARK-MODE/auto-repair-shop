@@ -20,7 +20,7 @@ func Repository() domain.WorkRepository {
 }
 
 func (r *pg_repo) FindByID(ctx context.Context, id string) (domain.Work, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return domain.Work{}, err
 	}
@@ -66,7 +66,7 @@ func (r *pg_repo) Save(ctx context.Context, w *domain.Work) error {
 }
 
 func (r *pg_repo) Count(ctx context.Context, params *domain.SearchWorkParams) (int64, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -88,7 +88,7 @@ func (r *pg_repo) Count(ctx context.Context, params *domain.SearchWorkParams) (i
 }
 
 func (r *pg_repo) Search(ctx context.Context, params *domain.SearchWorkParams) ([]domain.Work, error) {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}

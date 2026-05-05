@@ -37,5 +37,5 @@ WHERE u.id = $1
 
 	deleteCustomerQuery = `DELETE FROM customer WHERE id = $1`
 
-	countServiceOrdersByCustomerQuery = `SELECT COUNT(*) FROM service_order WHERE customer_id = $1`
+	countServiceOrdersByCustomerQuery = `SELECT COUNT(id) FROM service_order WHERE customer_id = $1`
 )

@@ -115,7 +115,10 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrInvalidCustomerId) ||
 		errors.Is(err, domain.ErrInvalidSupplyID) ||
 		errors.Is(err, domain.ErrInvalidSupplyAmount) ||
-		errors.Is(err, domain.ErrInvalidDocumentFormat)
+		errors.Is(err, domain.ErrInvalidDocumentFormat) ||
+		errors.Is(err, domain.ErrCompanyNameNotAllowed) ||
+		errors.Is(err, domain.ErrInvalidCustomerType) ||
+		errors.Is(err, domain.ErrCompanyNameRequired)
 }
 
 func isNotFoundError(err error) bool {

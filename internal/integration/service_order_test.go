@@ -99,7 +99,7 @@ func TestAddWorksToServiceOrder(t *testing.T) {
 	addWorkToSO(t, so.ID, []string{fix.WorkID}, attendantToken(t))
 
 	// Verify works appear in the service order.
-	resp := doRequest(t, http.MethodGet, fmt.Sprintf("/v1/service-order/%s/services", so.ID), nil, attendantToken(t))
+	resp := doRequest(t, http.MethodGet, fmt.Sprintf("/v1/service-order/%s/works", so.ID), nil, attendantToken(t))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var works struct {
@@ -117,7 +117,7 @@ func TestRemoveWorkFromServiceOrder(t *testing.T) {
 	addWorkToSO(t, so.ID, []string{fix.WorkID}, attendantToken(t))
 
 	resp := doRequest(t, http.MethodDelete,
-		fmt.Sprintf("/v1/service-order/%s/services/%s", so.ID, fix.WorkID), nil, attendantToken(t))
+		fmt.Sprintf("/v1/service-order/%s/works/%s", so.ID, fix.WorkID), nil, attendantToken(t))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	resp.Body.Close()
 }
@@ -212,7 +212,7 @@ func TestCannotAddWorkToNonNewSO(t *testing.T) {
 
 	// Attempt to add work to a non-NEW order must fail.
 	// ErrServiceOrderNotNew is mapped to 409 Conflict.
-	resp := doRequest(t, http.MethodPost, fmt.Sprintf("/v1/service-order/%s/services", so.ID),
+	resp := doRequest(t, http.MethodPost, fmt.Sprintf("/v1/service-order/%s/works", so.ID),
 		map[string]any{"services": []string{fix.WorkID}}, attendantToken(t))
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 	resp.Body.Close()
