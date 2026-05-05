@@ -67,7 +67,7 @@ func NewCustomer(name, email, password string, customerType CustomerType, docume
 
 	c.applyDocument(document)
 
-	if err := c.Validate(); err != nil {
+	if err = c.Validate(); err != nil {
 		return Customer{}, err
 	}
 
@@ -94,6 +94,10 @@ func (c *Customer) Validate() error {
 	case IndividualCustomerType:
 		if err := validateCPF(c.CPF); err != nil {
 			errs = append(errs, err)
+		}
+
+		if c.CompanyName != "" {
+			errs = append(errs, ErrCompanyNameNotAllowed)
 		}
 	case CompanyCustomerType:
 		if strings.TrimSpace(c.CompanyName) == "" {

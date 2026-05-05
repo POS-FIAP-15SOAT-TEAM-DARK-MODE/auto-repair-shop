@@ -32,13 +32,13 @@ func TestCreateCustomer_Individual(t *testing.T) {
 
 func TestCreateCustomer_Company(t *testing.T) {
 	resp := doRequest(t, http.MethodPost, "/v1/customers", map[string]any{
-		"name":         "Empresa Teste",
-		"email":        nextEmail(),
-		"password":     "Test@12345",
-		"type":         "COMPANY",
-		"document":     cnpj1,
-		"company_name": "Empresa Teste LTDA",
-		"phone":        nextPhone(),
+		"name":        "Empresa Teste",
+		"email":       nextEmail(),
+		"password":    "Test@12345",
+		"type":        "COMPANY",
+		"document":    cnpj1,
+		"companyName": "Empresa Teste LTDA",
+		"phone":       nextPhone(),
 	}, attendantToken(t))
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
@@ -107,7 +107,7 @@ func TestCreateCustomer_InvalidCNPJ(t *testing.T) {
 	resp := doRequest(t, http.MethodPost, "/v1/customers", map[string]any{
 		"name": "Bad CNPJ", "email": nextEmail(),
 		"password": "Test@12345", "type": "COMPANY",
-		"document": "00.000.000/0000-00", "company_name": "Bad Corp",
+		"document": "00.000.000/0000-00", "companyName": "Bad Corp",
 		"phone": nextPhone(),
 	}, attendantToken(t))
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)

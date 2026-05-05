@@ -10,5 +10,5 @@ const (
 
 	deleteVehicle = `DELETE FROM vehicle WHERE id = $1`
 
-	countVehicles = `SELECT COUNT(*) FROM vehicles`
+	countVehicles = `SELECT COUNT(id) FROM vehicle`
 )

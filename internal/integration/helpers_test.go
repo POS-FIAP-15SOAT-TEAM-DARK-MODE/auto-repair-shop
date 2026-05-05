@@ -41,7 +41,7 @@ type customerResponse struct {
 	Email       string `json:"email"`
 	Type        string `json:"type"`
 	Document    string `json:"document"`
-	CompanyName string `json:"company_name,omitempty"`
+	CompanyName string `json:"companyName,omitempty"`
 	Phone       string `json:"phone"`
 }
 
@@ -65,8 +65,8 @@ type supplyResponse struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
 	Description   string `json:"description"`
-	UnitPrice     string `json:"unit_price"`
-	StockQuantity int    `json:"stock_quantity"`
+	UnitPrice     string `json:"unitPrice"`
+	StockQuantity int    `json:"stockQuantity"`
 	Version       int    `json:"version"`
 }
 
@@ -178,13 +178,13 @@ func createCustomer(t *testing.T, name, email, cpf, phone string) customerRespon
 func createCompanyCustomer(t *testing.T, name, email, cnpj, companyName, phone string) customerResponse {
 	t.Helper()
 	body := map[string]any{
-		"name":         name,
-		"email":        email,
-		"password":     "Test@12345",
-		"type":         "COMPANY",
-		"document":     cnpj,
-		"company_name": companyName,
-		"phone":        phone,
+		"name":        name,
+		"email":       email,
+		"password":    "Test@12345",
+		"type":        "COMPANY",
+		"document":    cnpj,
+		"companyName": companyName,
+		"phone":       phone,
 	}
 	resp := doRequest(t, http.MethodPost, "/v1/customers", body, attendantToken(t))
 	if resp.StatusCode != http.StatusCreated {

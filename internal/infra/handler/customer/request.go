@@ -12,7 +12,7 @@ type createCustomerRequest struct {
 	Password    string `json:"password"`
 	Type        string `json:"type"`
 	Document    string `json:"document"`
-	CompanyName string `json:"company_name,omitempty"`
+	CompanyName string `json:"companyName,omitempty"`
 	Phone       string `json:"phone"`
 }
 

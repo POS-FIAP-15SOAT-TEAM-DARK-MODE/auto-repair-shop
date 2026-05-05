@@ -67,7 +67,7 @@ func (h *handler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := req.Validate(); err != nil {
+	if err = req.Validate(); err != nil {
 		status, response := web.Error(err)
 		logger.Of(ctx).Debug("User validation failed",
 			zap.String("operation", "create_user"),
