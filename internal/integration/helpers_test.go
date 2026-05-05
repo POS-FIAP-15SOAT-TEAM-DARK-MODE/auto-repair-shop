@@ -65,8 +65,8 @@ type supplyResponse struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
 	Description   string `json:"description"`
-	UnitPrice     string `json:"unitPrice"`
-	StockQuantity int    `json:"stockQuantity"`
+	UnitPrice     string `json:"unit_price"`
+	StockQuantity int    `json:"stock_quantity"`
 	Version       int    `json:"version"`
 }
 
@@ -238,7 +238,7 @@ func createServiceOrder(t *testing.T, customerID, vehicleID string) serviceOrder
 func addWorkToSO(t *testing.T, soID string, workIDs []string, tok string) {
 	t.Helper()
 	body := map[string]any{"services": workIDs}
-	resp := doRequest(t, http.MethodPost, fmt.Sprintf("/v1/service-order/%s/services", soID), body, tok)
+	resp := doRequest(t, http.MethodPost, fmt.Sprintf("/v1/service-order/%s/works", soID), body, tok)
 	require.Equal(t, http.StatusNoContent, resp.StatusCode,
 		"addWorkToSO: unexpected status %d", resp.StatusCode)
 	resp.Body.Close()
