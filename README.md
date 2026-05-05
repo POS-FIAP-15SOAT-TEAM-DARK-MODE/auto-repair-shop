@@ -247,26 +247,26 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 
 ### Service Orders (SO)
 
-| Method | Path                                              | Roles                      |
-|--------|---------------------------------------------------|----------------------------|
-| POST   | `/v1/service-order`                               | ADMIN, ATTENDANT           |
-| GET    | `/v1/service-order`                               | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/service-order/:id`                           | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/received`                  | ADMIN, ATTENDANT           |
-| PUT    | `/v1/service-order/:id/start-diagnosis`           | ADMIN, MECHANIC            |
-| PUT    | `/v1/service-order/:id/send`                      | ADMIN, MECHANIC            |
-| PUT    | `/v1/service-order/:id/accept`                    | CUSTOMER (own SO only)     |
-| PUT    | `/v1/service-order/:id/reject`                    | CUSTOMER (own SO only)     |
-| PUT    | `/v1/service-order/:id/finish`                    | ADMIN, MECHANIC            |
-| PUT    | `/v1/service-order/:id/deliver`                   | ADMIN, ATTENDANT           |
-| PUT    | `/v1/service-order/:id/cancel`                    | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/service-order/:id/history`                   | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/service-order/:id/services`                  | ADMIN, ATTENDANT, MECHANIC |
-| POST   | `/v1/service-order/:id/services`                  | ADMIN, ATTENDANT           |
-| DELETE | `/v1/service-order/:id/services/:serviceId`       | ADMIN, ATTENDANT           |
-| GET    | `/v1/service-order/:id/supplies`                  | ADMIN, ATTENDANT, MECHANIC |
-| POST   | `/v1/service-order/:id/supplies`                  | ADMIN, MECHANIC            |
-| DELETE | `/v1/service-order/:id/supplies/:supplyId`        | ADMIN, MECHANIC            |
+| Method | Path                                       | Roles                      |
+|--------|--------------------------------------------|----------------------------|
+| POST   | `/v1/service-order`                        | ADMIN, ATTENDANT           |
+| GET    | `/v1/service-order`                        | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id`                    | ADMIN, ATTENDANT, MECHANIC |
+| PUT    | `/v1/service-order/:id/received`           | ADMIN, ATTENDANT           |
+| PUT    | `/v1/service-order/:id/start-diagnosis`    | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/send`               | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/accept`             | CUSTOMER (own SO only)     |
+| PUT    | `/v1/service-order/:id/reject`             | CUSTOMER (own SO only)     |
+| PUT    | `/v1/service-order/:id/finish`             | ADMIN, MECHANIC            |
+| PUT    | `/v1/service-order/:id/deliver`            | ADMIN, ATTENDANT           |
+| PUT    | `/v1/service-order/:id/cancel`             | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id/history`            | ADMIN, ATTENDANT, MECHANIC |
+| GET    | `/v1/service-order/:id/works`              | ADMIN, ATTENDANT, MECHANIC |
+| POST   | `/v1/service-order/:id/works`              | ADMIN, ATTENDANT           |
+| DELETE | `/v1/service-order/:id/works/:serviceId`   | ADMIN, ATTENDANT           |
+| GET    | `/v1/service-order/:id/supplies`           | ADMIN, ATTENDANT, MECHANIC |
+| POST   | `/v1/service-order/:id/supplies`           | ADMIN, MECHANIC            |
+| DELETE | `/v1/service-order/:id/supplies/:supplyId` | ADMIN, MECHANIC            |
 
 ### Work Status Transitions (within a SO)
 

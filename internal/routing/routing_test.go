@@ -153,8 +153,6 @@ func TestSetupRouter(t *testing.T) {
 		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated, ""},
 		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK, ""},
 		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
-		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK, ""},
-		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
 		{goHttp.MethodDelete, "/v1/supplies/:id", goHttp.StatusNoContent, ""},
 
 		// Service Order
@@ -171,9 +169,9 @@ func TestSetupRouter(t *testing.T) {
 		{goHttp.MethodPut, "/v1/service-order/:id/cancel", goHttp.StatusOK, ""},
 
 		// Service Order Works
-		{goHttp.MethodGet, "/v1/service-order/:id/services", goHttp.StatusOK, ""},
-		{goHttp.MethodPost, "/v1/service-order/:id/services", goHttp.StatusNoContent, `{"services":["work-id-1"]}`},
-		{goHttp.MethodDelete, "/v1/service-order/:id/services/:serviceId", goHttp.StatusNoContent, ""},
+		{goHttp.MethodGet, "/v1/service-order/:id/works", goHttp.StatusOK, ""},
+		{goHttp.MethodPost, "/v1/service-order/:id/works", goHttp.StatusNoContent, `{"works":["work-id-1"]}`},
+		{goHttp.MethodDelete, "/v1/service-order/:id/works/:serviceId", goHttp.StatusNoContent, ""},
 
 		// Service Order Supplies
 		{goHttp.MethodGet, "/v1/service-order/:id/supplies", goHttp.StatusOK, ""},
