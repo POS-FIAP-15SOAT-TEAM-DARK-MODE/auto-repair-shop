@@ -29,6 +29,7 @@ func setupRouter(svc *domainmocks.SupplyService) *gin.Engine {
 	r.POST("/supplies", h.Create)
 	r.GET("/supplies", h.List)
 	r.PUT("/supplies/:id", h.Update)
+	r.DELETE("/supplies/:id", h.Delete)
 	return r
 }
 
@@ -349,17 +350,27 @@ func TestDeleteWorkHandler_Success(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, rec.Code)
 }
 
-func TestDeleteWorkHandler_ServiceError(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	mockService := domainmocks.NewSupplyService(t)
-	h := handler.HttpHandler(mockService)
+func TestDelete_EdgeCases(t *testing.T) {
+	svc := domainmocks.NewSupplyService(t)
+	router := setupRouter(svc)
 
-	mockService.EXPECT().Delete(mock.Anything, "work-id").Return(errors.New("internal error"))
+	t.Run("service error", func(t *testing.T) {
+		svc.EXPECT().Delete(mock.Anything, "id1").Return(assert.AnError)
+		req := httptest.NewRequest(http.MethodDelete, "/supplies/id1", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
 
-	router := gin.New()
-	router.DELETE("/works/:id", h.Delete)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	})
+}
 
-	req := httptest.NewRequest(http.MethodDelete, "/works/work-id", nil)
+func TestUpdate_ServiceError(t *testing.T) {
+	svc := domainmocks.NewSupplyService(t)
+	router := setupRouter(svc)
+
+	svc.EXPECT().Update(mock.Anything, mock.Anything).Return(assert.AnError)
+	req := httptest.NewRequest(http.MethodPut, "/supplies/id1", toJSON(t, validSupplyPayload()))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 

@@ -162,3 +162,26 @@ func TestCreateUserToDomain_HashPasswordFails(t *testing.T) {
 	_, err := CreateUserToDomain("John Doe", "john@example.com", "Secret@123")
 	assert.Error(t, err)
 }
+
+func TestLoggedUser_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		user    LoggedUser
+		wantErr bool
+	}{
+		{name: "valid", user: LoggedUser{User: User{Email: "a@b.com", Password: "secret"}}, wantErr: false},
+		{name: "empty email", user: LoggedUser{User: User{Email: "", Password: "secret"}}, wantErr: true},
+		{name: "empty password", user: LoggedUser{User: User{Email: "a@b.com", Password: ""}}, wantErr: true},
+		{name: "both empty", user: LoggedUser{}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.user.Validate()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

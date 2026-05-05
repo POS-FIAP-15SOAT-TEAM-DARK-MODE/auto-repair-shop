@@ -298,3 +298,80 @@ func TestCreateCustomerToDomain_InvalidType(t *testing.T) {
 		t.Fatal("expected error for invalid customer type")
 	}
 }
+
+// ── ParseDocument ─────────────────────────────────────────────────────────────
+
+func TestParseDocument(t *testing.T) {
+	tests := []struct {
+		name          string
+		raw           string
+		wantType      domain.CustomerType
+		wantSanitized string
+		wantErr       bool
+	}{
+		{
+			name:          "valid CPF formatted",
+			raw:           "111.444.777-35",
+			wantType:      domain.IndividualCustomerType,
+			wantSanitized: "11144477735",
+		},
+		{
+			name:          "valid CPF plain digits",
+			raw:           "11144477735",
+			wantType:      domain.IndividualCustomerType,
+			wantSanitized: "11144477735",
+		},
+		{
+			name:          "valid CNPJ formatted",
+			raw:           "11.222.333/0001-81",
+			wantType:      domain.CompanyCustomerType,
+			wantSanitized: "11222333000181",
+		},
+		{
+			name:          "valid CNPJ plain digits",
+			raw:           "11222333000181",
+			wantType:      domain.CompanyCustomerType,
+			wantSanitized: "11222333000181",
+		},
+		{
+			name:    "invalid CPF check digit",
+			raw:     "111.444.777-36",
+			wantErr: true,
+		},
+		{
+			name:    "invalid CNPJ check digit",
+			raw:     "11.222.333/0001-82",
+			wantErr: true,
+		},
+		{
+			name:    "too short — not CPF or CNPJ",
+			raw:     "12345",
+			wantErr: true,
+		},
+		{
+			name:    "too long",
+			raw:     "123456789012345",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotType, gotSanitized, err := domain.ParseDocument(tt.raw)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error for input %q, got none", tt.raw)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected no error for input %q, got: %v", tt.raw, err)
+			}
+			if gotType != tt.wantType {
+				t.Errorf("expected type %q, got %q", tt.wantType, gotType)
+			}
+			if gotSanitized != tt.wantSanitized {
+				t.Errorf("expected sanitized %q, got %q", tt.wantSanitized, gotSanitized)
+			}
+		})
+	}
+}

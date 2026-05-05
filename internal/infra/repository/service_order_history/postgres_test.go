@@ -138,4 +138,66 @@ func TestPostgresRepository_SearchWorkTransitions(t *testing.T) {
 		_, err := repo.SearchWorkTransitionsByServiceOrderID(context.Background(), "so-1")
 		assert.Error(t, err)
 	})
+
+	t.Run("scan error returns error", func(t *testing.T) {
+		repo := sohrepo.Repository()
+		rows := sqlmock.NewRows([]string{"work_id", "previous_status", "new_status", "created_at"}).
+			AddRow("w-1", nil, "NEW", "not-a-time")
+		testMock.ExpectQuery(`SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`).
+			WithArgs("so-1").
+			WillReturnRows(rows)
+
+		_, err := repo.SearchWorkTransitionsByServiceOrderID(context.Background(), "so-1")
+		assert.Error(t, err)
+	})
+}
+
+func TestPostgresRepository_Search_ScanError(t *testing.T) {
+	repo := sohrepo.Repository()
+	rows := sqlmock.NewRows([]string{"previous_status", "new_status", "created_at"}).
+		AddRow("NEW", "RECEIVED", "not-a-time")
+	testMock.ExpectQuery(`SELECT soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`).
+		WillReturnRows(rows)
+
+	_, err := repo.Search(context.Background(), &domain.SearchServiceOrderHistoryParams{})
+	assert.Error(t, err)
+}
+
+func TestPostgresRepository_InsertWorkHistory(t *testing.T) {
+	uow := postgresdb.NewTransactionalUoW(postgresdb.Connect())
+
+	t.Run("success", func(t *testing.T) {
+		testMock.ExpectBegin()
+		testMock.ExpectExec("INSERT INTO work_service_order_status_history").
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		testMock.ExpectCommit()
+
+		repo := sohrepo.Repository()
+		err := uow.Execute(context.Background(), func(ctx context.Context) error {
+			return repo.InsertWorkHistory(ctx, "so-1", "w-1", domain.SERVICE_ORDER_STATUS_NEW)
+		})
+
+		assert.NoError(t, err)
+		assert.NoError(t, testMock.ExpectationsWereMet())
+	})
+
+	t.Run("exec error", func(t *testing.T) {
+		testMock.ExpectBegin()
+		testMock.ExpectExec("INSERT INTO work_service_order_status_history").
+			WillReturnError(errors.New("db error"))
+		testMock.ExpectRollback()
+
+		repo := sohrepo.Repository()
+		err := uow.Execute(context.Background(), func(ctx context.Context) error {
+			return repo.InsertWorkHistory(ctx, "so-1", "w-1", domain.SERVICE_ORDER_STATUS_NEW)
+		})
+
+		assert.Error(t, err)
+	})
+}
+
+func TestPostgresRepository_InsertWorkHistory_NoTransaction(t *testing.T) {
+	repo := sohrepo.Repository()
+	err := repo.InsertWorkHistory(context.Background(), "so-1", "w-1", domain.SERVICE_ORDER_STATUS_NEW)
+	assert.Error(t, err)
 }

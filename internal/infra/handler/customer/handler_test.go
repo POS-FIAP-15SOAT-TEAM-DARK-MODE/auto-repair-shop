@@ -475,3 +475,30 @@ func TestGetByDocument(t *testing.T) {
 		})
 	}
 }
+
+func TestHandler_EdgeCases(t *testing.T) {
+	svc := domainmocks.NewCustomerService(t)
+	router := setupRouter(svc)
+
+	t.Run("GetByID empty", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/customers/%20", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Update empty id", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPut, "/customers/%20", bytes.NewReader([]byte(`{"name":"Test"}`)))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("Delete empty id", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodDelete, "/customers/%20", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+}
