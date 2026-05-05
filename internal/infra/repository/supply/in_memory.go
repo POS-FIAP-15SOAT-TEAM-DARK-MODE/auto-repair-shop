@@ -2,27 +2,31 @@ package supply
 
 import (
 	"context"
-	"sort"
+	"slices"
+	"sync"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 )
 
-type memory_repo struct {
+type memoryRepo struct {
+	mu   sync.Mutex
 	data map[string]domain.Supply
 }
 
 func MemoryRepository() domain.SupplyRepository {
-	return &memory_repo{
-		data: make(map[string]domain.Supply),
-	}
+	return &memoryRepo{data: make(map[string]domain.Supply)}
 }
 
-func (r *memory_repo) Save(_ context.Context, s *domain.Supply) error {
+func (r *memoryRepo) Save(_ context.Context, s *domain.Supply) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.data[s.ID] = *s
 	return nil
 }
 
-func (r *memory_repo) FindById(_ context.Context, id string) (domain.Supply, error) {
+func (r *memoryRepo) FindById(_ context.Context, id string) (domain.Supply, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	s, ok := r.data[id]
 	if !ok {
 		return domain.Supply{}, domain.ErrSupplyNotFound
@@ -30,38 +34,49 @@ func (r *memory_repo) FindById(_ context.Context, id string) (domain.Supply, err
 	return s, nil
 }
 
-func (r *memory_repo) Delete(_ context.Context, id string) error {
+func (r *memoryRepo) Search(_ context.Context, params *domain.ListSupplyParams) ([]domain.Supply, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	all := make([]domain.Supply, 0, len(r.data))
+	for _, s := range r.data {
+		all = append(all, s)
+	}
+	slices.SortFunc(all, func(a, b domain.Supply) int {
+		if a.ID < b.ID {
+			return -1
+		}
+		if a.ID > b.ID {
+			return 1
+		}
+		return 0
+	})
+	offset := int(params.Offset())
+	if offset >= len(all) {
+		return []domain.Supply{}, nil
+	}
+	end := offset + int(params.PageSize)
+	if end > len(all) {
+		end = len(all)
+	}
+	return all[offset:end], nil
+}
+
+func (r *memoryRepo) Count(_ context.Context, _ *domain.ListSupplyParams) (int64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return int64(len(r.data)), nil
+}
+
+func (r *memoryRepo) Delete(_ context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	delete(r.data, id)
 	return nil
 }
 
-func (r *memory_repo) Count(_ context.Context, params *domain.ListSupplyParams) (int64, error) {
-	return int64(len(r.data)), nil
-}
-
-func (r *memory_repo) Search(_ context.Context, params *domain.ListSupplyParams) ([]domain.Supply, error) {
-	items := make([]domain.Supply, 0, len(r.data))
-	for _, v := range r.data {
-		items = append(items, v)
-	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].ID < items[j].ID
-	})
-
-	start := int(params.Offset())
-	if start >= len(items) {
-		return []domain.Supply{}, nil
-	}
-
-	end := start + int(params.PageSize)
-	if end > len(items) {
-		end = len(items)
-	}
-
-	return items[start:end], nil
-}
-
-func (r *memory_repo) DecrementStock(_ context.Context, id string, amount int) error {
+func (r *memoryRepo) DecrementStock(_ context.Context, id string, amount int) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	s, ok := r.data[id]
 	if !ok {
 		return domain.ErrSupplyNotFound
@@ -74,7 +89,9 @@ func (r *memory_repo) DecrementStock(_ context.Context, id string, amount int) e
 	return nil
 }
 
-func (r *memory_repo) RestoreStock(_ context.Context, id string, amount int) error {
+func (r *memoryRepo) RestoreStock(_ context.Context, id string, amount int) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	s, ok := r.data[id]
 	if !ok {
 		return domain.ErrSupplyNotFound

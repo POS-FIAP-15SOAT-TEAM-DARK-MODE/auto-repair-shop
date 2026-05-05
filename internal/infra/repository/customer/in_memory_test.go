@@ -63,13 +63,13 @@ func TestMemoryRepository_GetByID(t *testing.T) {
 	c := newTestCustomer(t)
 	_ = repo.Create(ctx, &c)
 
-	t.Run("id exists returns error (known inverted behavior)", func(t *testing.T) {
-		_, err := repo.GetByID(ctx, c.ID)
+	t.Run("id not found returns not found", func(t *testing.T) {
+		_, err := repo.GetByID(ctx, "nonexistent")
 		assert.ErrorIs(t, err, domain.ErrCustomerNotFound)
 	})
 
-	t.Run("id not found returns no error", func(t *testing.T) {
-		_, err := repo.GetByID(ctx, "nonexistent")
+	t.Run("id found returns customers", func(t *testing.T) {
+		_, err := repo.GetByID(ctx, c.ID)
 		assert.NoError(t, err)
 	})
 }
