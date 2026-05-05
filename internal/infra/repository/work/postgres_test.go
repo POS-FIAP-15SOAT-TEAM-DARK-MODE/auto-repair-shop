@@ -80,19 +80,13 @@ func TestPostgresRepository_Search_Error(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
-	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT s.id, s.name, s.description, s.unit_price, s.status FROM \"work\"").
 		WillReturnError(assert.AnError)
-	mock.ExpectRollback()
 
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.Search(ctx, &domain.SearchWorkParams{Limit: 10})
-		return err
-	})
-
+	_, err = repo.Search(context.Background(), &domain.SearchWorkParams{Limit: 10})
 	assert.Error(t, err)
 }
 
@@ -101,21 +95,15 @@ func TestPostgresRepository_Search_ScanError(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
-	mock.ExpectBegin()
 	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "status"}).
-		AddRow("id1", "Work 1", "Desc 1", "invalid-price", true) // Scan error for price (expecting numeric)
+		AddRow("id1", "Work 1", "Desc 1", "invalid-price", true)
 	mock.ExpectQuery("SELECT s.id, s.name, s.description, s.unit_price, s.status FROM \"work\"").
 		WillReturnRows(rows)
-	mock.ExpectRollback()
 
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.Search(ctx, &domain.SearchWorkParams{Limit: 10})
-		return err
-	})
-
+	_, err = repo.Search(context.Background(), &domain.SearchWorkParams{Limit: 10})
 	assert.Error(t, err)
 }
 
@@ -249,39 +237,28 @@ func TestPostgresRepository_FindByID(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
 	id := "w1"
 
 	t.Run("success", func(t *testing.T) {
-		mock.ExpectBegin()
 		mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.status FROM "work" s WHERE s.id = \$1`).
 			WithArgs(id).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "status"}).
-				AddRow(id, "Work 1", "Desc 1", "100.00", true))
-		mock.ExpectCommit()
+				AddRow(id, "Work 1", "Desc 1", "100.00", domain.ACTIVE))
 
-		err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-			w, err := repo.FindByID(ctx, id)
-			assert.NoError(t, err)
-			assert.Equal(t, id, w.ID)
-			return nil
-		})
+		w, err := repo.FindByID(context.Background(), id)
 		assert.NoError(t, err)
+		assert.Equal(t, id, w.ID)
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		mock.ExpectBegin()
 		mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.status FROM "work" s WHERE s.id = \$1`).
 			WithArgs(id).
 			WillReturnError(sql.ErrNoRows)
-		mock.ExpectRollback()
 
-		err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-			_, err := repo.FindByID(ctx, id)
-			return err
-		})
+		_, err := repo.FindByID(context.Background(), id)
 		assert.ErrorIs(t, err, domain.ErrWorkNotFound)
 	})
 }
@@ -291,21 +268,17 @@ func TestPostgresRepository_Search_WithStatus(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	uowExec := postgresdb.NewTransactionalUoW(db)
+	postgresdb.ConnectWithDB(db)
 	repo := work.Repository()
 
 	params := &domain.SearchWorkParams{Limit: 10, Offset: 0, Status: "ACTIVE"}
 
-	mock.ExpectBegin()
 	rows := sqlmock.NewRows([]string{"id", "name", "description", "unit_price", "status"}).
 		AddRow("id1", "Work 1", "Desc 1", "10.00", true)
 	mock.ExpectQuery(`SELECT s.id, s.name, s.description, s.unit_price, s.status FROM "work" s`).
 		WillReturnRows(rows)
-	mock.ExpectCommit()
 
-	err = uowExec.Execute(context.Background(), func(ctx context.Context) error {
-		_, err := repo.Search(ctx, params)
-		return err
-	})
+	results, err := repo.Search(context.Background(), params)
 	assert.NoError(t, err)
+	assert.Len(t, results, 1)
 }
