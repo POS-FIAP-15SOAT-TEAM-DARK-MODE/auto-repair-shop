@@ -19,9 +19,8 @@ run:
 test:
 	$(SET_ENV_PREFIX) LOG_LEVEL=PANIC $(ENV_SEPARATOR) go test ./... --race -v
 
-test-integration: export BCRYPT_COST=4
 test-integration:
-	go test -tags=integration ./internal/integration/... -v
+	$(SET_ENV_PREFIX) BCRYPT_COST=4 $(ENV_SEPARATOR) go test -tags=integration ./internal/integration/... -v
 
 coverage:
 	$(SET_ENV_PREFIX) LOG_LEVEL=PANIC $(ENV_SEPARATOR) go test ./... --coverprofile=coverage.out
