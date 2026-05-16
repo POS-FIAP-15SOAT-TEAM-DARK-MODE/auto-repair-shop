@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 	"github.com/oklog/ulid/v2"
 	"github.com/shopspring/decimal"
 )
@@ -42,7 +43,7 @@ type (
 		ID          string
 		Status      SERVICE_ORDER_STATUS
 		Customer    *Customer
-		Vehicle     *Vehicle
+		Vehicle     *domain.Vehicle
 		Services    []Work
 		Supplies    []Supply
 		TotalAmount decimal.Decimal
@@ -154,7 +155,7 @@ type WorkExecutionTime struct {
 	AverageHours float64
 }
 
-func NewServiceOrder(Customer *Customer, Vehicle *Vehicle) *ServiceOrder {
+func NewServiceOrder(Customer *Customer, Vehicle *domain.Vehicle) *ServiceOrder {
 	return &ServiceOrder{
 		ID:          ulid.Make().String(),
 		Status:      SERVICE_ORDER_STATUS_NEW,

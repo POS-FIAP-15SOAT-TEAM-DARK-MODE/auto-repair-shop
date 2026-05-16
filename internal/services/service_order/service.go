@@ -9,6 +9,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	domainV2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -21,7 +22,7 @@ type svc struct {
 	workHistoryRepo   domain.ServiceOrderHistoryRepository
 	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository
 	customerService   domain.CustomerService
-	vehicleService    domain.VehicleService
+	vehicleService    domainV2.VehicleService
 }
 
 func Service(
@@ -32,7 +33,7 @@ func Service(
 	workHistoryRepo domain.ServiceOrderHistoryRepository,
 	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository,
 	customerService domain.CustomerService,
-	vehicleService domain.VehicleService) *svc {
+	vehicleService domainV2.VehicleService) *svc {
 	return &svc{uow, repo, workRepo, supplyRepo, workHistoryRepo, workSOHistoryRepo, customerService, vehicleService}
 }
 
@@ -80,12 +81,12 @@ func (s *svc) Create(ctx context.Context, customerId string, vehicleId string) (
 		return domain.ServiceOrder{}, err
 	}
 
-	vehicle, err := s.vehicleService.FindByID(ctx, vehicleId)
+	vehicle, err := s.vehicleService.FindById(ctx, vehicleId)
 	if err != nil {
 		return domain.ServiceOrder{}, err
 	}
 
-	so := domain.NewServiceOrder(&customer, vehicle)
+	so := domain.NewServiceOrder(&customer, &vehicle)
 	if err = s.uow.Execute(ctx, func(ctx context.Context) error {
 		return s.repo.Save(ctx, so)
 	}); err != nil {

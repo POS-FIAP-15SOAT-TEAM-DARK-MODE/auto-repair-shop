@@ -9,6 +9,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	dbPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
+	domainV2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -255,7 +256,7 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	var so domain.ServiceOrder
 	so.Customer = new(domain.Customer)
 	so.Customer.User = new(domain.User)
-	so.Vehicle = new(domain.Vehicle)
+	so.Vehicle = new(domainV2.Vehicle)
 	var status string
 	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
 		&so.ID, &status, &so.TotalAmount,
@@ -321,7 +322,7 @@ func (r *repository) Search(ctx context.Context, params *domain.ServiceOrderFilt
 		var so domain.ServiceOrder
 		so.Customer = new(domain.Customer)
 		so.Customer.User = new(domain.User)
-		so.Vehicle = new(domain.Vehicle)
+		so.Vehicle = new(domainV2.Vehicle)
 		var status string
 
 		if err = rows.Scan(

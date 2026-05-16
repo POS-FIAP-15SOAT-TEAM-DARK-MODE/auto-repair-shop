@@ -13,6 +13,8 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/mocks"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/adapters"
+	mocks2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -25,7 +27,7 @@ func TestSetupRouter(t *testing.T) {
 	mockUser := mocks.NewUserHandler(t)
 	mockCustomer := mocks.NewCustomerHandler(t)
 	mockWork := mocks.NewWorkHandler(t)
-	mockVehicle := mocks.NewVehicleHandler(t)
+	mockVehicle := mocks2.NewVehicleHTTPController(t)
 	mockSupply := mocks.NewSupplyHandler(t)
 	mockSO := mocks.NewServiceOrderHandler(t)
 	mockSOHistory := mocks.NewServiceOrderHistoryHandler(t)
@@ -54,10 +56,10 @@ func TestSetupRouter(t *testing.T) {
 	mockWork.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Vehicle
-	mockVehicle.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
-	mockVehicle.EXPECT().FindByLicensePlate(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
-	mockVehicle.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
-	mockVehicle.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockVehicle.EXPECT().Create(mock.Anything, mock.AnythingOfType("*http.Request")).Return(adapters.VehicleResponse{}, nil)
+	mockVehicle.EXPECT().Edit(mock.Anything, mock.AnythingOfType("*http.Request")).Return(adapters.VehicleResponse{}, nil)
+	mockVehicle.EXPECT().Delete(mock.Anything, mock.AnythingOfType("*http.Request")).Return(nil)
+	mockVehicle.EXPECT().List(mock.Anything, mock.AnythingOfType("*http.Request")).Return(adapters.PaginatedVehicleResponse{}, nil)
 
 	// Supply
 	mockSupply.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -117,76 +119,78 @@ func TestSetupRouter(t *testing.T) {
 	}
 
 	tests := []struct {
-		method string
-		path   string
-		status int
-		body   string
+		method       string
+		path         string
+		status       int
+		body         string
+		useOnlyError bool
+		useHandler   bool
 	}{
 		// Ping
-		{goHttp.MethodGet, "/ping", goHttp.StatusOK, ""},
+		{method: goHttp.MethodGet, path: "/ping", status: goHttp.StatusOK, body: ""},
 
 		// User
-		{goHttp.MethodPost, "/v1/auth/register", goHttp.StatusCreated, ""},
-		{goHttp.MethodPost, "/v1/auth/login", goHttp.StatusOK, ""},
-		{goHttp.MethodPatch, "/v1/users/:id/role", goHttp.StatusNoContent, `{"role":"MECHANIC"}`},
+		{method: goHttp.MethodPost, path: "/v1/auth/register", status: goHttp.StatusCreated, body: ""},
+		{method: goHttp.MethodPost, path: "/v1/auth/login", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodPatch, path: "/v1/users/:id/role", status: goHttp.StatusNoContent, body: `{"role":"MECHANIC"}`},
 
 		// Customer
-		{goHttp.MethodPost, "/v1/customers", goHttp.StatusCreated, ""},
-		{goHttp.MethodGet, "/v1/customers/:id", goHttp.StatusOK, ""},
-		{goHttp.MethodGet, "/v1/customers", goHttp.StatusOK, ""},
-		{goHttp.MethodPut, "/v1/customers/:id", goHttp.StatusOK, ""},
-		{goHttp.MethodDelete, "/v1/customers/:id", goHttp.StatusNoContent, ""},
+		{method: goHttp.MethodPost, path: "/v1/customers", status: goHttp.StatusCreated, body: ""},
+		{method: goHttp.MethodGet, path: "/v1/customers/:id", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodGet, path: "/v1/customers", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/customers/:id", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodDelete, path: "/v1/customers/:id", status: goHttp.StatusNoContent, body: ""},
 
 		// Work (catalog)
-		{goHttp.MethodPost, "/v1/works", goHttp.StatusCreated, ""},
-		{goHttp.MethodGet, "/v1/works", goHttp.StatusOK, ""},
-		{goHttp.MethodPut, "/v1/works/:id", goHttp.StatusOK, ""},
-		{goHttp.MethodDelete, "/v1/works/:id", goHttp.StatusNoContent, ""},
+		{method: goHttp.MethodPost, path: "/v1/works", status: goHttp.StatusCreated, body: ""},
+		{method: goHttp.MethodGet, path: "/v1/works", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/works/:id", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodDelete, path: "/v1/works/:id", status: goHttp.StatusNoContent, body: ""},
 
 		// Vehicle
-		{goHttp.MethodGet, "/v1/vehicles", goHttp.StatusOK, ""},
-		{goHttp.MethodPost, "/v1/vehicles", goHttp.StatusCreated, ""},
-		{goHttp.MethodPut, "/v1/vehicles/:id", goHttp.StatusOK, ""},
-		{goHttp.MethodDelete, "/v1/vehicles/:id", goHttp.StatusNoContent, ""},
+		{method: goHttp.MethodGet, path: "/v1/vehicles", status: goHttp.StatusOK, body: "", useHandler: true},
+		{method: goHttp.MethodPost, path: "/v1/vehicles", status: goHttp.StatusCreated, body: "", useHandler: true},
+		{method: goHttp.MethodPut, path: "/v1/vehicles/:id", status: goHttp.StatusOK, body: "", useHandler: true},
+		{method: goHttp.MethodDelete, path: "/v1/vehicles/:id", status: goHttp.StatusNoContent, body: "", useHandler: true, useOnlyError: true},
 
 		// Supply
-		{goHttp.MethodPost, "/v1/supplies", goHttp.StatusCreated, ""},
-		{goHttp.MethodGet, "/v1/supplies", goHttp.StatusOK, ""},
-		{goHttp.MethodPut, "/v1/supplies/:id", goHttp.StatusOK, ""},
-		{goHttp.MethodDelete, "/v1/supplies/:id", goHttp.StatusNoContent, ""},
+		{method: goHttp.MethodPost, path: "/v1/supplies", status: goHttp.StatusCreated, body: ""},
+		{method: goHttp.MethodGet, path: "/v1/supplies", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/supplies/:id", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodDelete, path: "/v1/supplies/:id", status: goHttp.StatusNoContent, body: ""},
 
 		// Service Order
-		{goHttp.MethodPost, "/v1/service-order", goHttp.StatusCreated, ""},
-		{goHttp.MethodGet, "/v1/service-order", goHttp.StatusOK, ""},
-		{goHttp.MethodGet, "/v1/service-order/:id", goHttp.StatusOK, `{"id":"123"}`},
-		{goHttp.MethodPut, "/v1/service-order/:id/finish", goHttp.StatusNoContent, ""},
-		{goHttp.MethodGet, "/v1/service-order/:id/status", goHttp.StatusOK, `{"id":"123". "status":"in_progress"}`},
-		{goHttp.MethodPut, "/v1/service-order/:id/start-diagnosis", goHttp.StatusNoContent, ""},
-		{goHttp.MethodPut, "/v1/service-order/:id/send", goHttp.StatusNoContent, ""},
-		{goHttp.MethodPut, "/v1/service-order/:id/accept", goHttp.StatusNoContent, ""},
-		{goHttp.MethodPut, "/v1/service-order/:id/reject", goHttp.StatusNoContent, ""},
-		{goHttp.MethodPut, "/v1/service-order/:id/deliver", goHttp.StatusNoContent, ""},
-		{goHttp.MethodPut, "/v1/service-order/:id/cancel", goHttp.StatusOK, ""},
+		{method: goHttp.MethodPost, path: "/v1/service-order", status: goHttp.StatusCreated, body: ""},
+		{method: goHttp.MethodGet, path: "/v1/service-order", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodGet, path: "/v1/service-order/:id", status: goHttp.StatusOK, body: `{"id":"123"}`},
+		{method: goHttp.MethodPut, path: "/v1/service-order/:id/finish", status: goHttp.StatusNoContent, body: ""},
+		{method: goHttp.MethodGet, path: "/v1/service-order/:id/status", status: goHttp.StatusOK, body: `{"id":"123". "status":"in_progress"}`},
+		{method: goHttp.MethodPut, path: "/v1/service-order/:id/start-diagnosis", status: goHttp.StatusNoContent, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/service-order/:id/send", status: goHttp.StatusNoContent, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/service-order/:id/accept", status: goHttp.StatusNoContent, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/service-order/:id/reject", status: goHttp.StatusNoContent, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/service-order/:id/deliver", status: goHttp.StatusNoContent, body: ""},
+		{method: goHttp.MethodPut, path: "/v1/service-order/:id/cancel", status: goHttp.StatusOK, body: ""},
 
 		// Service Order Works
-		{goHttp.MethodGet, "/v1/service-order/:id/works", goHttp.StatusOK, ""},
-		{goHttp.MethodPost, "/v1/service-order/:id/works", goHttp.StatusNoContent, `{"services":["work-id-1"]}`},
-		{goHttp.MethodDelete, "/v1/service-order/:id/works/:serviceId", goHttp.StatusNoContent, ""},
+		{method: goHttp.MethodGet, path: "/v1/service-order/:id/works", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodPost, path: "/v1/service-order/:id/works", status: goHttp.StatusNoContent, body: `{"services":["work-id-1"]}`},
+		{method: goHttp.MethodDelete, path: "/v1/service-order/:id/works/:serviceId", status: goHttp.StatusNoContent, body: ""},
 
 		// Service Order Supplies
-		{goHttp.MethodGet, "/v1/service-order/:id/supplies", goHttp.StatusOK, ""},
-		{goHttp.MethodPost, "/v1/service-order/:id/supplies", goHttp.StatusNoContent, `{"supplies":["supply-id-1"]}`},
-		{goHttp.MethodDelete, "/v1/service-order/:id/supplies/:serviceId", goHttp.StatusNoContent, ""},
+		{method: goHttp.MethodGet, path: "/v1/service-order/:id/supplies", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodPost, path: "/v1/service-order/:id/supplies", status: goHttp.StatusNoContent, body: `{"supplies":["supply-id-1"]}`},
+		{method: goHttp.MethodDelete, path: "/v1/service-order/:id/supplies/:serviceId", status: goHttp.StatusNoContent, body: ""},
 
 		// Service Order History
-		{goHttp.MethodGet, "/v1/service-order/:id/history", goHttp.StatusOK, ""},
+		{method: goHttp.MethodGet, path: "/v1/service-order/:id/history", status: goHttp.StatusOK, body: ""},
 
 		// Reports
-		{goHttp.MethodGet, "/v1/reports/average-execution-time", goHttp.StatusOK, ""},
+		{method: goHttp.MethodGet, path: "/v1/reports/average-execution-time", status: goHttp.StatusOK, body: ""},
 
 		// Swagger UI (based on mountSwaggerUI in routing.go)
-		{goHttp.MethodGet, "/swagger.yaml", goHttp.StatusOK, ""},
-		{goHttp.MethodGet, "/swagger/index.html", goHttp.StatusOK, ""},
+		{method: goHttp.MethodGet, path: "/swagger.yaml", status: goHttp.StatusOK, body: ""},
+		{method: goHttp.MethodGet, path: "/swagger/index.html", status: goHttp.StatusOK, body: ""},
 	}
 
 	// Replace :id with a concrete value in test URLs for request generation

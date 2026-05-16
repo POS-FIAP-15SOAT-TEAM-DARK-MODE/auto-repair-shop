@@ -10,25 +10,24 @@ import (
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
 	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
+	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
 	container "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/middleware"
 	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
 	soHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order_history"
 	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
+	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
 	workSOHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work_service_order_history"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/server"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
 	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
 	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
-
-	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
-	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
 	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
-
-	vehicleHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/vehicle"
-	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/vehicle"
-	vehicleSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/vehicle"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/id"
+	uow2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/uow"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle"
+	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/repository"
 
 	supplyHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/supply"
 	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/supply"
@@ -67,7 +66,7 @@ func httpContainer(db *sql.DB) *container.HandlersWrapper {
 		UserHandler:                newUserHandler(db),
 		CustomerHandler:            newCustomerHandler(db),
 		WorkHandler:                newWorkHandler(db),
-		VehicleHandler:             newVehicleHandler(db),
+		VehicleHandler:             vehicle.NewHTTPController(db),
 		SupplyHandler:              newSupplyHandler(db),
 		ServiceOrderHandler:        newServiceOrderHandler(db),
 		ServiceOrderHistoryHandler: newServiceOrderHistoryHandler(db),
@@ -103,13 +102,6 @@ func newWorkHandler(db *sql.DB) container.WorkHandler {
 	return workHandler.HttpHandler(svc)
 }
 
-func newVehicleHandler(db *sql.DB) container.VehicleHandler {
-	uow := postgres.NewTransactionalUoW(db)
-	vehicleRepository := vehicleRepo.NewVehicleRepository()
-	service := vehicleSvc.NewService(uow, vehicleRepository)
-	return vehicleHandler.HttpHandler(service)
-}
-
 func newSupplyHandler(db *sql.DB) container.SupplyHandler {
 	uow := postgres.NewTransactionalUoW(db)
 	supplyRepository := supplyRepo.Repository()
@@ -120,6 +112,9 @@ func newSupplyHandler(db *sql.DB) container.SupplyHandler {
 func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	uow := postgres.NewTransactionalUoW(db)
 
+	idGen := id.NewIDGenerator()
+	u := uow2.NewTransactionalUoW(db)
+
 	repo := soRepo.Repository()
 	workRepository := workRepo.Repository()
 	supplyRepository := supplyRepo.Repository()
@@ -127,11 +122,12 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	workSOHistoryRepository := workSOHistoryRepo.Repository()
 	userRepository := userRepo.Repository()
 	customerRepository := customerRepo.Repository()
-	vehicleRepository := vehicleRepo.NewVehicleRepository()
 
-	vehicle := vehicleSvc.NewService(uow, vehicleRepository)
+	vehicleRepository := vehicleRepo.NewPostgres()
+	vehicleSvc := vehicle.NewService(u, vehicleRepository, idGen)
+
 	customer := customerSvc.Service(uow, userRepository, customerRepository)
-	svc := soSvc.Service(uow, repo, workRepository, supplyRepository, workHistoryRepository, workSOHistoryRepository, customer, vehicle)
+	svc := soSvc.Service(uow, repo, workRepository, supplyRepository, workHistoryRepository, workSOHistoryRepository, customer, vehicleSvc)
 
 	return soHandler.HttpHandler(svc)
 }

@@ -377,14 +377,22 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /v1/vehicles/{customerId}:
+  /v1/vehicles:
     get:
-      summary: Get vehicles by customer id
-      description: Retrieve vehicles that belongs to a customer looking by its id
+      summary: Get vehicle by license plate
+      description: Retrieve a vehicle by its normalized license plate. The license plate must follow supported formats (old or Mercosul).
       tags:
         - Vehicle
+      security:
+        - SessionToken: []
       parameters:
-        - in: path
+        - in: query
+          name: plate
+          required: true
+          schema:
+            type: string
+          description: License plate (supports old and Mercosul formats)
+        - in: query
           name: customerId
           required: true
           schema:
@@ -406,35 +414,6 @@ paths:
             default: 10
             minimum: 1
           description: Number of items per page.
-      responses:
-        "200":
-          description: Vehicles found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ListVehiclesResponse"
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /v1/vehicles:
-    get:
-      summary: Get vehicle by license plate
-      description: Retrieve a vehicle by its normalized license plate. The license plate must follow supported formats (old or Mercosul).
-      tags:
-        - Vehicle
-      security:
-        - SessionToken: []
-      parameters:
-        - in: query
-          name: plate
-          required: true
-          schema:
-            type: string
-          description: License plate (supports old and Mercosul formats)
       responses:
         "200":
           description: Vehicle found

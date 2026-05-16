@@ -6,6 +6,10 @@ import (
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/app"
+
+	jsonv2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/json"
+	domainv2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 )
 
 type errorResponse struct {
@@ -118,7 +122,14 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrInvalidDocumentFormat) ||
 		errors.Is(err, domain.ErrCompanyNameNotAllowed) ||
 		errors.Is(err, domain.ErrInvalidCustomerType) ||
-		errors.Is(err, domain.ErrCompanyNameRequired)
+		errors.Is(err, jsonv2.ErrJSONUnexpectedEOF) ||
+		errors.Is(err, domain.ErrCompanyNameRequired) ||
+		errors.Is(err, domainv2.ErrVehicleInvalidPlate) ||
+		errors.Is(err, domainv2.ErrRequiredVehicleBrand) ||
+		errors.Is(err, domainv2.ErrRequiredVehicleModel) ||
+		errors.Is(err, domainv2.ErrParamVehicleYear) ||
+		errors.Is(err, domainv2.ErrInvalidVehicleId) ||
+		errors.Is(err, domainv2.ErrInvalidSearchVehicleParams)
 }
 
 func isNotFoundError(err error) bool {
@@ -129,7 +140,8 @@ func isNotFoundError(err error) bool {
 		errors.Is(err, domain.ErrServiceOrderNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderWorkNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderSupplyNotFound) ||
-		errors.Is(err, domain.ErrWorkServiceOrderNotFound)
+		errors.Is(err, domain.ErrWorkServiceOrderNotFound) ||
+		errors.Is(err, domainv2.ErrVehicleNotFound)
 }
 
 func isUnauthorizedError(err error) bool {
@@ -155,7 +167,8 @@ func isConflictError(err error) bool {
 		errors.Is(err, domain.ErrServiceOrderNotAwaitingApproval) ||
 		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCompleted) ||
 		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCancelled) ||
-		errors.Is(err, domain.ErrWorkServiceOrderInvalidStatus)
+		errors.Is(err, domain.ErrWorkServiceOrderInvalidStatus) ||
+		errors.Is(err, app.ErrDataConflict)
 }
 
 func isUnprocessableEntityError(err error) bool {

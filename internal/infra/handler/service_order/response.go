@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	domainV2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 )
 
 type (
@@ -156,7 +157,7 @@ func mapCustomerResponse(c domain.Customer) customerResponse {
 	}
 }
 
-func mapVehicleResponse(v domain.Vehicle) vehicleResponseDTO {
+func mapVehicleResponse(v domainV2.Vehicle) vehicleResponseDTO {
 	return vehicleResponseDTO{
 		ID:           v.ID,
 		BrandModel:   fmt.Sprintf("%s - %s", v.Brand, v.Model),

@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	service_order "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order"
+	domainv2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 	"github.com/stretchr/testify/assert"
 )
 
 func buildServiceOrder() *domain.ServiceOrder {
 	customer := &domain.Customer{ID: "customer-id"}
-	vehicle := domain.NewVehicle("ABC-1234", "Toyota", "Corolla", customer.ID, 2020)
+	vehicle := domainv2.NewVehicle("vh-1", "ABC-1234", "Toyota", "Corolla", customer.ID, 2020)
 	return domain.NewServiceOrder(customer, vehicle)
 }
 

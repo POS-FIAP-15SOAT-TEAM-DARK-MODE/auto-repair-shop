@@ -1,6 +1,10 @@
 package routing
 
 import (
+	"context"
+	http2 "net/http"
+
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
@@ -39,11 +43,10 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.PUT("/works/:id", middleware.Auth(role.AttendantRoles...), c.WorkHandler.Update)
 	v1.DELETE("/works/:id", middleware.Auth(role.AttendantRoles...), c.WorkHandler.Delete)
 
-	v1.GET("/vehicles", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.FindByLicensePlate)
-	v1.GET("/vehicles/:customerId", middleware.Auth(role.AttendantAndMechanicRoles...), c.VehicleHandler.FindByCustomer)
-	v1.POST("/vehicles", middleware.Auth(role.AttendantRoles...), c.VehicleHandler.Create)
-	v1.PUT("/vehicles/:id", middleware.Auth(role.AttendantRoles...), c.VehicleHandler.Update)
-	v1.DELETE("/vehicles/:id", middleware.Auth(role.AttendantRoles...), c.VehicleHandler.Delete)
+	v1.GET("/vehicles", middleware.Auth(role.AttendantAndMechanicRoles...), GinHandler(c.VehicleHandler.List))
+	v1.POST("/vehicles", middleware.Auth(role.AttendantRoles...), GinHandler(c.VehicleHandler.Create, http2.StatusCreated))
+	v1.PUT("/vehicles/:id", middleware.Auth(role.AttendantRoles...), GinHandler(c.VehicleHandler.Edit))
+	v1.DELETE("/vehicles/:id", middleware.Auth(role.AttendantRoles...), GinOnlyErrorHandler(c.VehicleHandler.Delete))
 
 	v1.GET("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.List)
 	v1.POST("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Create)
@@ -76,4 +79,55 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.GET("/service-order/:id/status", c.ServiceOrderHandler.GetStatus)
 
 	return router
+}
+
+func GinOnlyErrorHandler(cb func(context.Context, *http2.Request) error, customStatus ...int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		// context keys are gin param names (strings) intentionally;
+		// collision risk is acceptable here since params are route-scoped.
+		for _, v := range c.Params {
+			ctx = context.WithValue(ctx, v.Key, v.Value) //nolint:staticcheck
+		}
+
+		if err := cb(ctx, c.Request); err != nil {
+			status, errResp := web.Error(err)
+			c.JSON(status, errResp)
+			return
+		}
+
+		if len(customStatus) == 0 {
+			c.Status(http2.StatusNoContent)
+			c.Writer.WriteHeaderNow()
+			return
+		}
+
+		c.Status(customStatus[0])
+		c.Writer.WriteHeaderNow()
+	}
+}
+
+func GinHandler[T any](cb func(context.Context, *http2.Request) (T, error), customStatus ...int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+		// context keys are gin param names (strings) intentionally;
+		// collision risk is acceptable here since params are route-scoped.
+		for _, v := range c.Params {
+			ctx = context.WithValue(ctx, v.Key, v.Value) //nolint:staticcheck
+		}
+
+		resp, err := cb(ctx, c.Request)
+		if err != nil {
+			status, errResp := web.Error(err)
+			c.JSON(status, errResp)
+			return
+		}
+
+		if len(customStatus) == 0 {
+			c.JSON(http2.StatusOK, resp)
+			return
+		}
+
+		c.JSON(customStatus[0], resp)
+	}
 }
