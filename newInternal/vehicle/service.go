@@ -3,6 +3,7 @@ package vehicle
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/app"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/id"
@@ -105,7 +106,7 @@ func (svc *vehicleService) List(ctx context.Context, params adapters.ListVehicle
 		TotalItems: totalItems,
 		Page:       params.Page,
 		PageSize:   params.PageSize,
-		TotalPages: totalItems / params.PageSize,
+		TotalPages: int64(math.Max(float64(totalItems/params.PageSize), 1)),
 	}, nil
 }
 

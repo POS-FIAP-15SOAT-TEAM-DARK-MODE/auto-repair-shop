@@ -13,8 +13,10 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/mocks"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/adapters"
-	mocks2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces/mocks"
+	supplyAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/adapters"
+	suppliesMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces/mocks"
+	vehicleAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/adapters"
+	vehiclesMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,8 +29,8 @@ func TestSetupRouter(t *testing.T) {
 	mockUser := mocks.NewUserHandler(t)
 	mockCustomer := mocks.NewCustomerHandler(t)
 	mockWork := mocks.NewWorkHandler(t)
-	mockVehicle := mocks2.NewVehicleHTTPController(t)
-	mockSupply := mocks.NewSupplyHandler(t)
+	mockVehicle := vehiclesMocks.NewVehicleHTTPController(t)
+	mockSupply := suppliesMocks.NewSupplyHTTPController(t)
 	mockSO := mocks.NewServiceOrderHandler(t)
 	mockSOHistory := mocks.NewServiceOrderHistoryHandler(t)
 
@@ -56,16 +58,16 @@ func TestSetupRouter(t *testing.T) {
 	mockWork.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
 
 	// Vehicle
-	mockVehicle.EXPECT().Create(mock.Anything, mock.AnythingOfType("*http.Request")).Return(adapters.VehicleResponse{}, nil)
-	mockVehicle.EXPECT().Edit(mock.Anything, mock.AnythingOfType("*http.Request")).Return(adapters.VehicleResponse{}, nil)
+	mockVehicle.EXPECT().Create(mock.Anything, mock.AnythingOfType("*http.Request")).Return(vehicleAdapters.VehicleResponse{}, nil)
+	mockVehicle.EXPECT().Edit(mock.Anything, mock.AnythingOfType("*http.Request")).Return(vehicleAdapters.VehicleResponse{}, nil)
 	mockVehicle.EXPECT().Delete(mock.Anything, mock.AnythingOfType("*http.Request")).Return(nil)
-	mockVehicle.EXPECT().List(mock.Anything, mock.AnythingOfType("*http.Request")).Return(adapters.PaginatedVehicleResponse{}, nil)
+	mockVehicle.EXPECT().List(mock.Anything, mock.AnythingOfType("*http.Request")).Return(vehicleAdapters.PaginatedVehicleResponse{}, nil)
 
 	// Supply
-	mockSupply.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
-	mockSupply.EXPECT().List(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
-	mockSupply.EXPECT().Update(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
-	mockSupply.EXPECT().Delete(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	mockSupply.EXPECT().Create(mock.Anything, mock.AnythingOfType("*http.Request")).Return(supplyAdapters.SupplyResponse{}, nil)
+	mockSupply.EXPECT().Update(mock.Anything, mock.AnythingOfType("*http.Request")).Return(supplyAdapters.SupplyResponse{}, nil)
+	mockSupply.EXPECT().Delete(mock.Anything, mock.AnythingOfType("*http.Request")).Return(nil)
+	mockSupply.EXPECT().List(mock.Anything, mock.AnythingOfType("*http.Request")).Return(supplyAdapters.PaginatedSupplyResponse{}, nil)
 
 	// Service Order
 	mockSO.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })

@@ -9,7 +9,9 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
-	domainV2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
+	supplyInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
@@ -18,22 +20,22 @@ type svc struct {
 	uow               uow.Executor
 	repo              domain.ServiceOrderRepository
 	workRepo          domain.WorkRepository
-	supplyRepo        domain.SupplyRepository
+	supplyService     supplyInterfaces.SupplyService
 	workHistoryRepo   domain.ServiceOrderHistoryRepository
 	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository
 	customerService   domain.CustomerService
-	vehicleService    domainV2.VehicleService
+	vehicleService    vehicleDomain.VehicleService
 }
 
 func Service(
 	uow uow.Executor,
 	repo domain.ServiceOrderRepository,
 	workRepo domain.WorkRepository,
-	supplyRepo domain.SupplyRepository,
+	supplyRepo supplyInterfaces.SupplyService,
 	workHistoryRepo domain.ServiceOrderHistoryRepository,
 	workSOHistoryRepo domain.WorkServiceOrderHistoryRepository,
 	customerService domain.CustomerService,
-	vehicleService domainV2.VehicleService) *svc {
+	vehicleService vehicleDomain.VehicleService) *svc {
 	return &svc{uow, repo, workRepo, supplyRepo, workHistoryRepo, workSOHistoryRepo, customerService, vehicleService}
 }
 
@@ -262,7 +264,7 @@ func (s *svc) RemoveWork(ctx context.Context, serviceOrderID, workID string) err
 	return nil
 }
 
-func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
+func (s *svc) ListSupplies(ctx context.Context, serviceOrderID string) ([]supplyDomain.Supply, error) {
 	serviceOrderID = strings.TrimSpace(serviceOrderID)
 	if serviceOrderID == "" {
 		s.logValidationError(ctx, "list_service_order_supplies", domain.ErrInvalidServiceOrderId)
@@ -317,7 +319,7 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 				return domain.ErrInvalidSupplyAmount
 			}
 
-			supply, e := s.supplyRepo.FindById(ctx, supplyId)
+			supply, e := s.supplyService.FindById(ctx, supplyId)
 			if e != nil {
 				return e
 			}
@@ -330,7 +332,7 @@ func (s *svc) AddSupplies(ctx context.Context, serviceOrderID string, supplies [
 				return err
 			}
 
-			if err = s.supplyRepo.DecrementStock(ctx, supply.ID, sup.Amount); err != nil {
+			if err = s.supplyService.DecrementStockQuantity(ctx, supply.ID, sup.Amount); err != nil {
 				return err
 			}
 		}
@@ -381,7 +383,7 @@ func (s *svc) RemoveSupply(ctx context.Context, serviceOrderID, supplyID string)
 			return err
 		}
 
-		return s.supplyRepo.RestoreStock(ctx, supplyID, qty)
+		return s.supplyService.IncrementStockQuantity(ctx, supplyID, qty)
 	})
 
 	if err != nil {
@@ -648,7 +650,7 @@ func (s *svc) Reject(c context.Context, serviceOrderID, userID string) error {
 			return
 		})
 
-		var supplies []domain.Supply
+		var supplies []supplyDomain.Supply
 		eg.Go(func() (err error) {
 			supplies, err = s.ListSupplies(ctx, serviceOrderID)
 			return
@@ -670,7 +672,7 @@ func (s *svc) Reject(c context.Context, serviceOrderID, userID string) error {
 		so.Status = domain.SERVICE_ORDER_STATUS_REJECTED
 
 		for _, sup := range supplies {
-			if err := s.supplyRepo.RestoreStock(ctx, sup.ID, sup.StockQuantity); err != nil {
+			if err := s.supplyService.IncrementStockQuantity(ctx, sup.ID, sup.StockQuantity); err != nil {
 				return err
 			}
 		}

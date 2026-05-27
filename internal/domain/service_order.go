@@ -4,7 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 	"github.com/oklog/ulid/v2"
 	"github.com/shopspring/decimal"
 )
@@ -43,9 +44,9 @@ type (
 		ID          string
 		Status      SERVICE_ORDER_STATUS
 		Customer    *Customer
-		Vehicle     *domain.Vehicle
+		Vehicle     *vehicleDomain.Vehicle
 		Services    []Work
-		Supplies    []Supply
+		Supplies    []supplyDomain.Supply
 		TotalAmount decimal.Decimal
 		sumLocker   sync.Locker
 	}
@@ -58,7 +59,7 @@ type (
 	FullServiceOrder struct {
 		ServiceOrder
 		Works    []Work
-		Supplies []Supply
+		Supplies []supplyDomain.Supply
 	}
 
 	ServiceOrderFilterParams struct {
@@ -96,7 +97,7 @@ func (so *ServiceOrder) SumWorkValue(work Work) {
 	so.sumLocker.Unlock()
 }
 
-func (so *ServiceOrder) SumSupplyValue(supply Supply) {
+func (so *ServiceOrder) SumSupplyValue(supply supplyDomain.Supply) {
 	so.PrepareForSum()
 
 	supplyAmount := decimal.NewFromInt(int64(supply.StockQuantity))
@@ -115,7 +116,7 @@ type (
 		ListWorks(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorks(ctx context.Context, serviceOrderID string, workIDs []string) error
 		RemoveWork(ctx context.Context, serviceOrderID, workID string) error
-		ListSupplies(ctx context.Context, serviceOrderID string) ([]Supply, error)
+		ListSupplies(ctx context.Context, serviceOrderID string) ([]supplyDomain.Supply, error)
 		AddSupplies(ctx context.Context, serviceOrderID string, supplies []AddSupply) error
 		RemoveSupply(ctx context.Context, serviceOrderID, supplyID string) error
 		SendToCustomerApproval(ctx context.Context, serviceOrderID string) error
@@ -142,7 +143,7 @@ type (
 		ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Work, error)
 		AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error
 		RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error
-		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]Supply, error)
+		ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]supplyDomain.Supply, error)
 		AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error
 		RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) (int, error)
 		AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]WorkExecutionTime, error)
@@ -155,7 +156,7 @@ type WorkExecutionTime struct {
 	AverageHours float64
 }
 
-func NewServiceOrder(Customer *Customer, Vehicle *domain.Vehicle) *ServiceOrder {
+func NewServiceOrder(Customer *Customer, Vehicle *vehicleDomain.Vehicle) *ServiceOrder {
 	return &ServiceOrder{
 		ID:          ulid.Make().String(),
 		Status:      SERVICE_ORDER_STATUS_NEW,

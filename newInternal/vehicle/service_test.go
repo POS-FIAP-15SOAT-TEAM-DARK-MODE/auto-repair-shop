@@ -215,8 +215,9 @@ func TestService_List(t *testing.T) {
 					Year:         2020,
 					CustomerId:   "123",
 				}},
-				PageSize: 10,
-				Page:     1,
+				PageSize:   10,
+				Page:       1,
+				TotalPages: 1,
 			},
 		},
 		{
@@ -239,8 +240,9 @@ func TestService_List(t *testing.T) {
 					Year:         2020,
 					CustomerId:   "123",
 				}},
-				PageSize: 10,
-				Page:     1,
+				PageSize:   10,
+				Page:       1,
+				TotalPages: 1,
 			},
 		},
 		{
@@ -259,6 +261,7 @@ func TestService_List(t *testing.T) {
 				Items:      []adapters.VehicleResponse{},
 				PageSize:   10,
 				Page:       1,
+				TotalPages: 1,
 			},
 		},
 		{

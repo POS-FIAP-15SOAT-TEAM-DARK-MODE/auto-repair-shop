@@ -3,7 +3,7 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,22 +16,16 @@ func TestNewSupply(t *testing.T) {
 	unitPrice := decimal.NewFromFloat(49.99)
 	stockQuantity := 10
 	version := 1
+	id := "s-1"
 
-	s := domain.NewSupply(name, description, unitPrice, stockQuantity, version)
+	s := domain.NewSupply(id, name, description, unitPrice, stockQuantity)
 
-	assert.NotEmpty(t, s.ID)
+	assert.Equal(t, id, s.ID)
 	assert.Equal(t, name, s.Name)
 	assert.Equal(t, description, s.Description)
 	assert.True(t, unitPrice.Equal(s.UnitPrice))
 	assert.Equal(t, stockQuantity, s.StockQuantity)
 	assert.Equal(t, version, s.Version)
-}
-
-func TestNewSupply_GeneratesUniqueIDs(t *testing.T) {
-	s1 := domain.NewSupply("Brake Pad", "High performance brake pad", decimal.NewFromFloat(49.99), 10, 1)
-	s2 := domain.NewSupply("Brake Pad", "High performance brake pad", decimal.NewFromFloat(49.99), 10, 1)
-
-	assert.NotEqual(t, s1.ID, s2.ID)
 }
 
 // ─── IsValidName ──────────────────────────────────────────────────────────────

@@ -48,10 +48,10 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 	v1.PUT("/vehicles/:id", middleware.Auth(role.AttendantRoles...), GinHandler(c.VehicleHandler.Edit))
 	v1.DELETE("/vehicles/:id", middleware.Auth(role.AttendantRoles...), GinOnlyErrorHandler(c.VehicleHandler.Delete))
 
-	v1.GET("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.List)
-	v1.POST("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Create)
-	v1.PUT("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Update)
-	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), c.SupplyHandler.Delete)
+	v1.GET("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), GinHandler(c.SupplyHandler.List))
+	v1.POST("/supplies", middleware.Auth(role.AttendantAndMechanicRoles...), GinHandler(c.SupplyHandler.Create, http2.StatusCreated))
+	v1.PUT("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), GinHandler(c.SupplyHandler.Update))
+	v1.DELETE("/supplies/:id", middleware.Auth(role.AttendantAndMechanicRoles...), GinOnlyErrorHandler(c.SupplyHandler.Delete))
 
 	v1.POST("/service-order", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.Create)
 	v1.POST("/service-order/:id/works", middleware.Auth(role.AttendantRoles...), c.ServiceOrderHandler.AddWork)

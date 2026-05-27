@@ -6,13 +6,14 @@ import (
 	"sort"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
 	"github.com/shopspring/decimal"
 )
 
 type memory_repo struct {
 	data            map[string]domain.ServiceOrder
 	worksByOrder    map[string][]domain.Work
-	suppliesByOrder map[string][]domain.Supply
+	suppliesByOrder map[string][]supplyDomain.Supply
 	onStatusChange  func(soID string, prev *domain.SERVICE_ORDER_STATUS, newStatus domain.SERVICE_ORDER_STATUS)
 }
 
@@ -20,7 +21,7 @@ func MemoryRepository() domain.ServiceOrderRepository {
 	return &memory_repo{
 		data:            make(map[string]domain.ServiceOrder),
 		worksByOrder:    make(map[string][]domain.Work),
-		suppliesByOrder: make(map[string][]domain.Supply),
+		suppliesByOrder: make(map[string][]supplyDomain.Supply),
 	}
 }
 
@@ -30,7 +31,7 @@ func MemoryRepositoryWithHistory(onStatusChange func(soID string, prev *domain.S
 	return &memory_repo{
 		data:            make(map[string]domain.ServiceOrder),
 		worksByOrder:    make(map[string][]domain.Work),
-		suppliesByOrder: make(map[string][]domain.Supply),
+		suppliesByOrder: make(map[string][]supplyDomain.Supply),
 		onStatusChange:  onStatusChange,
 	}
 }
@@ -97,7 +98,7 @@ func (r *memory_repo) AddSupplyLink(_ context.Context, serviceOrderID string, su
 			return nil
 		}
 	}
-	s := domain.Supply{
+	s := supplyDomain.Supply{
 		ID:            supplyID,
 		UnitPrice:     unitPrice,
 		StockQuantity: amount,
@@ -108,19 +109,19 @@ func (r *memory_repo) AddSupplyLink(_ context.Context, serviceOrderID string, su
 	return nil
 }
 
-func (r *memory_repo) ListSuppliesByServiceOrderID(_ context.Context, serviceOrderID string) ([]domain.Supply, error) {
+func (r *memory_repo) ListSuppliesByServiceOrderID(_ context.Context, serviceOrderID string) ([]supplyDomain.Supply, error) {
 	supplies := r.suppliesByOrder[serviceOrderID]
 	if supplies == nil {
-		return []domain.Supply{}, nil
+		return []supplyDomain.Supply{}, nil
 	}
-	out := make([]domain.Supply, len(supplies))
+	out := make([]supplyDomain.Supply, len(supplies))
 	copy(out, supplies)
 	return out, nil
 }
 
 func (r *memory_repo) RemoveSupplyLink(_ context.Context, serviceOrderID string, supplyID string) (int, error) {
 	list := r.suppliesByOrder[serviceOrderID]
-	idx := slices.IndexFunc(list, func(w domain.Supply) bool { return w.ID == supplyID })
+	idx := slices.IndexFunc(list, func(w supplyDomain.Supply) bool { return w.ID == supplyID })
 	if idx < 0 {
 		return 0, domain.ErrServiceOrderSupplyNotFound
 	}

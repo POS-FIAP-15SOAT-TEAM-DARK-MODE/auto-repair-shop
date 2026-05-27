@@ -689,13 +689,10 @@ paths:
             minimum: 1
           description: Number of items per page.
         - in: query
-          name: status
+          name: version
           schema:
-            type: string
-            enum:
-              - ACTIVE
-              - INACTIVE
-          description: Filter supplies by status.
+            type: number
+          description: Filter supplies by version.
       responses:
         "200":
           description: Supplies listed successfully

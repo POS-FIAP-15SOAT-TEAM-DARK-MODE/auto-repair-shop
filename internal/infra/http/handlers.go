@@ -1,7 +1,8 @@
 package http
 
 import (
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
+	supplyInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces"
+	vehicleInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
 	"github.com/gin-gonic/gin"
 )
 
@@ -9,7 +10,6 @@ import (
 //go:generate go run github.com/vektra/mockery/v2@latest --name=UserHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=WorkHandler --with-expecter
-//go:generate go run github.com/vektra/mockery/v2@latest --name=SupplyHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHistoryHandler --with-expecter
 type (
@@ -32,13 +32,6 @@ type (
 	}
 
 	WorkHandler interface {
-		Create(*gin.Context)
-		List(*gin.Context)
-		Update(*gin.Context)
-		Delete(*gin.Context)
-	}
-
-	SupplyHandler interface {
 		Create(*gin.Context)
 		List(*gin.Context)
 		Update(*gin.Context)
@@ -79,8 +72,8 @@ type HandlersWrapper struct {
 	UserHandler                UserHandler
 	CustomerHandler            CustomerHandler
 	WorkHandler                WorkHandler
-	VehicleHandler             interfaces.VehicleHTTPController
-	SupplyHandler              SupplyHandler
+	VehicleHandler             vehicleInterfaces.VehicleHTTPController
+	SupplyHandler              supplyInterfaces.SupplyHTTPController
 	ServiceOrderHandler        ServiceOrderHandler
 	ServiceOrderHistoryHandler ServiceOrderHistoryHandler
 }

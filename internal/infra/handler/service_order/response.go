@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	domainV2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 )
 
 type (
@@ -108,7 +109,7 @@ type workExecutionTimeResponse struct {
 	AverageExecutionTime float64 `json:"averageExecutionTimeHours"`
 }
 
-func mapSupplies(supplies []domain.Supply) []supplyItemResponse {
+func mapSupplies(supplies []supplyDomain.Supply) []supplyItemResponse {
 	if len(supplies) == 0 {
 		return nil
 	}
@@ -126,7 +127,7 @@ func mapSupplies(supplies []domain.Supply) []supplyItemResponse {
 	return items
 }
 
-func mapSuppliesListToResponse(supplies []domain.Supply) listResponse[supplyItemResponse] {
+func mapSuppliesListToResponse(supplies []supplyDomain.Supply) listResponse[supplyItemResponse] {
 	items := mapSupplies(supplies)
 	n := int64(len(items))
 	return listResponse[supplyItemResponse]{
@@ -157,7 +158,7 @@ func mapCustomerResponse(c domain.Customer) customerResponse {
 	}
 }
 
-func mapVehicleResponse(v domainV2.Vehicle) vehicleResponseDTO {
+func mapVehicleResponse(v vehicleDomain.Vehicle) vehicleResponseDTO {
 	return vehicleResponseDTO{
 		ID:           v.ID,
 		BrandModel:   fmt.Sprintf("%s - %s", v.Brand, v.Model),

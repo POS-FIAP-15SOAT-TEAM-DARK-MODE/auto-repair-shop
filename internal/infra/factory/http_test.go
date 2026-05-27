@@ -20,7 +20,10 @@ func TestHttpContainer(t *testing.T) {
 	assert.NotNil(t, container.UserHandler)
 	assert.NotNil(t, container.CustomerHandler)
 	assert.NotNil(t, container.WorkHandler)
+	assert.NotNil(t, container.VehicleHandler)
 	assert.NotNil(t, container.SupplyHandler)
+	assert.NotNil(t, container.ServiceOrderHandler)
+	assert.NotNil(t, container.ServiceOrderHistoryHandler)
 
 }
 

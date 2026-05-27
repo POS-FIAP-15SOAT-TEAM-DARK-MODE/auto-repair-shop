@@ -9,7 +9,8 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/app"
 
 	jsonv2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/json"
-	domainv2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 )
 
 type errorResponse struct {
@@ -117,31 +118,35 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, domain.ErrPhoneRequired) ||
 		errors.Is(err, domain.ErrServiceOrderIDRequired) ||
 		errors.Is(err, domain.ErrInvalidCustomerId) ||
-		errors.Is(err, domain.ErrInvalidSupplyID) ||
-		errors.Is(err, domain.ErrInvalidSupplyAmount) ||
+		errors.Is(err, supplyDomain.ErrInvalidSupplyID) ||
+		errors.Is(err, supplyDomain.ErrInvalidSupplyAmount) ||
 		errors.Is(err, domain.ErrInvalidDocumentFormat) ||
 		errors.Is(err, domain.ErrCompanyNameNotAllowed) ||
 		errors.Is(err, domain.ErrInvalidCustomerType) ||
+		errors.Is(err, jsonv2.ErrJSONSyntax) ||
+		errors.Is(err, jsonv2.ErrJSONType) ||
 		errors.Is(err, jsonv2.ErrJSONUnexpectedEOF) ||
+		errors.Is(err, jsonv2.ErrJSONEmptyBody) ||
+		errors.Is(err, jsonv2.ErrWrongPayloadFormat) ||
 		errors.Is(err, domain.ErrCompanyNameRequired) ||
-		errors.Is(err, domainv2.ErrVehicleInvalidPlate) ||
-		errors.Is(err, domainv2.ErrRequiredVehicleBrand) ||
-		errors.Is(err, domainv2.ErrRequiredVehicleModel) ||
-		errors.Is(err, domainv2.ErrParamVehicleYear) ||
-		errors.Is(err, domainv2.ErrInvalidVehicleId) ||
-		errors.Is(err, domainv2.ErrInvalidSearchVehicleParams)
+		errors.Is(err, vehicleDomain.ErrVehicleInvalidPlate) ||
+		errors.Is(err, vehicleDomain.ErrRequiredVehicleBrand) ||
+		errors.Is(err, vehicleDomain.ErrRequiredVehicleModel) ||
+		errors.Is(err, vehicleDomain.ErrParamVehicleYear) ||
+		errors.Is(err, vehicleDomain.ErrInvalidVehicleId) ||
+		errors.Is(err, vehicleDomain.ErrInvalidSearchVehicleParams)
 }
 
 func isNotFoundError(err error) bool {
 	return errors.Is(err, domain.ErrCustomerNotFound) ||
 		errors.Is(err, domain.ErrVehicleNotFound) ||
 		errors.Is(err, domain.ErrWorkNotFound) ||
-		errors.Is(err, domain.ErrSupplyNotFound) ||
+		errors.Is(err, supplyDomain.ErrSupplyNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderWorkNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderSupplyNotFound) ||
 		errors.Is(err, domain.ErrWorkServiceOrderNotFound) ||
-		errors.Is(err, domainv2.ErrVehicleNotFound)
+		errors.Is(err, vehicleDomain.ErrVehicleNotFound)
 }
 
 func isUnauthorizedError(err error) bool {
@@ -176,7 +181,7 @@ func isUnprocessableEntityError(err error) bool {
 		errors.Is(err, domain.ErrWorkPriceLessThenOrEqualZero) ||
 		errors.Is(err, domain.ErrInvalidWorkPriceValue) ||
 		errors.Is(err, domain.ErrInvalidWorkStatusValue) ||
-		errors.Is(err, domain.ErrSupplyOutOfStock)
+		errors.Is(err, supplyDomain.ErrSupplyOutOfStock)
 }
 
 func isForbidden(err error) bool {

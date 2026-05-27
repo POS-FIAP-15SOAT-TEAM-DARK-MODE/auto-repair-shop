@@ -9,9 +9,12 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	uowmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow/mocks"
-	domainV2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
-	mocks2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces/mocks"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
+	supplyInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces"
+	suppliesMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces/mocks"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
+	vehicleInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
+	vehiclesMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -82,27 +85,27 @@ func setupCreateTestMock(t *testing.T,
 	vehicleError error) (uow.Executor,
 	domain.ServiceOrderRepository,
 	domain.WorkRepository,
-	domain.SupplyRepository,
+	supplyInterfaces.SupplyService,
 	domain.CustomerService,
-	interfaces.VehicleService) {
+	vehicleInterfaces.VehicleService) {
 	executor := uowmocks.NewExecutor(t)
 	mockRepo := mocks.NewServiceOrderRepository(t)
 	mockWorkRepo := mocks.NewWorkRepository(t)
-	mockSupplyRepo := mocks.NewSupplyRepository(t)
 	mockCustomerSvc := mocks.NewCustomerService(t)
-	mockVehicleSvc := mocks2.NewVehicleService(t)
+	mockVehicleSvc := vehiclesMocks.NewVehicleService(t)
+	mockSupplySvc := suppliesMocks.NewSupplyService(t)
 
 	mockCustomerSvc.EXPECT().GetByID(mock.Anything, customerID).Return(domain.Customer{}, customerError)
 
 	if customerError == nil {
-		mockVehicleSvc.EXPECT().FindById(mock.Anything, mock.AnythingOfType("string")).Return(domainV2.Vehicle{}, vehicleError)
+		mockVehicleSvc.EXPECT().FindById(mock.Anything, mock.AnythingOfType("string")).Return(vehicleDomain.Vehicle{}, vehicleError)
 		if vehicleError == nil {
 			executor.EXPECT().Execute(mock.Anything, mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 			mockRepo.EXPECT().Save(mock.Anything, mock.Anything).Return(err)
 		}
 	}
 
-	return executor, mockRepo, mockWorkRepo, mockSupplyRepo, mockCustomerSvc, mockVehicleSvc
+	return executor, mockRepo, mockWorkRepo, mockSupplySvc, mockCustomerSvc, mockVehicleSvc
 }
 
 func runAllSteps() func(context.Context, ...uow.Step) error {
@@ -133,12 +136,12 @@ func TestAddSupplies_EmptyList(t *testing.T) {
 func TestAddSupplies_InvalidAmount(t *testing.T) {
 	executor := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
-	supplyRepo := mocks.NewSupplyRepository(t)
+	mockSupplySvc := suppliesMocks.NewSupplyService(t)
 
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), mockSupplySvc, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.AddSupplies(context.Background(), "so-1", []domain.AddSupply{{ID: "sup-1", Amount: 0}})
 	assert.ErrorIs(t, err, domain.ErrInvalidSupplyAmount)
 }
@@ -146,13 +149,13 @@ func TestAddSupplies_InvalidAmount(t *testing.T) {
 func TestAddSupplies_OutOfStock_ZeroStock(t *testing.T) {
 	executor := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
-	supplyRepo := mocks.NewSupplyRepository(t)
+	supplySvc := suppliesMocks.NewSupplyService(t)
 
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, nil)
-	supplyRepo.EXPECT().FindById(mock.Anything, "sup-1").Return(domain.Supply{ID: "sup-1", StockQuantity: 0}, nil)
+	supplySvc.EXPECT().FindById(mock.Anything, "sup-1").Return(supplyDomain.Supply{ID: "sup-1", StockQuantity: 0}, nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), supplySvc, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.AddSupplies(context.Background(), "so-1", []domain.AddSupply{{ID: "sup-1", Amount: 1}})
 	assert.ErrorIs(t, err, domain.ErrSupplyOutOfStock)
 }
@@ -160,13 +163,13 @@ func TestAddSupplies_OutOfStock_ZeroStock(t *testing.T) {
 func TestAddSupplies_OutOfStock_InsufficientQuantity(t *testing.T) {
 	executor := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
-	supplyRepo := mocks.NewSupplyRepository(t)
+	supplySvc := suppliesMocks.NewSupplyService(t)
 
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, nil)
-	supplyRepo.EXPECT().FindById(mock.Anything, "sup-1").Return(domain.Supply{ID: "sup-1", StockQuantity: 2}, nil)
+	supplySvc.EXPECT().FindById(mock.Anything, "sup-1").Return(supplyDomain.Supply{ID: "sup-1", StockQuantity: 2}, nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), supplySvc, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.AddSupplies(context.Background(), "so-1", []domain.AddSupply{{ID: "sup-1", Amount: 5}})
 	assert.ErrorIs(t, err, domain.ErrSupplyOutOfStock)
 }
@@ -178,7 +181,7 @@ func TestAddSupplies_ServiceOrderNotNew(t *testing.T) {
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_NEW, nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.AddSupplies(context.Background(), "so-1", []domain.AddSupply{{ID: "sup-1", Amount: 1}})
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotInDiagnosis)
 }
@@ -186,18 +189,18 @@ func TestAddSupplies_ServiceOrderNotNew(t *testing.T) {
 func TestAddSupplies_Success_DecrementsStock(t *testing.T) {
 	executor := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
-	supplyRepo := mocks.NewSupplyRepository(t)
+	supplyRepo := suppliesMocks.NewSupplyService(t)
 
-	supply := domain.Supply{ID: "sup-1", StockQuantity: 10}
+	supply := supplyDomain.Supply{ID: "sup-1", StockQuantity: 10}
 
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, nil)
 	supplyRepo.EXPECT().FindById(mock.Anything, "sup-1").Return(supply, nil)
 	repo.EXPECT().AddSupplyLink(mock.Anything, "so-1", "sup-1", 3, supply.UnitPrice).Return(nil)
-	supplyRepo.EXPECT().DecrementStock(mock.Anything, "sup-1", 3).Return(nil)
+	supplyRepo.EXPECT().DecrementStockQuantity(mock.Anything, "sup-1", 3).Return(nil)
 	expectReviewOSPricing(executor, repo, "so-1")
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.AddSupplies(context.Background(), "so-1", []domain.AddSupply{{ID: "sup-1", Amount: 3}})
 	assert.NoError(t, err)
 }
@@ -205,18 +208,18 @@ func TestAddSupplies_Success_DecrementsStock(t *testing.T) {
 func TestAddSupplies_DecrementStock_ConcurrentFailure(t *testing.T) {
 	executor := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
-	supplyRepo := mocks.NewSupplyRepository(t)
+	supplyRepo := suppliesMocks.NewSupplyService(t)
 
-	supply := domain.Supply{ID: "sup-1", StockQuantity: 5}
+	supply := supplyDomain.Supply{ID: "sup-1", StockQuantity: 5}
 
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, nil)
 	supplyRepo.EXPECT().FindById(mock.Anything, "sup-1").Return(supply, nil)
 	repo.EXPECT().AddSupplyLink(mock.Anything, "so-1", "sup-1", 5, supply.UnitPrice).Return(nil)
 	// Simulates concurrent depletion: stock was taken by another transaction.
-	supplyRepo.EXPECT().DecrementStock(mock.Anything, "sup-1", 5).Return(domain.ErrSupplyOutOfStock)
+	supplyRepo.EXPECT().DecrementStockQuantity(mock.Anything, "sup-1", 5).Return(domain.ErrSupplyOutOfStock)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.AddSupplies(context.Background(), "so-1", []domain.AddSupply{{ID: "sup-1", Amount: 5}})
 	assert.ErrorIs(t, err, domain.ErrSupplyOutOfStock)
 }
@@ -226,15 +229,15 @@ func TestAddSupplies_DecrementStock_ConcurrentFailure(t *testing.T) {
 func TestRemoveSupply_Success_RestoresStock(t *testing.T) {
 	executor := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
-	supplyRepo := mocks.NewSupplyRepository(t)
+	supplyRepo := suppliesMocks.NewSupplyService(t)
 
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, nil)
 	repo.EXPECT().RemoveSupplyLink(mock.Anything, "so-1", "sup-1").Return(3, nil)
-	supplyRepo.EXPECT().RestoreStock(mock.Anything, "sup-1", 3).Return(nil)
+	supplyRepo.EXPECT().IncrementStockQuantity(mock.Anything, "sup-1", 3).Return(nil)
 	expectReviewOSPricing(executor, repo, "so-1")
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.RemoveSupply(context.Background(), "so-1", "sup-1")
 	assert.NoError(t, err)
 }
@@ -242,13 +245,13 @@ func TestRemoveSupply_Success_RestoresStock(t *testing.T) {
 func TestRemoveSupply_SupplyNotLinked(t *testing.T) {
 	executor := uowmocks.NewExecutor(t)
 	repo := mocks.NewServiceOrderRepository(t)
-	supplyRepo := mocks.NewSupplyRepository(t)
+	supplyRepo := suppliesMocks.NewSupplyService(t)
 
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS, nil)
 	repo.EXPECT().RemoveSupplyLink(mock.Anything, "so-1", "sup-1").Return(0, domain.ErrServiceOrderSupplyNotFound)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), supplyRepo, mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.RemoveSupply(context.Background(), "so-1", "sup-1")
 	assert.ErrorIs(t, err, domain.ErrServiceOrderSupplyNotFound)
 }
@@ -260,7 +263,7 @@ func TestRemoveSupply_ServiceOrderNotNew(t *testing.T) {
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().ExistsByID(mock.Anything, "so-1").Return(true, domain.SERVICE_ORDER_STATUS_NEW, nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.RemoveSupply(context.Background(), "so-1", "sup-1")
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotInDiagnosis)
 }
@@ -280,7 +283,7 @@ func TestFinish_RepositoryFindFailure(t *testing.T) {
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{}, domain.ErrServiceOrderNotFound)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.Finish(context.Background(), "so-1")
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotFound)
 }
@@ -292,7 +295,7 @@ func TestFinish_ServiceOrderNotInProgress(t *testing.T) {
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{ID: "so-1", Status: domain.SERVICE_ORDER_STATUS_NEW}, nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.Finish(context.Background(), "so-1")
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotInProgress)
 }
@@ -307,7 +310,7 @@ func TestFinish_Success(t *testing.T) {
 		return so.ID == "so-1" && so.Status == domain.SERVICE_ORDER_STATUS_COMPLETED
 	})).Return(nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.Finish(context.Background(), "so-1")
 	assert.NoError(t, err)
 }
@@ -320,7 +323,7 @@ func TestFinish_SaveFailure(t *testing.T) {
 	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{ID: "so-1", Status: domain.SERVICE_ORDER_STATUS_IN_PROGRESS}, nil)
 	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(assert.AnError)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.Finish(context.Background(), "so-1")
 	assert.ErrorIs(t, err, assert.AnError)
 }
@@ -340,7 +343,7 @@ func TestSendToDiagnosis_ServiceOrderNotFound(t *testing.T) {
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{}, domain.ErrServiceOrderNotFound)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.SendToDiagnosis(context.Background(), "so-1")
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotFound)
 }
@@ -352,7 +355,7 @@ func TestSendToDiagnosis_ServiceOrderNotInReceived(t *testing.T) {
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps())
 	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{ID: "so-1", Status: domain.SERVICE_ORDER_STATUS_NEW}, nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.SendToDiagnosis(context.Background(), "so-1")
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotInReceived)
 }
@@ -365,7 +368,7 @@ func TestSendToDiagnosis_SaveFailure(t *testing.T) {
 	repo.EXPECT().FindByID(mock.Anything, "so-1").Return(domain.ServiceOrder{ID: "so-1", Status: domain.SERVICE_ORDER_STATUS_RECEIVED}, nil)
 	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(domain.ErrInfraConflict)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.SendToDiagnosis(context.Background(), "so-1")
 	assert.ErrorIs(t, err, domain.ErrInfraConflict)
 }
@@ -380,7 +383,7 @@ func TestSendToDiagnosis_Success(t *testing.T) {
 		return so.Status == domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS
 	})).Return(nil)
 
-	s := Service(executor, repo, mocks.NewWorkRepository(t), mocks.NewSupplyRepository(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), mocks2.NewVehicleService(t))
+	s := Service(executor, repo, mocks.NewWorkRepository(t), suppliesMocks.NewSupplyService(t), mocks.NewServiceOrderHistoryRepository(t), mocks.NewWorkServiceOrderHistoryRepository(t), mocks.NewCustomerService(t), vehiclesMocks.NewVehicleService(t))
 	err := s.SendToDiagnosis(context.Background(), "so-1")
 	assert.NoError(t, err)
 }
@@ -391,11 +394,11 @@ func newBasicService(t *testing.T) *svc {
 		uowmocks.NewExecutor(t),
 		mocks.NewServiceOrderRepository(t),
 		mocks.NewWorkRepository(t),
-		mocks.NewSupplyRepository(t),
+		suppliesMocks.NewSupplyService(t),
 		mocks.NewServiceOrderHistoryRepository(t),
 		mocks.NewWorkServiceOrderHistoryRepository(t),
 		mocks.NewCustomerService(t),
-		mocks2.NewVehicleService(t),
+		vehiclesMocks.NewVehicleService(t),
 	)
 }
 
@@ -403,7 +406,7 @@ func expectReviewOSPricing(executor *uowmocks.Executor, repo *mocks.ServiceOrder
 	executor.EXPECT().Execute(mock.Anything, mock.Anything).RunAndReturn(runAllSteps()).Maybe()
 	repo.EXPECT().FindByID(mock.Anything, serviceOrderID).Return(domain.ServiceOrder{ID: serviceOrderID}, nil).Maybe()
 	repo.EXPECT().ListWorksByServiceOrderID(mock.Anything, serviceOrderID).Return([]domain.Work{}, nil).Maybe()
-	repo.EXPECT().ListSuppliesByServiceOrderID(mock.Anything, serviceOrderID).Return([]domain.Supply{}, nil).Maybe()
+	repo.EXPECT().ListSuppliesByServiceOrderID(mock.Anything, serviceOrderID).Return([]supplyDomain.Supply{}, nil).Maybe()
 	repo.EXPECT().Save(mock.Anything, mock.Anything).Return(nil).Maybe()
 }
 
@@ -506,11 +509,11 @@ func newBasicServiceWith(t *testing.T, repo domain.ServiceOrderRepository) *svc 
 		uowmocks.NewExecutor(t),
 		repo,
 		mocks.NewWorkRepository(t),
-		mocks.NewSupplyRepository(t),
+		suppliesMocks.NewSupplyService(t),
 		mocks.NewServiceOrderHistoryRepository(t),
 		mocks.NewWorkServiceOrderHistoryRepository(t),
 		mocks.NewCustomerService(t),
-		mocks2.NewVehicleService(t),
+		vehiclesMocks.NewVehicleService(t),
 	)
 }
 
@@ -698,11 +701,11 @@ func newWorkSOHistoryServiceWith(t *testing.T, workSOHistoryRepo *mocks.WorkServ
 		executor,
 		mocks.NewServiceOrderRepository(t),
 		mocks.NewWorkRepository(t),
-		mocks.NewSupplyRepository(t),
+		suppliesMocks.NewSupplyService(t),
 		mocks.NewServiceOrderHistoryRepository(t),
 		workSOHistoryRepo,
 		mocks.NewCustomerService(t),
-		mocks2.NewVehicleService(t),
+		vehiclesMocks.NewVehicleService(t),
 	)
 }
 

@@ -9,7 +9,8 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	dbPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db"
 	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
-	domainV2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
@@ -150,7 +151,7 @@ func (r *repository) RemoveWorkLink(ctx context.Context, serviceOrderID, workID 
 	return nil
 }
 
-func (r *repository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]domain.Supply, error) {
+func (r *repository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]supplyDomain.Supply, error) {
 	tx, err := postgres.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
@@ -162,9 +163,9 @@ func (r *repository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOr
 	}
 	defer func() { _ = rows.Close() }()
 
-	var supplies []domain.Supply
+	var supplies []supplyDomain.Supply
 	for rows.Next() {
-		var sup domain.Supply
+		var sup supplyDomain.Supply
 		if err = rows.Scan(&sup.ID, &sup.Name, &sup.Description, &sup.UnitPrice, &sup.StockQuantity, &sup.Version); err != nil {
 			return nil, pgPkg.Error(ctx, err)
 		}
@@ -256,7 +257,7 @@ func (r *repository) FindByID(ctx context.Context, id string) (domain.ServiceOrd
 	var so domain.ServiceOrder
 	so.Customer = new(domain.Customer)
 	so.Customer.User = new(domain.User)
-	so.Vehicle = new(domainV2.Vehicle)
+	so.Vehicle = new(vehicleDomain.Vehicle)
 	var status string
 	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
 		&so.ID, &status, &so.TotalAmount,
@@ -322,7 +323,7 @@ func (r *repository) Search(ctx context.Context, params *domain.ServiceOrderFilt
 		var so domain.ServiceOrder
 		so.Customer = new(domain.Customer)
 		so.Customer.User = new(domain.User)
-		so.Vehicle = new(domainV2.Vehicle)
+		so.Vehicle = new(vehicleDomain.Vehicle)
 		var status string
 
 		if err = rows.Scan(

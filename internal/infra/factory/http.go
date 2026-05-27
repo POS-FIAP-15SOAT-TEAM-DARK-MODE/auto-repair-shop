@@ -26,16 +26,14 @@ import (
 	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/id"
 	uow2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/uow"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle"
 	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/repository"
-
-	supplyHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/supply"
-	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/supply"
-	supplySvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/supply"
 
 	soHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order"
 	soRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order"
 	soSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order"
+	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/repository"
 
 	soHistoryHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order_history"
 	soHistorySvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order_history"
@@ -67,7 +65,7 @@ func httpContainer(db *sql.DB) *container.HandlersWrapper {
 		CustomerHandler:            newCustomerHandler(db),
 		WorkHandler:                newWorkHandler(db),
 		VehicleHandler:             vehicle.NewHTTPController(db),
-		SupplyHandler:              newSupplyHandler(db),
+		SupplyHandler:              supply.NewHTTPController(db),
 		ServiceOrderHandler:        newServiceOrderHandler(db),
 		ServiceOrderHistoryHandler: newServiceOrderHistoryHandler(db),
 	}
@@ -102,13 +100,6 @@ func newWorkHandler(db *sql.DB) container.WorkHandler {
 	return workHandler.HttpHandler(svc)
 }
 
-func newSupplyHandler(db *sql.DB) container.SupplyHandler {
-	uow := postgres.NewTransactionalUoW(db)
-	supplyRepository := supplyRepo.Repository()
-	service := supplySvc.Service(uow, supplyRepository)
-	return supplyHandler.HttpHandler(service)
-}
-
 func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 	uow := postgres.NewTransactionalUoW(db)
 
@@ -117,17 +108,19 @@ func newServiceOrderHandler(db *sql.DB) container.ServiceOrderHandler {
 
 	repo := soRepo.Repository()
 	workRepository := workRepo.Repository()
-	supplyRepository := supplyRepo.Repository()
 	workHistoryRepository := soHistoryRepo.Repository()
 	workSOHistoryRepository := workSOHistoryRepo.Repository()
 	userRepository := userRepo.Repository()
 	customerRepository := customerRepo.Repository()
 
+	supplyRepository := supplyRepo.NewPostgres()
+	supplyService := supply.NewService(u, supplyRepository, idGen)
+
 	vehicleRepository := vehicleRepo.NewPostgres()
 	vehicleSvc := vehicle.NewService(u, vehicleRepository, idGen)
 
 	customer := customerSvc.Service(uow, userRepository, customerRepository)
-	svc := soSvc.Service(uow, repo, workRepository, supplyRepository, workHistoryRepository, workSOHistoryRepository, customer, vehicleSvc)
+	svc := soSvc.Service(uow, repo, workRepository, supplyService, workHistoryRepository, workSOHistoryRepository, customer, vehicleSvc)
 
 	return soHandler.HttpHandler(svc)
 }
