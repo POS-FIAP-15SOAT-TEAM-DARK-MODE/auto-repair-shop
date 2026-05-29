@@ -28,9 +28,9 @@ func SetupRouter(c *http.HandlersWrapper, m *http.Middlewares) *gin.Engine {
 
 	v1 := router.Group("/v1")
 
-	v1.POST("/auth/register", middleware.Auth(role.ADMIN), c.UserHandler.Create)
-	v1.POST("/auth/login", c.UserHandler.Login)
-	v1.PATCH("/users/:id/role", middleware.Auth(role.ADMIN), c.UserHandler.UpdateRole)
+	v1.POST("/auth/register", middleware.Auth(role.ADMIN), GinHandler(c.UserHandler.Register, http2.StatusCreated))
+	v1.POST("/auth/login", GinHandler(c.UserHandler.Login))
+	v1.PATCH("/users/:id/role", middleware.Auth(role.ADMIN), GinOnlyErrorHandler(c.UserHandler.ChangeRole))
 
 	v1.GET("/customers", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByDocument)
 	v1.GET("/customers/:id", middleware.Auth(role.AttendantRoles...), c.CustomerHandler.GetByID)

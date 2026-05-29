@@ -1,13 +1,13 @@
 package http
 
 import (
+	authInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/interfaces"
 	supplyInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces"
 	vehicleInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
 	"github.com/gin-gonic/gin"
 )
 
 //go:generate go run github.com/vektra/mockery/v2@latest --name=PingHandler --with-expecter
-//go:generate go run github.com/vektra/mockery/v2@latest --name=UserHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=CustomerHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=WorkHandler --with-expecter
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderHandler --with-expecter
@@ -15,12 +15,6 @@ import (
 type (
 	PingHandler interface {
 		Ping(*gin.Context)
-	}
-
-	UserHandler interface {
-		Create(*gin.Context)
-		Login(*gin.Context)
-		UpdateRole(*gin.Context)
 	}
 
 	CustomerHandler interface {
@@ -69,7 +63,7 @@ type (
 
 type HandlersWrapper struct {
 	PingHandler                PingHandler
-	UserHandler                UserHandler
+	UserHandler                authInterfaces.AuthHTTPController
 	CustomerHandler            CustomerHandler
 	WorkHandler                WorkHandler
 	VehicleHandler             vehicleInterfaces.VehicleHTTPController

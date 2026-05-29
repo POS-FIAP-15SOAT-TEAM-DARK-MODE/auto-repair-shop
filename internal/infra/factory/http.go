@@ -3,13 +3,11 @@ package factory
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/seed"
 	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
 	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
-	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
 	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
 	container "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/middleware"
@@ -22,8 +20,8 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
 	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
-	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
 	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/id"
 	uow2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/uow"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply"
@@ -61,7 +59,7 @@ func middlewaresContainer() *container.Middlewares {
 func httpContainer(db *sql.DB) *container.HandlersWrapper {
 	return &container.HandlersWrapper{
 		PingHandler:                newPingHandler(),
-		UserHandler:                newUserHandler(db),
+		UserHandler:                auth.NewHTTPController(db),
 		CustomerHandler:            newCustomerHandler(db),
 		WorkHandler:                newWorkHandler(db),
 		VehicleHandler:             vehicle.NewHTTPController(db),
@@ -73,16 +71,6 @@ func httpContainer(db *sql.DB) *container.HandlersWrapper {
 
 func newPingHandler() container.PingHandler {
 	return pingHandler.HttpHandler()
-}
-
-func newUserHandler(db *sql.DB) container.UserHandler {
-	uow := postgres.NewTransactionalUoW(db)
-
-	expiresIn := env.GetTimeDuration("JWT_EXPIRES_IN", 24*time.Hour)
-
-	userRepository := userRepo.Repository()
-	userService := userSvc.Service(uow, userRepository, expiresIn)
-	return userHandler.HttpHandler(userService)
 }
 
 func newCustomerHandler(db *sql.DB) container.CustomerHandler {

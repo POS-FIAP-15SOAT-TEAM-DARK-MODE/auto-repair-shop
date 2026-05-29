@@ -8,6 +8,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/app"
 
+	customerDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/customer/domain"
 	jsonv2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/json"
 	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
 	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
@@ -134,7 +135,13 @@ func isBadRequestError(err error) bool {
 		errors.Is(err, vehicleDomain.ErrRequiredVehicleModel) ||
 		errors.Is(err, vehicleDomain.ErrParamVehicleYear) ||
 		errors.Is(err, vehicleDomain.ErrInvalidVehicleId) ||
-		errors.Is(err, vehicleDomain.ErrInvalidSearchVehicleParams)
+		errors.Is(err, vehicleDomain.ErrInvalidSearchVehicleParams) ||
+		errors.Is(err, customerDomain.ErrPhoneRequired) ||
+		errors.Is(err, customerDomain.ErrCompanyNameRequired) ||
+		errors.Is(err, customerDomain.ErrCompanyNameNotAllowed) ||
+		errors.Is(err, customerDomain.ErrInvalidCustomerType) ||
+		errors.Is(err, customerDomain.ErrInvalidDocumentFormat) ||
+		errors.Is(err, customerDomain.ErrInvalidCustomerId)
 }
 
 func isNotFoundError(err error) bool {
@@ -146,7 +153,8 @@ func isNotFoundError(err error) bool {
 		errors.Is(err, domain.ErrServiceOrderWorkNotFound) ||
 		errors.Is(err, domain.ErrServiceOrderSupplyNotFound) ||
 		errors.Is(err, domain.ErrWorkServiceOrderNotFound) ||
-		errors.Is(err, vehicleDomain.ErrVehicleNotFound)
+		errors.Is(err, vehicleDomain.ErrVehicleNotFound) ||
+		errors.Is(err, customerDomain.ErrCustomerNotFound)
 }
 
 func isUnauthorizedError(err error) bool {
@@ -173,7 +181,8 @@ func isConflictError(err error) bool {
 		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCompleted) ||
 		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCancelled) ||
 		errors.Is(err, domain.ErrWorkServiceOrderInvalidStatus) ||
-		errors.Is(err, app.ErrDataConflict)
+		errors.Is(err, app.ErrDataConflict) ||
+		errors.Is(err, customerDomain.ErrCustomerHasServiceOrders)
 }
 
 func isUnprocessableEntityError(err error) bool {
@@ -185,7 +194,7 @@ func isUnprocessableEntityError(err error) bool {
 }
 
 func isForbidden(err error) bool {
-	return errors.Is(err, domain.ErrInvalidCustomerProperty)
+	return errors.Is(err, domain.ErrInvalidCustomerProperty) || errors.Is(err, customerDomain.ErrInvalidCustomerProperty)
 }
 
 func unwrapAll(err error) []string {

@@ -13,6 +13,8 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/mocks"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
+	authAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/adapters"
+	authMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/interfaces/mocks"
 	supplyAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/adapters"
 	suppliesMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces/mocks"
 	vehicleAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/adapters"
@@ -26,23 +28,25 @@ func TestSetupRouter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	mockPing := mocks.NewPingHandler(t)
-	mockUser := mocks.NewUserHandler(t)
 	mockCustomer := mocks.NewCustomerHandler(t)
 	mockWork := mocks.NewWorkHandler(t)
-	mockVehicle := vehiclesMocks.NewVehicleHTTPController(t)
-	mockSupply := suppliesMocks.NewSupplyHTTPController(t)
 	mockSO := mocks.NewServiceOrderHandler(t)
 	mockSOHistory := mocks.NewServiceOrderHistoryHandler(t)
+
+	// MIGRATED
+	mockVehicle := vehiclesMocks.NewVehicleHTTPController(t)
+	mockSupply := suppliesMocks.NewSupplyHTTPController(t)
+	mockAuth := authMocks.NewAuthHTTPController(t)
 
 	// Set up only the handlers/routes that exist in internal/routing/routing.go
 
 	// Ping
 	mockPing.EXPECT().Ping(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
 
-	// User
-	mockUser.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
-	mockUser.EXPECT().Login(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
-	mockUser.EXPECT().UpdateRole(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusNoContent) })
+	// Auth
+	mockAuth.EXPECT().Register(mock.Anything, mock.AnythingOfType("*http.Request")).Return(authAdapters.UserResponse{}, nil)
+	mockAuth.EXPECT().Login(mock.Anything, mock.AnythingOfType("*http.Request")).Return(authAdapters.LoginResponse{}, nil)
+	mockAuth.EXPECT().ChangeRole(mock.Anything, mock.AnythingOfType("*http.Request")).Return(nil)
 
 	// Customer
 	mockCustomer.EXPECT().Create(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusCreated) })
@@ -98,7 +102,7 @@ func TestSetupRouter(t *testing.T) {
 
 	c := &http.HandlersWrapper{
 		PingHandler:                mockPing,
-		UserHandler:                mockUser,
+		UserHandler:                mockAuth,
 		CustomerHandler:            mockCustomer,
 		WorkHandler:                mockWork,
 		VehicleHandler:             mockVehicle,
