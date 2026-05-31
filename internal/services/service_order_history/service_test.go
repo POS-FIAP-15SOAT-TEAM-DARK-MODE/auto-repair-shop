@@ -1,0 +1,164 @@
+package service_order_history
+
+import (
+	"context"
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	domainmocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain/mocks"
+	uow "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+var (
+	soBaseTime = time.Date(2026, 4, 5, 12, 0, 0, 0, time.UTC)
+	soReceived = domain.ServiceOrderHistoryItem{
+		PreviousStatus: "",
+		NewStatus:      domain.SERVICE_ORDER_STATUS_RECEIVED,
+		CreatedAt:      soBaseTime,
+	}
+	soInProgress = domain.ServiceOrderHistoryItem{
+		PreviousStatus: domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL,
+		NewStatus:      domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
+		CreatedAt:      soBaseTime.Add(2 * time.Hour),
+	}
+	soCompleted = domain.ServiceOrderHistoryItem{
+		PreviousStatus: domain.SERVICE_ORDER_STATUS_IN_PROGRESS,
+		NewStatus:      domain.SERVICE_ORDER_STATUS_COMPLETED,
+		CreatedAt:      soBaseTime.Add(4 * time.Hour),
+	}
+)
+
+func TestService_GetHistoryByID(t *testing.T) {
+	tests := []struct {
+		name      string
+		params    *domain.SearchServiceOrderHistoryParams
+		setupRepo func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams)
+		assert    func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error)
+	}{
+		{
+			name:   "search error short-circuits",
+			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
+			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
+				repo.EXPECT().Search(mock.Anything, params).Return(nil, errors.New("db search failure"))
+			},
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
+				assert.Error(t, err)
+				assert.Nil(t, items)
+			},
+		},
+		{
+			name:   "empty items returns immediately",
+			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
+			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
+				repo.EXPECT().Search(mock.Anything, params).Return([]domain.ServiceOrderHistoryItem{}, nil)
+			},
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
+				assert.NoError(t, err)
+				assert.Empty(t, items)
+			},
+		},
+		{
+			name:   "no IN_PROGRESS entry skips work transition lookup",
+			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
+			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
+				repo.EXPECT().Search(mock.Anything, params).Return([]domain.ServiceOrderHistoryItem{soReceived}, nil)
+			},
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
+				assert.NoError(t, err)
+				assert.Len(t, items, 1)
+				assert.Empty(t, items[0].WorkTransitions)
+			},
+		},
+		{
+			name:   "work transitions grouped by work_id and attached to IN_PROGRESS entry only",
+			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
+			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
+				items := []domain.ServiceOrderHistoryItem{soReceived, soInProgress, soCompleted}
+				groups := []domain.WorkTransitionGroup{
+					{
+						WorkID: "w-1",
+						Status: []domain.WorkStatusItem{
+							{NewStatus: domain.SERVICE_ORDER_STATUS_NEW, CreatedAt: soBaseTime.Add(1 * time.Hour)},
+							{PreviousStatus: domain.SERVICE_ORDER_STATUS_NEW, NewStatus: domain.SERVICE_ORDER_STATUS_IN_PROGRESS, CreatedAt: soBaseTime.Add(2 * time.Hour)},
+						},
+					},
+					{
+						WorkID: "w-2",
+						Status: []domain.WorkStatusItem{
+							{NewStatus: domain.SERVICE_ORDER_STATUS_NEW, CreatedAt: soBaseTime.Add(1 * time.Hour)},
+						},
+					},
+				}
+				repo.EXPECT().Search(mock.Anything, params).Return(items, nil)
+				repo.EXPECT().SearchWorkTransitionsByServiceOrderID(mock.Anything, "so-1").
+					Return(groups, nil)
+			},
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
+				assert.NoError(t, err)
+				assert.Len(t, items, 3)
+
+				assert.Empty(t, items[0].WorkTransitions)
+				assert.Empty(t, items[2].WorkTransitions)
+
+				groups := items[1].WorkTransitions
+				assert.Len(t, groups, 2)
+
+				assert.Equal(t, "w-1", groups[0].WorkID)
+				assert.Len(t, groups[0].Status, 2)
+				assert.Equal(t, domain.SERVICE_ORDER_STATUS_NEW, groups[0].Status[0].NewStatus)
+				assert.Equal(t, domain.SERVICE_ORDER_STATUS_IN_PROGRESS, groups[0].Status[1].NewStatus)
+
+				assert.Equal(t, "w-2", groups[1].WorkID)
+				assert.Len(t, groups[1].Status, 1)
+				assert.Equal(t, domain.SERVICE_ORDER_STATUS_NEW, groups[1].Status[0].NewStatus)
+			},
+		},
+		{
+			name:   "no work transitions yields nil WorkTransitions on IN_PROGRESS entry",
+			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
+			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
+				items := []domain.ServiceOrderHistoryItem{soReceived, soInProgress}
+				repo.EXPECT().Search(mock.Anything, params).Return(items, nil)
+				repo.EXPECT().SearchWorkTransitionsByServiceOrderID(mock.Anything, "so-1").
+					Return([]domain.WorkTransitionGroup{}, nil)
+			},
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
+				assert.NoError(t, err)
+				assert.Len(t, items, 2)
+				assert.Empty(t, items[0].WorkTransitions)
+				assert.Empty(t, items[1].WorkTransitions)
+			},
+		},
+		{
+			name:   "SearchWorkTransitions error propagates",
+			params: &domain.SearchServiceOrderHistoryParams{ID: "so-1"},
+			setupRepo: func(repo *domainmocks.ServiceOrderHistoryRepository, params *domain.SearchServiceOrderHistoryParams) {
+				items := []domain.ServiceOrderHistoryItem{soInProgress}
+				repo.EXPECT().Search(mock.Anything, params).Return(items, nil)
+				repo.EXPECT().SearchWorkTransitionsByServiceOrderID(mock.Anything, "so-1").
+					Return(nil, errors.New("work tx lookup failed"))
+			},
+			assert: func(t *testing.T, items []domain.ServiceOrderHistoryItem, err error) {
+				assert.Error(t, err)
+				assert.Nil(t, items)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			executor := &uow.UnitOfWork{}
+			repo := domainmocks.NewServiceOrderHistoryRepository(t)
+			tt.setupRepo(repo, tt.params)
+
+			s := Service(executor, repo)
+			items, err := s.GetHistoryByID(context.Background(), tt.params)
+			tt.assert(t, items, err)
+		})
+	}
+}

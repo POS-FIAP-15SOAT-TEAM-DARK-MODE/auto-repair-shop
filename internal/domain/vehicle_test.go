@@ -1,0 +1,258 @@
+package domain
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestValidateLicensePlate(t *testing.T) {
+	tests := []struct {
+		name        string
+		plate       string
+		expectedErr error
+	}{
+		{
+			name:        "valid mercosul plate",
+			plate:       "ABC1D23",
+			expectedErr: nil,
+		},
+		{
+			name:        "invalid plate format",
+			plate:       "AB12345",
+			expectedErr: ErrVehicleInvalidPlate,
+		},
+		{
+			name:        "invalid plate with special chars",
+			plate:       "ABC-1234",
+			expectedErr: ErrVehicleInvalidPlate,
+		},
+		{
+			name:        "empty plate",
+			plate:       "",
+			expectedErr: ErrVehicleInvalidPlate,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateLicensePlate(tt.plate)
+
+			if tt.expectedErr == nil {
+				assert.NoError(t, err)
+				return
+			}
+
+			assert.True(t, errors.Is(err, tt.expectedErr),
+				"expected error to wrap %v, got %v", tt.expectedErr, err)
+		})
+	}
+}
+
+func TestVehicle_Validate(t *testing.T) {
+	tests := []struct {
+		name        string
+		vehicle     *Vehicle
+		expectedErr error
+	}{
+		{
+			name: "valid vehicle",
+			vehicle: &Vehicle{
+				LicensePlate: "ABC1D23",
+				Year:         2020,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "invalid plate",
+			vehicle: &Vehicle{
+				LicensePlate: "INVALID",
+				Year:         2020,
+			},
+			expectedErr: ErrVehicleInvalidPlate,
+		},
+		{
+			name: "invalid year",
+			vehicle: &Vehicle{
+				LicensePlate: "ABC1D23",
+				Year:         1800,
+			},
+			expectedErr: ErrParamVehicleYear,
+		},
+		{
+			name: "invalid plate and year (joined error)",
+			vehicle: &Vehicle{
+				LicensePlate: "XXX",
+				Year:         1000,
+			},
+			expectedErr: ErrVehicleInvalidPlate,
+		},
+		{
+			name: "plate normalized with spaces and hyphen",
+			vehicle: &Vehicle{
+				LicensePlate: " abc-1d23 ",
+				Year:         2020,
+			},
+			expectedErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.vehicle.Validate()
+
+			if tt.expectedErr == nil {
+				assert.NoError(t, err)
+				return
+			}
+
+			assert.True(t, errors.Is(err, tt.expectedErr),
+				"expected error to wrap %v, got %v", tt.expectedErr, err)
+		})
+	}
+}
+
+func TestNewVehicle(t *testing.T) {
+	tests := []struct {
+		name          string
+		plate         string
+		brand         string
+		model         string
+		customerId    string
+		year          int
+		expectedPlate string
+	}{
+		{
+			name:          "should uppercase plate",
+			plate:         "abc1d23",
+			brand:         "chevrolet",
+			model:         "onix",
+			customerId:    "123",
+			year:          2020,
+			expectedPlate: "ABC1D23",
+		},
+		{
+			name:          "already uppercase plate",
+			plate:         "ABC1D23",
+			brand:         "fiat",
+			model:         "uno",
+			customerId:    "456",
+			year:          2010,
+			expectedPlate: "ABC1D23",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v := NewVehicle(tt.plate, tt.brand, tt.model, tt.customerId, tt.year)
+
+			assert.NotEmpty(t, v.ID)
+			assert.Equal(t, tt.expectedPlate, v.LicensePlate)
+			assert.Equal(t, tt.brand, v.Brand)
+			assert.Equal(t, tt.model, v.Model)
+			assert.Equal(t, tt.year, v.Year)
+			assert.Equal(t, tt.customerId, v.CustomerId)
+		})
+	}
+}
+
+func TestNormalizeLicensePlate(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "already normalized",
+			input:    "ABC1D23",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "lowercase plate",
+			input:    "abc1d23",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "with hyphen",
+			input:    "ABC-1D23",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "with spaces",
+			input:    "  ABC1D23  ",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "lowercase with spaces and hyphen",
+			input:    "  abc-1d23  ",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "multiple hyphens",
+			input:    "A-B-C-1-D-2-3",
+			expected: "ABC1D23",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "only spaces",
+			input:    "     ",
+			expected: "",
+		},
+		{
+			name:     "only hyphens",
+			input:    "-----",
+			expected: "",
+		},
+		{
+			name:     "mixed invalid format still normalized",
+			input:    " a-b c-1d 2-3 ",
+			expected: "ABC1D23",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NormalizeLicensePlate(tt.input)
+
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestListVehicleParams_SearchVehicleParams(t *testing.T) {
+	tests := []struct {
+		name       string
+		params     ListVehicleParams
+		wantOffset int64
+		wantLimit  int64
+		wantCustID string
+	}{
+		{
+			name:       "page 1",
+			params:     ListVehicleParams{Page: 1, PageSize: 10, CustomerID: "cust-1"},
+			wantOffset: 0,
+			wantLimit:  10,
+			wantCustID: "cust-1",
+		},
+		{
+			name:       "page 2",
+			params:     ListVehicleParams{Page: 2, PageSize: 5, CustomerID: "cust-2"},
+			wantOffset: 5,
+			wantLimit:  5,
+			wantCustID: "cust-2",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sp := tt.params.SearchVehicleParams()
+			assert.Equal(t, tt.wantOffset, sp.Offset)
+			assert.Equal(t, tt.wantLimit, sp.Limit)
+			assert.Equal(t, tt.wantCustID, sp.CustomerId)
+		})
+	}
+}

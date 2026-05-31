@@ -1,0 +1,55 @@
+---
+description: Database and API design rules
+globs: ["**/migrations/**", "**/schema*", "**/swagger*", "**/openapi*", "**/*.sql"]
+alwaysApply: false
+---
+
+# Database & API Design
+
+## PostgreSQL Rules
+- Use NUMERIC(10,2) for all monetary values — never FLOAT or DOUBLE
+- Use ENUM or CHECK constraint for service order status column; valid values: RECEIVED, IN_DIAGNOSIS, AWAITING_APPROVAL, IN_PROGRESS, COMPLETED, DELIVERED, REJECTED
+- Apply foreign key constraints with referential integrity for: vehicle→customer, service_order→customer, service_order→vehicle, service_order_service→service_order, service_order_service→service, service_order_part→service_order, service_order_part→part, customer→user
+- Many-to-many: `USER_ROLE` table linking user↔role
+- Index columns: customer.cpf, customer.cnpj, vehicle.plate, service_order.status, service_order.customer_id, user.email
+- Use database transactions (BEGIN/COMMIT) for: service order creation with parts, stock decrement, status transitions
+- Use SELECT FOR UPDATE when reading stock quantity before decrement
+
+## Migration Strategy
+- All schema changes via versioned migration files (never alter schema manually)
+- Migration files named: `V{version}__{description}.sql` (Flyway) or numeric prefix (other tools)
+- Never drop or modify existing columns in a migration — add new columns, deprecate old ones
+
+## API Design (RESTful)
+### Endpoints Overview
+- `POST   /auth/login` — obtain JWT (public)
+- `GET    /service-orders/:id/status` — customer tracking (public, no auth)
+- `POST   /customers` — create customer (ADMIN, ATTENDANT)
+- `GET    /customers` — list customers (ADMIN, ATTENDANT)
+- `GET    /customers/:id` — get customer (ADMIN, ATTENDANT)
+- `PUT    /customers/:id` — update customer (ADMIN, ATTENDANT)
+- `DELETE /customers/:id` — delete customer (ADMIN)
+- Same CRUD pattern for `/vehicles`, `/services`, `/parts`
+- `POST   /service-orders` — create service order (ADMIN, ATTENDANT)
+- `GET    /service-orders` — list service orders with filters: status, customer_id, vehicle_id (ADMIN, ATTENDANT, MECHANIC)
+- `GET    /service-orders/:id` — full service order detail with services, parts, values, status history (ADMIN, ATTENDANT, MECHANIC)
+- `PATCH  /service-orders/:id/status` — advance service order status (ADMIN, ATTENDANT, MECHANIC)
+- `POST   /service-orders/:id/approve` — CLIENT approves own budget → IN_PROGRESS
+- `POST   /service-orders/:id/reject` — CLIENT rejects own budget → REJECTED
+- `GET    /reports/average-time` — average execution time report (ADMIN, ATTENDANT)
+- `POST   /users` — create user (ADMIN only)
+- `PUT    /users/:id/roles` — update user roles (ADMIN only)
+
+## Request / Response Conventions
+- All request and response bodies in JSON
+- Dates and timestamps in ISO 8601 format (UTC)
+- IDs as UUIDs
+- Pagination on list endpoints: `?page=1&limit=20`, response includes `total`, `page`, `limit`, `data`
+- Filter parameters on GET /service-orders: `?status=IN_PROGRESS&customer_id=...&vehicle_id=...`
+
+## Swagger/OpenAPI
+- Every endpoint must have: summary, description, request body schema, response schemas (success + errors)
+- Tag endpoints by domain: Customers, Vehicles, Services, Parts, ServiceOrders, Reports, Auth, Users
+- Document 401/403 responses on all protected endpoints
+- Mark public service order status endpoint explicitly as requiring no authentication
+- Document role requirements for each protected endpoint
