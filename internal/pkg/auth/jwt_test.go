@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -100,6 +101,59 @@ func TestGenerateToken(t *testing.T) {
 			if token == "" {
 				t.Fatalf("expected non-empty token")
 			}
+		})
+	}
+}
+
+func TestGetClaimsFromHeader(t *testing.T) {
+	validTok, err := GenerateToken("user-99", []domain.Role{domain.ADMIN}, time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+
+	tests := []struct {
+		name       string
+		header     string
+		wantErr    bool
+		wantUserID string
+	}{
+		{
+			name:       "valid bearer token",
+			header:     "Bearer " + validTok,
+			wantErr:    false,
+			wantUserID: "user-99",
+		},
+		{
+			name:    "empty header",
+			header:  "",
+			wantErr: true,
+		},
+		{
+			name:    "no bearer prefix",
+			header:  validTok,
+			wantErr: true,
+		},
+		{
+			name:    "bearer with expired token",
+			header:  "Bearer invalid.token.here",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, _ := http.NewRequest(http.MethodGet, "/", nil)
+			if tt.header != "" {
+				req.Header.Set("Authorization", tt.header)
+			}
+
+			claims, err := GetClaimsFromHeader(req)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantUserID, claims.UserId)
 		})
 	}
 }
