@@ -1,0 +1,350 @@
+package repository
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+
+	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/domain"
+	customerDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/customer/domain"
+	dbPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/db"
+	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/db/postgres"
+	uowPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/uow"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/service_order/domain"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/domain"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
+	workDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/work/domain"
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+)
+
+type soRepository struct{}
+
+func NewSOPostgres() domain.ServiceOrderRepository {
+	return &soRepository{}
+}
+
+func (r *soRepository) Save(ctx context.Context, so *domain.ServiceOrder) error {
+	tx, err := uowPkg.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	var currentDBStatus string
+	err = tx.QueryRowContext(ctx, selectSOStatusQuery, so.ID).Scan(&currentDBStatus)
+
+	isNew := false
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			isNew = true
+		} else {
+			return pgPkg.Error(ctx, err)
+		}
+	}
+
+	statusChanged := isNew || currentDBStatus != so.Status.String()
+	var prevStatus *string
+	if !isNew && currentDBStatus != "" {
+		s := currentDBStatus
+		prevStatus = &s
+	}
+
+	_, err = tx.ExecContext(ctx, insertServiceOrderQuery,
+		so.ID,
+		so.Customer.ID,
+		so.Vehicle.ID,
+		so.Status.String(),
+		so.TotalAmount,
+	)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	if statusChanged {
+		_, err = tx.ExecContext(ctx, insertServiceOrderStatusQuery,
+			domain.NewHistoryServiceOrderID(),
+			so.ID,
+			prevStatus,
+			so.Status.String())
+		if err != nil {
+			return pgPkg.Error(ctx, err)
+		}
+	}
+
+	return nil
+}
+
+func (r *soRepository) ExistsByID(ctx context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
+	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return false, "", err
+	}
+
+	var status domain.SERVICE_ORDER_STATUS
+	if err = db.QueryRowContext(ctx, serviceOrderExistsQuery, id).Scan(&status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, "", domain.ErrServiceOrderNotFound
+		}
+		return false, "", pgPkg.Error(ctx, err)
+	}
+	return status != "", status, nil
+}
+
+func (r *soRepository) FindByID(ctx context.Context, id string) (domain.ServiceOrder, error) {
+	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return domain.ServiceOrder{}, err
+	}
+
+	var so domain.ServiceOrder
+	so.Customer = new(customerDomain.Customer)
+	so.Customer.User = new(authDomain.User)
+	so.Vehicle = new(vehicleDomain.Vehicle)
+	var status string
+	if err = db.QueryRowContext(ctx, serviceOrderFindByIDQuery, id).Scan(
+		&so.ID, &status, &so.TotalAmount,
+		&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+		&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+		&so.Customer.User.Name, &so.Customer.User.Email,
+		&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+		&so.Vehicle.Model, &so.Vehicle.Year,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ServiceOrder{}, domain.ErrServiceOrderNotFound
+		}
+		return domain.ServiceOrder{}, pgPkg.Error(ctx, err)
+	}
+
+	so.Status = domain.StringToServiceOrderStatus(status)
+	return so, nil
+}
+
+func (r *soRepository) Count(ctx context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
+	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	queryBuilder := dbPkg.QueryBuilder(countServiceOrderQuery)
+	queryBuilder.Add("so.status =", params.Status)
+	queryBuilder.Add("so.customer_id =", params.CustomerID)
+	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
+	query, args := queryBuilder.Build()
+
+	var total int64
+	if err = db.QueryRowContext(ctx, query, args...).Scan(&total); err != nil {
+		return 0, pgPkg.Error(ctx, err)
+	}
+	return total, nil
+}
+
+func (r *soRepository) Search(ctx context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
+	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	queryBuilder := dbPkg.QueryBuilder(searchServiceOrderQuery).
+		OrderBy("so.created_at", dbPkg.ASC).
+		AddPagination(params.Limit, params.Offset)
+	queryBuilder.Add("so.status =", params.Status)
+	queryBuilder.Add("so.customer_id =", params.CustomerID)
+	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
+	query, args := queryBuilder.Build()
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	items := make([]domain.ServiceOrder, 0, params.Limit)
+	for rows.Next() {
+		var so domain.ServiceOrder
+		so.Customer = new(customerDomain.Customer)
+		so.Customer.User = new(authDomain.User)
+		so.Vehicle = new(vehicleDomain.Vehicle)
+		var status string
+
+		if err = rows.Scan(
+			&so.ID, &status, &so.TotalAmount,
+			&so.Customer.ID, &so.Customer.UserID, &so.Customer.Type,
+			&so.Customer.CPF, &so.Customer.CNPJ, &so.Customer.CompanyName, &so.Customer.Phone,
+			&so.Customer.User.Name, &so.Customer.User.Email,
+			&so.Vehicle.ID, &so.Vehicle.LicensePlate, &so.Vehicle.Brand,
+			&so.Vehicle.Model, &so.Vehicle.Year,
+		); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+
+		so.Status = domain.StringToServiceOrderStatus(status)
+		items = append(items, so)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	return items, nil
+}
+
+func (r *soRepository) ListWorksByServiceOrderID(ctx context.Context, serviceOrderID string) ([]workDomain.Work, error) {
+	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.QueryContext(ctx, listWorksByServiceOrderQuery, serviceOrderID)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var works []workDomain.Work
+	for rows.Next() {
+		var w workDomain.Work
+		var statusBool bool
+		if err = rows.Scan(&w.ID, &w.Name, &w.Description, &w.Price, &statusBool); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		w.Status = workDomain.BoolToWorkStatus(statusBool)
+		works = append(works, w)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	return works, nil
+}
+
+func (r *soRepository) AddWorkLink(ctx context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error {
+	tx, err := uowPkg.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, insertServiceOrderWorkQuery,
+		uuid.NewString(),
+		serviceOrderID,
+		workID,
+		unitPrice,
+	)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	return nil
+}
+
+func (r *soRepository) RemoveWorkLink(ctx context.Context, serviceOrderID, workID string) error {
+	tx, err := uowPkg.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	res, err := tx.ExecContext(ctx, deleteServiceOrderWorkQuery, serviceOrderID, workID)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	if n == 0 {
+		return domain.ErrServiceOrderWorkNotFound
+	}
+	return nil
+}
+
+func (r *soRepository) ListSuppliesByServiceOrderID(ctx context.Context, serviceOrderID string) ([]supplyDomain.Supply, error) {
+	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.QueryContext(ctx, listSuppliesByServiceOrderQuery, serviceOrderID)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var supplies []supplyDomain.Supply
+	for rows.Next() {
+		var sup supplyDomain.Supply
+		if err = rows.Scan(&sup.ID, &sup.Name, &sup.Description, &sup.UnitPrice, &sup.StockQuantity, &sup.Version); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		supplies = append(supplies, sup)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	return supplies, nil
+}
+
+func (r *soRepository) AddSupplyLink(ctx context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error {
+	tx, err := uowPkg.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx, insertServiceOrderSuppliesQuery,
+		uuid.NewString(),
+		serviceOrderID,
+		supplyID,
+		amount,
+		unitPrice,
+	)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	return nil
+}
+
+func (r *soRepository) RemoveSupplyLink(ctx context.Context, serviceOrderID, supplyID string) (int, error) {
+	tx, err := uowPkg.GetTransaction(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	var qty int
+	err = tx.QueryRowContext(ctx, deleteServiceOrderSuppliesQuery, serviceOrderID, supplyID).Scan(&qty)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, domain.ErrServiceOrderSupplyNotFound
+		}
+		return 0, pgPkg.Error(ctx, err)
+	}
+	return qty, nil
+}
+
+func (r *soRepository) AverageExecutionTimeInHours(ctx context.Context, workIDs []string) ([]domain.WorkExecutionTime, error) {
+	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query, args := dbPkg.QueryBuilder(averageExecutionTimeBaseQuery).
+		Add("h_start.new_status =", "IN_PROGRESS").
+		Add("h_end.new_status =", "COMPLETED").
+		AddAny("w.id", workIDs).
+		GroupBy("w.id", "w.name").
+		OrderBy("w.name", dbPkg.ASC).
+		Build()
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []domain.WorkExecutionTime
+	for rows.Next() {
+		var w domain.WorkExecutionTime
+		if err = rows.Scan(&w.WorkID, &w.WorkName, &w.AverageHours); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		result = append(result, w)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	return result, nil
+}
