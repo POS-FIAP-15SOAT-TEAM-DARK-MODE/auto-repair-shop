@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-
-	"github.com/gin-gonic/gin"
 )
 
 var (
@@ -44,14 +42,6 @@ func mapJSONErrorType(err error) error {
 func CheckJsonError(err error) error {
 	if err == nil {
 		return nil
-	}
-
-	if ginErr, ok := errors.AsType[*gin.Error](err); ok && ginErr.Err != nil {
-		if mapped := mapJSONErrorType(ginErr.Err); mapped != nil {
-			return mapped
-		}
-
-		err = ginErr.Err
 	}
 
 	if mapped := mapJSONErrorType(err); mapped != nil {

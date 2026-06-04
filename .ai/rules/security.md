@@ -14,7 +14,7 @@
 - Groups: `AttendantRoles`, `MechanicRoles`, `CustomerRoles`, `AttendantAndMechanicRoles`.
 
 ## Passwords
-- bcrypt, minimum cost factor 12 (configured via `BCRYPT_COST` env var).
+- bcrypt, default cost factor 10 (`bcrypt.DefaultCost`), configurable via `BCRYPT_COST` env var.
 - Default customer password = their CPF or CNPJ.
 - Never log or return password hashes.
 

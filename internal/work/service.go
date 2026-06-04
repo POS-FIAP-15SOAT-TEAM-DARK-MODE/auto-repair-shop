@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work/adapters"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work/domain"
@@ -23,20 +22,22 @@ func NewService(uow uow.Executor, repo interfaces.WorkRepository) *workService {
 }
 
 func (s *workService) Create(ctx context.Context, req adapters.CreateWork) (adapters.WorkResponse, error) {
+	if err := domain.ValidWorkStatusStringValue(req.Status); err != nil {
+		return adapters.WorkResponse{}, err
+	}
+
 	work, err := domain.NewWork(req.Name, req.Description, req.Price, domain.StringToWorkStatus(req.Status))
 	if err != nil {
 		return adapters.WorkResponse{}, fmt.Errorf("%w: %w", domain.ErrInvalidWorkPriceValue, err)
 	}
 
 	if err := work.Validate(); err != nil {
-		logger.Of(ctx).Error(err)
 		return adapters.WorkResponse{}, err
 	}
 
 	if err := s.uow.Execute(ctx, func(txCtx context.Context) error {
 		return s.repo.Save(txCtx, work)
 	}); err != nil {
-		logger.Of(ctx).Error(err)
 		return adapters.WorkResponse{}, err
 	}
 
@@ -48,6 +49,10 @@ func (s *workService) Update(ctx context.Context, id string, req adapters.Create
 		return adapters.WorkResponse{}, domain.ErrInvalidWorkId
 	}
 
+	if err := domain.ValidWorkStatusStringValue(req.Status); err != nil {
+		return adapters.WorkResponse{}, err
+	}
+
 	work, err := domain.NewWork(req.Name, req.Description, req.Price, domain.StringToWorkStatus(req.Status))
 	if err != nil {
 		return adapters.WorkResponse{}, fmt.Errorf("%w: %w", domain.ErrInvalidWorkPriceValue, err)
@@ -55,14 +60,12 @@ func (s *workService) Update(ctx context.Context, id string, req adapters.Create
 	work.ID = id
 
 	if err := work.Validate(); err != nil {
-		logger.Of(ctx).Error(err)
 		return adapters.WorkResponse{}, err
 	}
 
 	if err := s.uow.Execute(ctx, func(txCtx context.Context) error {
 		return s.repo.Save(txCtx, work)
 	}); err != nil {
-		logger.Of(ctx).Error(err)
 		return adapters.WorkResponse{}, err
 	}
 
@@ -77,7 +80,6 @@ func (s *workService) Delete(ctx context.Context, id string) error {
 	if err := s.uow.Execute(ctx, func(txCtx context.Context) error {
 		return s.repo.Delete(txCtx, id)
 	}); err != nil {
-		logger.Of(ctx).Error(err)
 		return err
 	}
 

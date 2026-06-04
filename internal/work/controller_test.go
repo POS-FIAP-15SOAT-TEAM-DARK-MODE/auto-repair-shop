@@ -51,8 +51,10 @@ func TestController_Create_Success(t *testing.T) {
 }
 
 func TestController_Create_InvalidStatus(t *testing.T) {
-	svcMock := mocks.NewWorkService(t)
-	ctrl := work.NewController(svcMock)
+	repo := workInMemoryRepo()
+	uow := workInMemoryUoW()
+	svc := work.NewService(uow, repo)
+	ctrl := work.NewController(svc)
 
 	body, _ := json.Marshal(map[string]string{
 		"name": "Oil Change", "description": "Valid description here",
@@ -64,7 +66,6 @@ func TestController_Create_InvalidStatus(t *testing.T) {
 	_, err := ctrl.Create(context.Background(), req)
 
 	assert.ErrorIs(t, err, domain.ErrInvalidWorkStatusValue)
-	svcMock.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
 }
 
 func TestController_Create_InvalidJSON(t *testing.T) {

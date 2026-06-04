@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	pkgJson "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,16 +27,6 @@ func TestCheckJsonError(t *testing.T) {
 		{"StringEOF", errors.New("EOF"), pkgJson.ErrJSONEmptyBody},
 		{"StringUnexpectedEOF", errors.New("unexpected EOF"), pkgJson.ErrJSONUnexpectedEOF},
 		{"UnknownError", errors.New("unknown"), pkgJson.ErrWrongPayloadFormat},
-		{
-			"GinWrappedSyntaxError",
-			&gin.Error{Err: &json.SyntaxError{}},
-			pkgJson.ErrJSONSyntax,
-		},
-		{
-			"GinWrappedUnknownError",
-			&gin.Error{Err: errors.New("unknown")},
-			pkgJson.ErrWrongPayloadFormat,
-		},
 	}
 
 	for _, tt := range tests {

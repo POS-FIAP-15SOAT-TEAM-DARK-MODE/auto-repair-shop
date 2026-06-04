@@ -38,10 +38,6 @@ func (ctrl *workController) Create(ctx context.Context, req *http.Request) (adap
 		return adapters.WorkResponse{}, err
 	}
 
-	if err := domain.ValidWorkStatusStringValue(dto.Status); err != nil {
-		return adapters.WorkResponse{}, err
-	}
-
 	resp, err := ctrl.svc.Create(ctx, dto)
 	if err != nil {
 		logger.Of(ctx).Debug("Work creation failed in service layer",
@@ -95,10 +91,6 @@ func (ctrl *workController) Update(ctx context.Context, req *http.Request) (adap
 	if err := json.ParseJsonBodyToStruct(req.Body, &dto); err != nil {
 		logger.Of(ctx).Debug("Failed to bind work update payload",
 			zap.String("operation", "update_work"), zap.Error(err))
-		return adapters.WorkResponse{}, err
-	}
-
-	if err := domain.ValidWorkStatusStringValue(dto.Status); err != nil {
 		return adapters.WorkResponse{}, err
 	}
 
