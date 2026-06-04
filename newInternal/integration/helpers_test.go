@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
+	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/auth"
 	"github.com/stretchr/testify/require"
 )
 
@@ -87,28 +87,28 @@ type paginatedResponse[T any] struct {
 
 func adminToken(t *testing.T) string {
 	t.Helper()
-	tok, err := auth.GenerateToken("admin-test-user", []domain.Role{domain.ADMIN}, time.Now().Add(time.Hour))
+	tok, err := auth.GenerateToken("admin-test-user", []authDomain.Role{authDomain.ADMIN}, time.Now().Add(time.Hour))
 	require.NoError(t, err)
 	return tok
 }
 
 func attendantToken(t *testing.T) string {
 	t.Helper()
-	tok, err := auth.GenerateToken("attendant-test-user", []domain.Role{domain.ATTENDANT}, time.Now().Add(time.Hour))
+	tok, err := auth.GenerateToken("attendant-test-user", []authDomain.Role{authDomain.ATTENDANT}, time.Now().Add(time.Hour))
 	require.NoError(t, err)
 	return tok
 }
 
 func mechanicToken(t *testing.T) string {
 	t.Helper()
-	tok, err := auth.GenerateToken("mechanic-test-user", []domain.Role{domain.MECHANIC}, time.Now().Add(time.Hour))
+	tok, err := auth.GenerateToken("mechanic-test-user", []authDomain.Role{authDomain.MECHANIC}, time.Now().Add(time.Hour))
 	require.NoError(t, err)
 	return tok
 }
 
 func customerToken(t *testing.T, userID string) string {
 	t.Helper()
-	tok, err := auth.GenerateToken(userID, []domain.Role{domain.CUSTOMER}, time.Now().Add(time.Hour))
+	tok, err := auth.GenerateToken(userID, []authDomain.Role{authDomain.CUSTOMER}, time.Now().Add(time.Hour))
 	require.NoError(t, err)
 	return tok
 }
@@ -322,7 +322,7 @@ func getUserID(t *testing.T, email string) string {
 	t.Helper()
 	u, err := memUserRepo.GetByEmail(context.Background(), email)
 	require.NoError(t, err, "getUserID: email %q not found", email)
-	require.NotNil(t, u, "getUserID: email %q not found", email)
+	require.NotEmpty(t, u.ID, "getUserID: email %q not found", email)
 	return u.ID
 }
 

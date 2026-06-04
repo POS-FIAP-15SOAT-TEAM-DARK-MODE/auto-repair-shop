@@ -8,50 +8,49 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/id"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/uow"
-	supply "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply"
-	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/adapters"
-	supplyInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces"
-	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/repository"
-	vehicle "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle"
-	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
-	vehicleInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
-	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/repository"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	customerHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/customer"
-	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
-	soHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order"
-	soHistoryHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/service_order_history"
-	userHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/user"
-	workHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/work"
-	container "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/middleware"
-	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/customer"
-	soRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order"
-	soHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/service_order_history"
-	userRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/user"
-	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work"
-	workSOHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/repository/work_service_order_history"
-	uowV1 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/routing"
-	customerSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/customer"
-	soSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order"
-	soHistorySvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/service_order_history"
-	userSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/user"
-	workSvc "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/services/work"
+	authPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth"
+	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/domain"
+	authInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/interfaces"
+	authRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/repository"
+	customerPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/customer"
+	customerAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/customer/adapters"
+	customerDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/customer/domain"
+	customerInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/customer/interfaces"
+	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/customer/repository"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/id"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/uow"
+	serviceOrderPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/service_order"
+	soRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/service_order/repository"
+	soHistoryPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/service_order_history"
+	soHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/service_order_history/repository"
+	supplyPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply"
+	supplyAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/adapters"
+	supplyInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/interfaces"
+	supplyRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/supply/repository"
+	vehiclePkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/domain"
+	vehicleInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/interfaces"
+	vehicleRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/vehicle/repository"
+	workPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/work"
+	workDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/work/domain"
+	workInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/work/interfaces"
+	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/work/repository"
+
+	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/infra/handler/ping"
+	container "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/infra/http"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/infra/http/middleware"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/infra/routing"
 )
 
 var (
 	testServer     *httptest.Server
-	memUserRepo    domain.UserRepository
+	memUserRepo    authInterfaces.AuthRepository
 	memSupplyRepo  supplyInterfaces.SupplyService
 	seedCustomerID string
 )
@@ -60,47 +59,61 @@ func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 
 	ctx := context.Background()
+	idGen := id.NewIDGenerator()
+	noopUoW := uow.NewInMemoryUoW()
 
-	userRepository := userRepo.MemoryRepository()
-	customerRepository := customerRepo.MemoryRepository()
-	workRepository := workRepo.MemoryRepository()
-	workSOHistoryRepository := workSOHistoryRepo.MemoryRepository()
-	soHistoryStore := soHistoryRepo.NewMemoryStore()
-	soRepository := soRepo.MemoryRepositoryWithHistory(soHistoryStore.Record)
+	// Auth
+	userRepository := authRepo.NewInMemory()
+	authSvc := authPkg.NewService(noopUoW, userRepository, idGen)
+	authCtrl := authPkg.NewController(authSvc)
 
-	// MIGRATED
+	// Customer
+	custRepository := customerRepo.NewInMemory()
+	custSvc := customerPkg.NewService(noopUoW, custRepository, userRepository)
+	custCtrl := customerPkg.NewController(custSvc)
+
+	// Work
+	wRepository := workRepo.NewInMemory()
+	workSvc := workPkg.NewService(noopUoW, wRepository)
+	workCtrl := workPkg.NewController(workSvc)
+
+	// Vehicle
 	vehicleRepository := vehicleRepo.NewInMemory()
+	vehicleSvc := vehiclePkg.NewService(noopUoW, vehicleRepository, idGen)
+	vehicleCtrl := vehiclePkg.NewController(vehicleSvc)
+
+	// Supply
 	supplyRepository := supplyRepo.NewInMemory()
-	// MIGRATED
+	supplySvc := supplyPkg.NewService(noopUoW, supplyRepository, idGen)
+	supplyCtrl := supplyPkg.NewController(supplySvc)
+
+	// Service order history
+	soHistoryStore := soHistoryRepo.NewMemoryStore()
+	soHistorySvc := soHistoryPkg.NewService(soHistoryStore)
+	soHistoryCtrl := soHistoryPkg.NewController(soHistorySvc)
+
+	// Service order
+	soRepository := soRepo.NewSOMemoryWithHistory(soHistoryStore.Record)
+	wsoHistoryRepository := soRepo.NewWSOHistoryMemory()
+	customerFinder := newCustomerFinder(custRepository)
+	var wRepo workInterfaces.WorkRepository = wRepository
+	soSvc := serviceOrderPkg.NewService(noopUoW, soRepository, wRepo, supplySvc, wsoHistoryRepository, customerFinder, vehicleSvc)
+	soCtrl := serviceOrderPkg.NewController(soSvc)
 
 	memUserRepo = userRepository
+	memSupplyRepo = supplySvc
 
-	noopUoW := &uowV1.UnitOfWork{}
-	noopUoWV2 := uow.NewInMemoryUoW()
-	expiresIn := 24 * time.Hour
-	idGen := id.NewIDGenerator()
-
-	// MIGRATED
-	vehicleService := vehicle.NewService(noopUoWV2, vehicleRepository, idGen)
-	supplyService := supply.NewService(noopUoWV2, supplyRepository, idGen)
-	// MIGRATED
-
-	userService := userSvc.Service(noopUoW, userRepository, expiresIn)
-	customerService := customerSvc.Service(noopUoW, userRepository, customerRepository)
-	workService := workSvc.Service(noopUoW, workRepository)
-	soHistoryService := soHistorySvc.Service(noopUoW, soHistoryStore)
-	soService := soSvc.Service(noopUoW, soRepository, workRepository, supplyService, soHistoryStore, workSOHistoryRepository, customerService, vehicleService)
+	seedCustomerID = seedMemory(ctx, userRepository, custRepository, vehicleRepository, wRepository, supplySvc)
 
 	handlers := &container.HandlersWrapper{
 		PingHandler:                pingHandler.HttpHandler(),
-		UserHandler:                userHandler.HttpHandler(userService),
-		CustomerHandler:            customerHandler.NewHandler(customerService),
-		WorkHandler:                workHandler.HttpHandler(workService),
-		ServiceOrderHandler:        soHandler.HttpHandler(soService),
-		ServiceOrderHistoryHandler: soHistoryHandler.HttpHandler(soHistoryService),
-		// MIGRATED
-		VehicleHandler: vehicle.NewController(vehicleService),
-		SupplyHandler:  supply.NewController(supplyService),
+		UserHandler:                authCtrl,
+		CustomerHandler:            custCtrl,
+		WorkHandler:                workCtrl,
+		VehicleHandler:             vehicleCtrl,
+		SupplyHandler:              supplyCtrl,
+		ServiceOrderHandler:        soCtrl,
+		ServiceOrderHistoryHandler: soHistoryCtrl,
 	}
 
 	middlewares := &container.Middlewares{
@@ -109,13 +122,41 @@ func TestMain(m *testing.M) {
 		"ErrorHandler": middleware.ErrorHandler(),
 	}
 
-	memSupplyRepo = supplyService
-	seedCustomerID = seedMemory(ctx, userRepository, customerRepository, vehicleRepository, workRepository, supplyService)
 	router := routing.SetupRouter(handlers, middlewares)
 	testServer = httptest.NewServer(router)
 	defer testServer.Close()
 
 	os.Exit(m.Run())
+}
+
+type customerFinderAdapter struct {
+	repo customerInterfaces.CustomerRepository
+}
+
+func newCustomerFinder(repo customerInterfaces.CustomerRepository) serviceOrderPkg.CustomerFinder {
+	return &customerFinderAdapter{repo: repo}
+}
+
+func (f *customerFinderAdapter) GetByID(ctx context.Context, customerID string) (customerDomain.Customer, error) {
+	items, err := f.repo.List(ctx, customerAdapters.ListCustomerParams{ID: customerID})
+	if err != nil {
+		return customerDomain.Customer{}, err
+	}
+	if len(items) == 0 {
+		return customerDomain.Customer{}, customerDomain.ErrCustomerNotFound
+	}
+	return items[0], nil
+}
+
+func (f *customerFinderAdapter) GetByUserID(ctx context.Context, userID string) (customerDomain.Customer, error) {
+	items, err := f.repo.List(ctx, customerAdapters.ListCustomerParams{UserID: userID})
+	if err != nil {
+		return customerDomain.Customer{}, err
+	}
+	if len(items) == 0 {
+		return customerDomain.Customer{}, customerDomain.ErrCustomerNotFound
+	}
+	return items[0], nil
 }
 
 func hashPW(raw string) string {
@@ -128,38 +169,45 @@ func hashPW(raw string) string {
 
 func seedMemory(
 	ctx context.Context,
-	userRepository domain.UserRepository,
-	customerRepository domain.CustomerRepository,
+	userRepository authInterfaces.AuthRepository,
+	custRepository customerInterfaces.CustomerRepository,
 	vehicleRepository vehicleInterfaces.VehicleRepository,
-	workRepository domain.WorkRepository,
-	supplyRepository supplyInterfaces.SupplyService,
+	wRepository workInterfaces.WorkRepository,
+	supplySvc supplyInterfaces.SupplyService,
 ) string {
 	// Staff users
 	attendantID := uuid.NewString()
-	_ = userRepository.Create(ctx, &domain.User{ID: attendantID, Name: "attendant", Email: "attendant@autorepairshop.com", Password: hashPW("attendant123")})
-	_ = userRepository.AssignRole(ctx, attendantID, domain.ATTENDANT)
+	_ = userRepository.Save(ctx, &authDomain.User{
+		ID: attendantID, Name: "attendant",
+		CoreUser: authDomain.CoreUser{Email: "attendant@autorepairshop.com", Password: hashPW("attendant123")},
+	})
+	_ = userRepository.SaveUserRole(ctx, attendantID, authDomain.ATTENDANT)
 
 	mechanicID := uuid.NewString()
-	_ = userRepository.Create(ctx, &domain.User{ID: mechanicID, Name: "mechanic", Email: "mechanic@autorepairshop.com", Password: hashPW("mechanic123")})
-	_ = userRepository.AssignRole(ctx, mechanicID, domain.MECHANIC)
+	_ = userRepository.Save(ctx, &authDomain.User{
+		ID: mechanicID, Name: "mechanic",
+		CoreUser: authDomain.CoreUser{Email: "mechanic@autorepairshop.com", Password: hashPW("mechanic123")},
+	})
+	_ = userRepository.SaveUserRole(ctx, mechanicID, authDomain.MECHANIC)
 
 	// Customer João Silva (CPF sanitized = digits only)
 	joaoUserID := uuid.NewString()
-	joaoUser := &domain.User{ID: joaoUserID, Name: "João Silva", Email: "joao.silva@email.com", Password: hashPW("529.982.247-25")}
-	_ = userRepository.Create(ctx, joaoUser)
-	_ = userRepository.AssignRole(ctx, joaoUserID, domain.CUSTOMER)
+	_ = userRepository.Save(ctx, &authDomain.User{
+		ID: joaoUserID, Name: "João Silva",
+		CoreUser: authDomain.CoreUser{Email: "joao.silva@email.com", Password: hashPW("529.982.247-25")},
+	})
+	_ = userRepository.SaveUserRole(ctx, joaoUserID, authDomain.CUSTOMER)
 
 	joaoCustomerID := uuid.NewString()
-	_ = customerRepository.Create(ctx, &domain.Customer{
+	_ = custRepository.Save(ctx, &customerDomain.Customer{
 		ID:     joaoCustomerID,
 		UserID: joaoUserID,
-		Type:   domain.IndividualCustomerType,
+		Type:   customerDomain.IndividualCustomerType,
 		CPF:    "52998224725",
 		Phone:  "11999990001",
-		User:   joaoUser,
 	})
 
-	// Vehicle ABC-1234 (plate stored normalized, no hyphen)
+	// Vehicle ABC-1234
 	_ = vehicleRepository.Save(ctx, &vehicleDomain.Vehicle{
 		ID:           uuid.NewString(),
 		LicensePlate: "ABC1234",
@@ -178,7 +226,7 @@ func seedMemory(
 		{"Diagnóstico Eletrônico", "Leitura de falhas via scanner OBD-II do veículo", "100.00"},
 	} {
 		p, _ := decimal.NewFromString(w.price)
-		_ = workRepository.Save(ctx, &domain.Work{ID: uuid.NewString(), Name: w.name, Description: w.desc, Price: p, Status: domain.ACTIVE})
+		_ = wRepository.Save(ctx, &workDomain.Work{ID: uuid.NewString(), Name: w.name, Description: w.desc, Price: p, Status: workDomain.ACTIVE})
 	}
 
 	// 5 seed supplies
@@ -193,7 +241,7 @@ func seedMemory(
 		{"Correia Dentada", "Kit correia dentada com tensor e rolamento incluso", "380.00", 15},
 	} {
 		p, _ := decimal.NewFromString(s.price)
-		_, _ = supplyRepository.Create(ctx, supplyDomain.CreateSupply{Name: s.name, Description: s.desc, UnitPrice: p, StockQuantity: s.qty})
+		_, _ = supplySvc.Create(ctx, supplyAdapters.CreateSupply{Name: s.name, Description: s.desc, UnitPrice: p, StockQuantity: s.qty})
 	}
 
 	return joaoCustomerID
