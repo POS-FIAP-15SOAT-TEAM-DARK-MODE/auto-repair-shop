@@ -60,3 +60,23 @@ func (r *memory_repo) GetUserSession(_ context.Context, userID string) (adapters
 		ExpiresIn: int64(expiresAt.Second()),
 	}, err
 }
+
+func (r *memory_repo) Update(_ context.Context, userID, name, email string) error {
+	u, ok := r.data[userID]
+	if !ok {
+		return domain.ErrInvalidUserCredentials
+	}
+	u.Name = name
+	u.Email = email
+	r.data[userID] = u
+	return nil
+}
+
+func (r *memory_repo) Delete(_ context.Context, userID string) error {
+	if _, ok := r.data[userID]; !ok {
+		return domain.ErrInvalidUserCredentials
+	}
+	delete(r.data, userID)
+	delete(r.roles, userID)
+	return nil
+}

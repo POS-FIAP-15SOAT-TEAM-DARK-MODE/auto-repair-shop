@@ -6,13 +6,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/db/postgres"
-	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/adapters"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/auth/interfaces"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/auth"
+	pgPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/db/postgres"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/logger"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/uow"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -26,7 +26,7 @@ func NewPostgres(sessionExpirationDuration time.Duration) interfaces.AuthReposit
 }
 
 func (u *repo) GetByEmail(ctx context.Context, email string) (domain.User, error) {
-	db, err := postgres.GetOneTimeTransaction(ctx)
+	db, err := uow.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -62,7 +62,7 @@ func (u *repo) GetUserSession(ctx context.Context, id string) (adapters.LoginRes
 }
 
 func (u *repo) getRolesByUserId(ctx context.Context, id string) ([]domain.Role, error) {
-	db, err := postgres.GetOneTimeTransaction(ctx)
+	db, err := uow.GetOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (u *repo) getRolesByUserId(ctx context.Context, id string) ([]domain.Role, 
 }
 
 func (u *repo) Save(ctx context.Context, c *domain.User) error {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := uow.GetTransaction(ctx)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (u *repo) Save(ctx context.Context, c *domain.User) error {
 }
 
 func (u *repo) SaveUserRole(ctx context.Context, userID string, role domain.Role) error {
-	tx, err := postgres.GetTransaction(ctx)
+	tx, err := uow.GetTransaction(ctx)
 	if err != nil {
 		return err
 	}
@@ -115,6 +115,36 @@ func (u *repo) SaveUserRole(ctx context.Context, userID string, role domain.Role
 
 	id := uuid.New().String()
 	if _, err = tx.ExecContext(ctx, updateRoleQuery, id, userID, string(role)); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (u *repo) Update(ctx context.Context, userID, name, email string) error {
+	tx, err := uow.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, updateUserQuery, name, email, userID); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	return nil
+}
+
+func (u *repo) Delete(ctx context.Context, userID string) error {
+	tx, err := uow.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteRolesQuery, userID); err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	if _, err = tx.ExecContext(ctx, deleteUserQuery, userID); err != nil {
 		return pgPkg.Error(ctx, err)
 	}
 

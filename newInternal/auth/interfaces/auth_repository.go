@@ -13,4 +13,6 @@ type AuthRepository interface {
 	SaveUserRole(ctx context.Context, userID string, role domain.Role) error
 	GetByEmail(ctx context.Context, email string) (domain.User, error)
 	GetUserSession(ctx context.Context, id string) (adapters.LoginResponse, error)
+	Update(ctx context.Context, userID, name, email string) error
+	Delete(ctx context.Context, userID string) error
 }

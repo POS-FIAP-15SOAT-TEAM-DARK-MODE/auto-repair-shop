@@ -7,7 +7,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/env"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/newInternal/pkg/logger"
 	"go.uber.org/zap"
@@ -190,7 +189,7 @@ func (c *CoreUser) HashPassword(ctx context.Context) error {
 
 func (c *CoreUser) ComparePassword(value string) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(c.Password), []byte(value)); err != nil {
-		return domain.ErrInvalidUserCredentials
+		return ErrInvalidUserCredentials
 	}
 	return nil
 }
