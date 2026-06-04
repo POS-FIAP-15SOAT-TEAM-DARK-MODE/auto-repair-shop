@@ -1,7 +1,13 @@
-# CLAUDE.md
+---
+description: Master AI rules reference — pointer to .ai/. Single source of truth for all coding rules.
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# AI Rules Reference
 
 > **Single source of truth: `.ai/`**
-> Only this file is auto-loaded by Claude Code. All linked files must be opened on demand — never loaded automatically.
+> Only this file is auto-loaded by Cursor. All linked files must be opened on demand — never loaded automatically.
 > Never duplicate rule content here.
 
 ## Always-Applied Rules

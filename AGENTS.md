@@ -1,7 +1,7 @@
-# CLAUDE.md
+# AGENTS.md
 
 > **Single source of truth: `.ai/`**
-> Only this file is auto-loaded by Claude Code. All linked files must be opened on demand — never loaded automatically.
+> Only this file is auto-loaded by Codex / GitHub Copilot. All linked files must be opened on demand — never loaded automatically.
 > Never duplicate rule content here.
 
 ## Always-Applied Rules

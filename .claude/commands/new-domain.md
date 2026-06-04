@@ -1,0 +1,1 @@
+../../.ai/commands/new-domain.md

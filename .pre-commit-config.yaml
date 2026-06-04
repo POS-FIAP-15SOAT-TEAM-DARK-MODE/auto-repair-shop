@@ -36,3 +36,12 @@ repos:
         language: system
         pass_filenames: false
         types: [go]
+
+  - repo: local
+    hooks:
+      - id: check-ai-rules
+        name: check ai rules placement
+        entry: .ai/hooks/check-ai-rules.sh
+        language: script
+        pass_filenames: false
+        always_run: true
