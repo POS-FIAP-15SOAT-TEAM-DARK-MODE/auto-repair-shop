@@ -61,12 +61,17 @@ func (ctrl *soController) List(ctx context.Context, req *http.Request) (adapters
 		}
 	}
 
+	sortBy := q.Get("sort_by")
+	sortOrder := q.Get("sort_order")
+
 	params := adapters.SOFilterParams{
 		Page:       page,
 		PageSize:   pageSize,
 		Status:     q.Get("status"),
 		CustomerID: q.Get("customerId"),
 		VehicleID:  q.Get("vehicleId"),
+		SortBy:     sortBy,
+		SortOrder:  sortOrder,
 	}
 
 	return ctrl.svc.List(ctx, params)

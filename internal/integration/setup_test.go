@@ -42,10 +42,9 @@ import (
 	workInterfaces "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work/interfaces"
 	workRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work/repository"
 
-	pingHandler "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/handler/ping"
-	container "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/middleware"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/routing"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/container"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/middleware"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/routing"
 )
 
 var (
@@ -106,7 +105,6 @@ func TestMain(m *testing.M) {
 	seedCustomerID = seedMemory(ctx, userRepository, custRepository, vehicleRepository, wRepository, supplySvc)
 
 	handlers := &container.HandlersWrapper{
-		PingHandler:                pingHandler.HttpHandler(),
 		UserHandler:                authCtrl,
 		CustomerHandler:            custCtrl,
 		WorkHandler:                workCtrl,

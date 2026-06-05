@@ -11,6 +11,31 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// statusPriority mirrors the SQL CASE priority used in so_postgres.go:
+// IN_PROGRESS(1) → AWAITING_APPROVAL(2) → IN_DIAGNOSIS(3) → RECEIVED(4) → NEW(5) → other(6)
+var statusPriority = map[domain.SERVICE_ORDER_STATUS]int{
+	domain.SERVICE_ORDER_STATUS_IN_PROGRESS:       1,
+	domain.SERVICE_ORDER_STATUS_AWAITING_APPROVAL: 2,
+	domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS:      3,
+	domain.SERVICE_ORDER_STATUS_RECEIVED:          4,
+	domain.SERVICE_ORDER_STATUS_NEW:               5,
+}
+
+func statusPriorityOf(s domain.SERVICE_ORDER_STATUS) int {
+	if p, ok := statusPriority[s]; ok {
+		return p
+	}
+	return 6
+}
+
+// terminalStatusSet matches the postgres terminalStatuses slice.
+var terminalStatusSet = map[domain.SERVICE_ORDER_STATUS]bool{
+	domain.SERVICE_ORDER_STATUS_DELIVERED: true,
+	domain.SERVICE_ORDER_STATUS_COMPLETED: true,
+	domain.SERVICE_ORDER_STATUS_REJECTED:  true,
+	domain.SERVICE_ORDER_STATUS_CANCELLED: true,
+}
+
 type soMemoryRepo struct {
 	data            map[string]domain.ServiceOrder
 	worksByOrder    map[string][]workDomain.Work
@@ -65,7 +90,11 @@ func (r *soMemoryRepo) FindByID(_ context.Context, id string) (domain.ServiceOrd
 func (r *soMemoryRepo) Count(_ context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
 	var total int64
 	for _, so := range r.data {
-		if params.Status != "" && so.Status.String() != params.Status {
+		if params.Status == "" {
+			if terminalStatusSet[so.Status] {
+				continue
+			}
+		} else if so.Status.String() != params.Status {
 			continue
 		}
 		if params.CustomerID != "" && (so.Customer == nil || so.Customer.ID != params.CustomerID) {
@@ -82,7 +111,11 @@ func (r *soMemoryRepo) Count(_ context.Context, params *domain.ServiceOrderFilte
 func (r *soMemoryRepo) Search(_ context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
 	filtered := make([]domain.ServiceOrder, 0)
 	for _, so := range r.data {
-		if params.Status != "" && so.Status.String() != params.Status {
+		if params.Status == "" {
+			if terminalStatusSet[so.Status] {
+				continue
+			}
+		} else if so.Status.String() != params.Status {
 			continue
 		}
 		if params.CustomerID != "" && (so.Customer == nil || so.Customer.ID != params.CustomerID) {
@@ -94,9 +127,20 @@ func (r *soMemoryRepo) Search(_ context.Context, params *domain.ServiceOrderFilt
 		filtered = append(filtered, so)
 	}
 
-	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].ID < filtered[j].ID
-	})
+	if params.SortBy == "status" {
+		sort.Slice(filtered, func(i, j int) bool {
+			pi := statusPriorityOf(filtered[i].Status)
+			pj := statusPriorityOf(filtered[j].Status)
+			if pi != pj {
+				return pi < pj
+			}
+			return filtered[i].ID < filtered[j].ID
+		})
+	} else {
+		sort.Slice(filtered, func(i, j int) bool {
+			return filtered[i].ID < filtered[j].ID
+		})
+	}
 
 	items := make([]domain.ServiceOrder, 0, params.Limit)
 	start := int(params.Offset)

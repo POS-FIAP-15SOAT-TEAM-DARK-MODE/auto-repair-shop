@@ -88,7 +88,52 @@ func (s *soService) Create(ctx context.Context, req adapters.CreateSORequest) (a
 
 	so := domain.NewServiceOrder(&customer, &vehicle)
 	if err = s.uow.Execute(ctx, func(ctx context.Context) error {
-		return s.repo.Save(ctx, so)
+		if err := s.repo.Save(ctx, so); err != nil {
+			return err
+		}
+
+		for _, rawID := range req.WorkIDs {
+			workID := strings.TrimSpace(rawID)
+			if workID == "" {
+				return domain.ErrInvalidWorkId
+			}
+			w, e := s.workRepo.FindByID(ctx, workID)
+			if e != nil {
+				return e
+			}
+			if e = s.repo.AddWorkLink(ctx, so.ID, w.ID, w.Price); e != nil {
+				return e
+			}
+			if e = s.wsoHistoryRepo.Insert(ctx, so.ID, w.ID, nil, domain.WORK_SERVICE_ORDER_STATUS_AWAITING_START); e != nil {
+				return e
+			}
+		}
+
+		for _, sup := range req.Supplies {
+			supplyID := strings.TrimSpace(sup.ID)
+			if supplyID == "" {
+				return domain.ErrInvalidSupplyID
+			}
+			if sup.Amount <= 0 {
+				s.logValidationError(ctx, "create_service_order", domain.ErrInvalidSupplyAmount)
+				return domain.ErrInvalidSupplyAmount
+			}
+			supply, e := s.supplyService.FindById(ctx, supplyID)
+			if e != nil {
+				return e
+			}
+			if supply.StockQuantity < sup.Amount {
+				return domain.ErrSupplyOutOfStock
+			}
+			if e = s.repo.AddSupplyLink(ctx, so.ID, sup.ID, sup.Amount, supply.UnitPrice); e != nil {
+				return e
+			}
+			if e = s.supplyService.DecrementStockQuantity(ctx, supply.ID, sup.Amount); e != nil {
+				return e
+			}
+		}
+
+		return nil
 	}); err != nil {
 		return adapters.SOResponse{}, err
 	}
@@ -99,6 +144,14 @@ func (s *soService) Create(ctx context.Context, req adapters.CreateSORequest) (a
 		zap.String("service_order_id", so.ID),
 		zap.String("status", so.Status.String()),
 	)
+
+	if len(req.WorkIDs) > 0 || len(req.Supplies) > 0 {
+		go func() {
+			if err := s.reviewOSPricing(context.Background(), so.ID); err != nil {
+				logger.Global().Error(err, zap.String("serviceOrderID", so.ID))
+			}
+		}()
+	}
 
 	return adapters.SOResponse{ID: so.ID, Status: so.Status.String()}, nil
 }
@@ -112,6 +165,8 @@ func (s *soService) List(ctx context.Context, params adapters.SOFilterParams) (a
 		Status:     params.Status,
 		CustomerID: params.CustomerID,
 		VehicleID:  params.VehicleID,
+		SortBy:     params.SortBy,
+		SortOrder:  params.SortOrder,
 	}
 
 	var total int64

@@ -4,17 +4,19 @@ import (
 	"context"
 	http2 "net/http"
 
+	api "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/docs"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/container"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/middleware"
+	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
-
-	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/domain"
-	newHttp "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/middleware"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 )
 
-func SetupRouter(c *newHttp.HandlersWrapper, m *newHttp.Middlewares) *gin.Engine {
+func SetupRouter(c *container.HandlersWrapper, m *container.Middlewares) *gin.Engine {
 	router := gin.New()
 
 	for name, mid := range *m {
@@ -24,7 +26,9 @@ func SetupRouter(c *newHttp.HandlersWrapper, m *newHttp.Middlewares) *gin.Engine
 
 	mountSwaggerUI(router)
 
-	router.GET("/ping", c.PingHandler.Ping)
+	router.GET("/ping", func(c *gin.Context) {
+		c.JSON(http2.StatusOK, gin.H{"message": "pong"})
+	})
 
 	v1 := router.Group("/v1")
 
@@ -79,6 +83,14 @@ func SetupRouter(c *newHttp.HandlersWrapper, m *newHttp.Middlewares) *gin.Engine
 	v1.GET("/service-order/:id/status", GinHandler(c.ServiceOrderHandler.GetStatus))
 
 	return router
+}
+
+func mountSwaggerUI(router *gin.Engine) {
+	router.GET("/swagger.yaml", func(c *gin.Context) {
+		c.Data(http2.StatusOK, "application/yaml; charset=utf-8", api.SwaggerBytes)
+	})
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/swagger.yaml")))
 }
 
 func GinOnlyErrorHandler(cb func(context.Context, *http2.Request) error, customStatus ...int) gin.HandlerFunc {

@@ -1,8 +1,10 @@
 package adapters
 
 type CreateSORequest struct {
-	CustomerID string `json:"client"`
-	VehicleID  string `json:"vehicle"`
+	CustomerID string          `json:"client"`
+	VehicleID  string          `json:"vehicle"`
+	WorkIDs    []string        `json:"works,omitempty"`
+	Supplies   []AddSupplyItem `json:"supplies,omitempty"`
 }
 
 type AddWorksRequest struct {

@@ -8,14 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/container"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/routing"
 	authAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/adapters"
 	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/domain"
 	authMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/interfaces/mocks"
 	customerAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer/adapters"
 	customerMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer/interfaces/mocks"
-	newHttp "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/http/mocks"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/routing"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/auth"
 	soAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/adapters"
 	soMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/interfaces/mocks"
@@ -35,7 +34,6 @@ import (
 func TestSetupRouter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	mockPing := mocks.NewPingHandler(t)
 	mockCustomer := customerMocks.NewCustomerHTTPController(t)
 	mockWork := workMocks.NewWorkHTTPController(t)
 	mockSO := soMocks.NewServiceOrderHTTPController(t)
@@ -46,10 +44,7 @@ func TestSetupRouter(t *testing.T) {
 	mockSupply := suppliesMocks.NewSupplyHTTPController(t)
 	mockAuth := authMocks.NewAuthHTTPController(t)
 
-	// Set up only the handlers/routes that exist in internal/infra/routing/routing.go
-
-	// Ping
-	mockPing.EXPECT().Ping(mock.Anything).RunAndReturn(func(c *gin.Context) { c.Status(goHttp.StatusOK) })
+	// Set up only the handlers/routes that exist in internal/app/routing/routing.go
 
 	// Auth
 	mockAuth.EXPECT().Register(mock.Anything, mock.AnythingOfType("*http.Request")).Return(authAdapters.UserResponse{}, nil)
@@ -108,8 +103,7 @@ func TestSetupRouter(t *testing.T) {
 	// Service Order History
 	mockSOHistory.EXPECT().GetHistoryByID(mock.Anything, mock.AnythingOfType("*http.Request")).Return([]soHistoryAdapters.SOHistoryResponse{}, nil)
 
-	c := &newHttp.HandlersWrapper{
-		PingHandler:                mockPing,
+	c := &container.HandlersWrapper{
 		UserHandler:                mockAuth,
 		CustomerHandler:            mockCustomer,
 		WorkHandler:                mockWork,
@@ -119,7 +113,7 @@ func TestSetupRouter(t *testing.T) {
 		ServiceOrderHistoryHandler: mockSOHistory,
 	}
 
-	m := &newHttp.Middlewares{
+	m := &container.Middlewares{
 		"test_mw": func(c *gin.Context) { c.Next() },
 	}
 

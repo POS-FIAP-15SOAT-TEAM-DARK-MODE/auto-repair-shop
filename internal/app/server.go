@@ -1,4 +1,4 @@
-package server
+package app
 
 import (
 	"context"
@@ -8,6 +8,16 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"go.uber.org/zap"
 )
+
+// Server defines the interface for all servers (HTTP, gRPC, etc.)
+type Server interface {
+	// Start begins the server's listener
+	Start(ctx context.Context) error
+	// Stop gracefully shuts down the server
+	Stop(ctx context.Context) error
+	// Name returns the name of the server for logging purposes
+	Name() string
+}
 
 type httpServer struct {
 	server *http.Server

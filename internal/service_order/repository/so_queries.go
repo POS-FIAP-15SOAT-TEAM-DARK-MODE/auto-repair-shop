@@ -1,5 +1,20 @@
 package repository
 
+// terminalStatuses lists the service order statuses that are excluded from the
+// default list view. Pass an explicit status filter to retrieve them.
+var terminalStatuses = []string{"DELIVERED", "COMPLETED", "REJECTED", "CANCELLED"}
+
+// statusSortCaseExpr is a raw SQL CASE expression that orders service orders by
+// workflow priority: IN_PROGRESS → AWAITING_APPROVAL → IN_DIAGNOSIS → RECEIVED → NEW.
+const statusSortCaseExpr = `CASE so.status ` +
+	`WHEN 'IN_PROGRESS' THEN 1 ` +
+	`WHEN 'AWAITING_APPROVAL' THEN 2 ` +
+	`WHEN 'IN_DIAGNOSIS' THEN 3 ` +
+	`WHEN 'RECEIVED' THEN 4 ` +
+	`WHEN 'NEW' THEN 5 ` +
+	`ELSE 6 ` +
+	`END ASC`
+
 const (
 	selectSOStatusQuery     = "SELECT status FROM service_order WHERE id = $1"
 	insertServiceOrderQuery = `

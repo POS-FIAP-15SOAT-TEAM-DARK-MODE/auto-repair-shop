@@ -126,7 +126,11 @@ func (r *soRepository) Count(ctx context.Context, params *domain.ServiceOrderFil
 	}
 
 	queryBuilder := dbPkg.QueryBuilder(countServiceOrderQuery)
-	queryBuilder.Add("so.status =", params.Status)
+	if params.Status == "" {
+		queryBuilder.AddNotIn("so.status", terminalStatuses)
+	} else {
+		queryBuilder.Add("so.status =", params.Status)
+	}
 	queryBuilder.Add("so.customer_id =", params.CustomerID)
 	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
 	query, args := queryBuilder.Build()
@@ -144,12 +148,20 @@ func (r *soRepository) Search(ctx context.Context, params *domain.ServiceOrderFi
 		return nil, err
 	}
 
-	queryBuilder := dbPkg.QueryBuilder(searchServiceOrderQuery).
-		OrderBy("so.created_at", dbPkg.ASC).
-		AddPagination(params.Limit, params.Offset)
-	queryBuilder.Add("so.status =", params.Status)
+	queryBuilder := dbPkg.QueryBuilder(searchServiceOrderQuery)
+	if params.Status == "" {
+		queryBuilder.AddNotIn("so.status", terminalStatuses)
+	} else {
+		queryBuilder.Add("so.status =", params.Status)
+	}
 	queryBuilder.Add("so.customer_id =", params.CustomerID)
 	queryBuilder.Add("so.vehicle_id =", params.VehicleID)
+	if params.SortBy == "status" {
+		queryBuilder.OrderByRaw(statusSortCaseExpr)
+	} else {
+		queryBuilder.OrderBy("so.created_at", dbPkg.ASC)
+	}
+	queryBuilder.AddPagination(params.Limit, params.Offset)
 	query, args := queryBuilder.Build()
 
 	rows, err := db.QueryContext(ctx, query, args...)

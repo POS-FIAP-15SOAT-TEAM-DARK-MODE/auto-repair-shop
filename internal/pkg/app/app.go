@@ -8,25 +8,25 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/infra/server"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 )
 
 type LifecycleManager struct {
-	servers []server.Server
+	servers []app.Server
 	timeout time.Duration
 }
 
 func NewLifecycleManager(timeout time.Duration) *LifecycleManager {
 	return &LifecycleManager{
-		servers: make([]server.Server, 0),
+		servers: make([]app.Server, 0),
 		timeout: timeout,
 	}
 }
 
-func (m *LifecycleManager) Add(s ...server.Server) {
+func (m *LifecycleManager) Add(s ...app.Server) {
 	m.servers = append(m.servers, s...)
 }
 

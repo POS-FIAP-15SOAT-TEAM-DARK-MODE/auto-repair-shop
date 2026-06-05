@@ -1,4 +1,4 @@
-package seed
+package app
 
 import (
 	"context"
@@ -14,10 +14,10 @@ import (
 
 const checkSeededQuery = `SELECT COUNT(*) FROM "work"`
 
-// Run executes the database seed only if no seed data is present yet.
+// RunSeed executes the database seed only if no seed data is present yet.
 // Idempotency is guaranteed by checking for existing rows in the work table,
 // which is exclusively populated by the seed (not by migrations).
-func Run(ctx context.Context, db *sql.DB) {
+func RunSeed(ctx context.Context, db *sql.DB) {
 	log := logger.Global()
 
 	seeded, err := isAlreadySeeded(ctx, db)

@@ -71,6 +71,8 @@ type ServiceOrderFilterParams struct {
 	Status     string
 	CustomerID string
 	VehicleID  string
+	SortBy     string
+	SortOrder  string
 }
 
 type WorkExecutionTime struct {

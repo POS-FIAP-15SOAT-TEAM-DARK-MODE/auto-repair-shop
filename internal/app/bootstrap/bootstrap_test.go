@@ -1,4 +1,4 @@
-package factory
+package bootstrap
 
 import (
 	"testing"
@@ -13,18 +13,16 @@ func TestHttpContainer(t *testing.T) {
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()
 
-	container := httpContainer(db)
+	c := httpContainer(db)
 
-	assert.NotNil(t, container)
-	assert.NotNil(t, container.PingHandler)
-	assert.NotNil(t, container.UserHandler)
-	assert.NotNil(t, container.CustomerHandler)
-	assert.NotNil(t, container.WorkHandler)
-	assert.NotNil(t, container.VehicleHandler)
-	assert.NotNil(t, container.SupplyHandler)
-	assert.NotNil(t, container.ServiceOrderHandler)
-	assert.NotNil(t, container.ServiceOrderHistoryHandler)
-
+	assert.NotNil(t, c)
+	assert.NotNil(t, c.UserHandler)
+	assert.NotNil(t, c.CustomerHandler)
+	assert.NotNil(t, c.WorkHandler)
+	assert.NotNil(t, c.VehicleHandler)
+	assert.NotNil(t, c.SupplyHandler)
+	assert.NotNil(t, c.ServiceOrderHandler)
+	assert.NotNil(t, c.ServiceOrderHistoryHandler)
 }
 
 func TestMiddlewaresContainer(t *testing.T) {
@@ -35,7 +33,7 @@ func TestMiddlewaresContainer(t *testing.T) {
 	assert.Contains(t, *m, "ErrorHandler")
 }
 
-func TestHTTPServer(t *testing.T) {
+func TestHTTPServerBootstrap(t *testing.T) {
 	db, _, err := sqlmock.New()
 	assert.NoError(t, err)
 	defer func() { _ = db.Close() }()

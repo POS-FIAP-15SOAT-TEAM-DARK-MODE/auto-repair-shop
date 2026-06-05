@@ -8,6 +8,8 @@ type SOFilterParams struct {
 	Status     string
 	CustomerID string
 	VehicleID  string
+	SortBy     string
+	SortOrder  string
 }
 
 type WorkItemResponse struct {
