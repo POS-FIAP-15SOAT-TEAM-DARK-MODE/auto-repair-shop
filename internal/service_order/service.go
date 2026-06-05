@@ -894,30 +894,20 @@ func (s *soService) reviewOSPricing(ctx context.Context, soID string) error {
 
 	so.ResetPricing()
 
-	eg := errgroup.Group{}
-	eg.Go(func() error {
-		works, e := s.repo.ListWorksByServiceOrderID(ctx, soID)
-		if e != nil {
-			return e
-		}
-		for _, work := range works {
-			so.SumWorkValue(work)
-		}
-		return nil
-	})
-	eg.Go(func() error {
-		supplies, e := s.repo.ListSuppliesByServiceOrderID(ctx, soID)
-		if e != nil {
-			return e
-		}
-		for _, supply := range supplies {
-			so.SumSupplyValue(supply)
-		}
-		return nil
-	})
-
-	if err = eg.Wait(); err != nil {
+	works, err := s.repo.ListWorksByServiceOrderID(ctx, soID)
+	if err != nil {
 		return err
+	}
+	for _, work := range works {
+		so.SumWorkValue(work)
+	}
+
+	supplies, err := s.repo.ListSuppliesByServiceOrderID(ctx, soID)
+	if err != nil {
+		return err
+	}
+	for _, supply := range supplies {
+		so.SumSupplyValue(supply)
 	}
 
 	return s.uow.Execute(ctx, func(c context.Context) error {

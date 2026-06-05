@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 	"sort"
+	"sync"
 
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/domain"
 	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/supply/domain"
@@ -37,6 +38,7 @@ var terminalStatusSet = map[domain.SERVICE_ORDER_STATUS]bool{
 }
 
 type soMemoryRepo struct {
+	mu              sync.RWMutex
 	data            map[string]domain.ServiceOrder
 	worksByOrder    map[string][]workDomain.Work
 	suppliesByOrder map[string][]supplyDomain.Supply
@@ -61,6 +63,8 @@ func NewSOMemoryWithHistory(onStatusChange func(soID string, prev *domain.SERVIC
 }
 
 func (r *soMemoryRepo) Save(_ context.Context, so *domain.ServiceOrder) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	if r.onStatusChange != nil {
 		old, exists := r.data[so.ID]
 		if !exists {
@@ -75,11 +79,15 @@ func (r *soMemoryRepo) Save(_ context.Context, so *domain.ServiceOrder) error {
 }
 
 func (r *soMemoryRepo) ExistsByID(_ context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	v, ok := r.data[id]
 	return ok, v.Status, nil
 }
 
 func (r *soMemoryRepo) FindByID(_ context.Context, id string) (domain.ServiceOrder, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	so, ok := r.data[id]
 	if !ok {
 		return so, domain.ErrServiceOrderNotFound
@@ -88,6 +96,8 @@ func (r *soMemoryRepo) FindByID(_ context.Context, id string) (domain.ServiceOrd
 }
 
 func (r *soMemoryRepo) Count(_ context.Context, params *domain.ServiceOrderFilterParams) (int64, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	var total int64
 	for _, so := range r.data {
 		if params.Status == "" {
@@ -109,6 +119,8 @@ func (r *soMemoryRepo) Count(_ context.Context, params *domain.ServiceOrderFilte
 }
 
 func (r *soMemoryRepo) Search(_ context.Context, params *domain.ServiceOrderFilterParams) ([]domain.ServiceOrder, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	filtered := make([]domain.ServiceOrder, 0)
 	for _, so := range r.data {
 		if params.Status == "" {
@@ -154,6 +166,8 @@ func (r *soMemoryRepo) Search(_ context.Context, params *domain.ServiceOrderFilt
 }
 
 func (r *soMemoryRepo) ListWorksByServiceOrderID(_ context.Context, serviceOrderID string) ([]workDomain.Work, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	works := r.worksByOrder[serviceOrderID]
 	if works == nil {
 		return []workDomain.Work{}, nil
@@ -164,6 +178,8 @@ func (r *soMemoryRepo) ListWorksByServiceOrderID(_ context.Context, serviceOrder
 }
 
 func (r *soMemoryRepo) AddWorkLink(_ context.Context, serviceOrderID, workID string, unitPrice decimal.Decimal) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	for _, w := range r.worksByOrder[serviceOrderID] {
 		if w.ID == workID {
 			return nil
@@ -177,6 +193,8 @@ func (r *soMemoryRepo) AddWorkLink(_ context.Context, serviceOrderID, workID str
 }
 
 func (r *soMemoryRepo) RemoveWorkLink(_ context.Context, serviceOrderID, workID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	list := r.worksByOrder[serviceOrderID]
 	idx := slices.IndexFunc(list, func(w workDomain.Work) bool { return w.ID == workID })
 	if idx < 0 {
@@ -187,6 +205,8 @@ func (r *soMemoryRepo) RemoveWorkLink(_ context.Context, serviceOrderID, workID 
 }
 
 func (r *soMemoryRepo) ListSuppliesByServiceOrderID(_ context.Context, serviceOrderID string) ([]supplyDomain.Supply, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	supplies := r.suppliesByOrder[serviceOrderID]
 	if supplies == nil {
 		return []supplyDomain.Supply{}, nil
@@ -197,6 +217,8 @@ func (r *soMemoryRepo) ListSuppliesByServiceOrderID(_ context.Context, serviceOr
 }
 
 func (r *soMemoryRepo) AddSupplyLink(_ context.Context, serviceOrderID, supplyID string, amount int, unitPrice decimal.Decimal) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	for _, s := range r.suppliesByOrder[serviceOrderID] {
 		if s.ID == supplyID {
 			return nil
@@ -211,6 +233,8 @@ func (r *soMemoryRepo) AddSupplyLink(_ context.Context, serviceOrderID, supplyID
 }
 
 func (r *soMemoryRepo) RemoveSupplyLink(_ context.Context, serviceOrderID, supplyID string) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	list := r.suppliesByOrder[serviceOrderID]
 	idx := slices.IndexFunc(list, func(s supplyDomain.Supply) bool { return s.ID == supplyID })
 	if idx < 0 {
