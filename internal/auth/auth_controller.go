@@ -33,7 +33,7 @@ func (ctrl authController) Login(ctx context.Context, req *http.Request) (adapte
 	resp, err := ctrl.svc.Login(ctx, dto)
 	if err != nil {
 		logger.Of(ctx).Debug("Failed to register user",
-			zap.String("operation", "change_user_role"),
+			zap.String("operation", "log_in_user"),
 			zap.Error(err),
 			zap.String("entity", "user"),
 		)
@@ -57,7 +57,7 @@ func (ctrl authController) Register(ctx context.Context, req *http.Request) (ada
 	resp, err := ctrl.svc.Register(ctx, dto)
 	if err != nil {
 		logger.Of(ctx).Debug("Failed to register user",
-			zap.String("operation", "change_user_role"),
+			zap.String("operation", "register_user"),
 			zap.Error(err),
 			zap.String("entity", "user"),
 		)

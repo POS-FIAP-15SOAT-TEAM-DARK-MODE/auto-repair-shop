@@ -51,8 +51,6 @@ func getHTTPStatus(err error) int {
 		return http.StatusConflict
 	case isUnprocessableEntityError(err):
 		return http.StatusUnprocessableEntity
-	case isNotFoundError(err):
-		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
 	}
