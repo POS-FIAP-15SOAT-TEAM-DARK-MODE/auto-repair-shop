@@ -90,14 +90,15 @@ func TestFindVehicleByLicensePlate(t *testing.T) {
 	// Seed creates a vehicle with plate "ABC-1234" (stored as "ABC1234").
 	resp := doRequest(t, http.MethodGet, "/v1/vehicles?plate=ABC-1234", nil, attendantToken(t))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	v := decodeJSON[vehicleResponse](t, resp)
-	assert.Equal(t, "ABC1234", v.LicensePlate)
+	v := decodeJSON[paginatedResponse[vehicleResponse]](t, resp)
+	assert.Equal(t, "ABC1234", v.Items[0].LicensePlate)
 }
 
 func TestFindVehicleByLicensePlate_NotFound(t *testing.T) {
 	resp := doRequest(t, http.MethodGet, "/v1/vehicles?plate=ZZZ-9999", nil, attendantToken(t))
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	v := decodeJSON[paginatedResponse[vehicleResponse]](t, resp)
+	assert.Len(t, v.Items, 0)
 }
 
 func TestUpdateVehicle(t *testing.T) {
@@ -126,7 +127,7 @@ func TestDeleteVehicle(t *testing.T) {
 
 func TestFindVehiclesByCustomer(t *testing.T) {
 	resp := doRequest(t, http.MethodGet,
-		fmt.Sprintf("/v1/vehicles/%s", seedCustomerID), nil, attendantToken(t))
+		fmt.Sprintf("/v1/vehicles?customerId=%s", seedCustomerID), nil, attendantToken(t))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	page := decodeJSON[paginatedResponse[vehicleResponse]](t, resp)
 	assert.NotEmpty(t, page.Items, "seed customer should have at least one vehicle")

@@ -37,7 +37,6 @@ func TestLogin_ValidMechanicCredentials(t *testing.T) {
 }
 
 func TestLogin_ValidCustomerCredentials(t *testing.T) {
-	// Seed creates customer João with CPF as default password.
 	body := map[string]string{
 		"email":    "joao.silva@email.com",
 		"password": "529.982.247-25",
@@ -70,7 +69,6 @@ func TestLogin_UnknownEmail(t *testing.T) {
 func TestLogin_EmptyCredentials(t *testing.T) {
 	body := map[string]string{"email": "", "password": ""}
 	resp := doRequest(t, http.MethodPost, "/v1/auth/login", body, "")
-	// Empty credentials fail validation before auth → 400.
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	resp.Body.Close()
 }
@@ -120,13 +118,11 @@ func TestRegisterUser_PasswordMismatch(t *testing.T) {
 		"confirmPassword": "Different@12345",
 	}
 	resp := doRequest(t, http.MethodPost, "/v1/auth/register", body, adminToken(t))
-	// ErrUserPasswordDontMatch is mapped to 400 Bad Request.
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	resp.Body.Close()
 }
 
 func TestUpdateUserRole_AsAdmin(t *testing.T) {
-	// Create a user first.
 	createBody := map[string]string{
 		"name": "Role Update User", "email": "roleupdate@test.com",
 		"password": "Test@12345", "confirmPassword": "Test@12345",
@@ -135,7 +131,6 @@ func TestUpdateUserRole_AsAdmin(t *testing.T) {
 	require.Equal(t, http.StatusCreated, createResp.StatusCode)
 	user := decodeJSON[userResponse](t, createResp)
 
-	// Update role.
 	updateBody := map[string]string{"role": "MECHANIC"}
 	resp := doRequest(t, http.MethodPatch, "/v1/users/"+user.ID+"/role", updateBody, adminToken(t))
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
@@ -161,7 +156,6 @@ func TestLoginResponse_ContainsValidJWT(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
 	resp.Body.Close()
 
-	// Validate the returned token works on a protected route.
 	protResp := doRequest(t, http.MethodGet, "/v1/works", nil, result.Token)
 	assert.Equal(t, http.StatusOK, protResp.StatusCode)
 	protResp.Body.Close()
