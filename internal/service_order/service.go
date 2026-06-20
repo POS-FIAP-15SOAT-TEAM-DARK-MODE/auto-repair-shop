@@ -911,6 +911,6 @@ func (s *soService) reviewOSPricing(ctx context.Context, soID string) error {
 	}
 
 	return s.uow.Execute(ctx, func(c context.Context) error {
-		return s.repo.Save(c, &so)
+		return s.repo.UpdatePricing(c, soID, so.TotalAmount)
 	})
 }

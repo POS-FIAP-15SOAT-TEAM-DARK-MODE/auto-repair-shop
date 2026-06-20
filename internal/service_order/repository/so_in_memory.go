@@ -78,6 +78,20 @@ func (r *soMemoryRepo) Save(_ context.Context, so *domain.ServiceOrder) error {
 	return nil
 }
 
+// UpdatePricing mutates only the total amount, leaving the status untouched so
+// it cannot overwrite a concurrent lifecycle transition.
+func (r *soMemoryRepo) UpdatePricing(_ context.Context, serviceOrderID string, totalAmount decimal.Decimal) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	so, ok := r.data[serviceOrderID]
+	if !ok {
+		return domain.ErrServiceOrderNotFound
+	}
+	so.TotalAmount = totalAmount
+	r.data[serviceOrderID] = so
+	return nil
+}
+
 func (r *soMemoryRepo) ExistsByID(_ context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

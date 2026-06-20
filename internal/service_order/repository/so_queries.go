@@ -27,6 +27,14 @@ const (
 		updated_at  = NOW();
 	`
 
+	// updateServiceOrderPricingQuery updates only the total amount, never the
+	// status, so concurrent pricing reviews cannot clobber lifecycle transitions.
+	updateServiceOrderPricingQuery = `
+	UPDATE service_order
+	SET total_amount = $2, updated_at = NOW()
+	WHERE id = $1
+	`
+
 	insertServiceOrderStatusQuery = `
 	INSERT INTO service_order_status_history (id, service_order_id, previous_status, new_status)
 	VALUES ($1, $2, $3, $4)
