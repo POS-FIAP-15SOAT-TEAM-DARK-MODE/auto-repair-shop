@@ -37,6 +37,7 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 # Set working directory and copy binary
 WORKDIR /app
+
 COPY --from=builder /app/main .
 
 # Drop to non-root user

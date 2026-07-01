@@ -64,3 +64,24 @@ migrate-status:
 
 mockgen:
 	go generate ./...
+
+# =====================================================================
+# Kubernetes / Infra (k8s/) — 100% Docker-only
+#   The host needs ONLY Docker. These targets run the real work inside the
+#   toolbox container (kind/kubectl/terraform/aws) via the mounted Docker
+#   socket. For anything ad hoc (kubectl, logs, terraform, aws) use k8s-shell.
+#   See README "Infrastructure (k8s/)".
+# =====================================================================
+
+K8S_TOOLBOX := ./k8s/toolbox/run.sh
+
+.PHONY: k8s-up k8s-down k8s-shell
+
+k8s-up: ## Bring up the full local environment (Kind + app + HPA)
+	@$(K8S_TOOLBOX) up
+
+k8s-down: ## Tear down the local environment (delete the Kind cluster)
+	@$(K8S_TOOLBOX) down
+
+k8s-shell: ## Shell into the toolbox for anything else (kubectl/kind/terraform/aws)
+	@$(K8S_TOOLBOX) shell

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: auto-repair-shop
+
+# The app's Kubernetes workload only. Networking and the database (RDS) are
+# owned by Terraform (k8s/terraform/aws).
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - hpa.yaml
+  - migrate-job.yaml
+
+images:
+  - name: auto-repair-shop
+    newTag: dev
