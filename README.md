@@ -62,6 +62,106 @@ internal/
   services/         # Business logic layer
 ```
 
+## Architecture
+
+The same Go workload runs in three interchangeable ways: **(1)** locally with just
+Docker Compose (no Kubernetes), **(2)** on a local **Kind** cluster that simulates
+the full Kubernetes behavior end-to-end (no AWS needed), and **(3)** on **AWS
+(EKS + RDS)** provisioned by Terraform. Paths (2) and (3) apply the *same*
+Kustomize manifests — only the overlay changes.
+
+### Application components
+
+```mermaid
+flowchart LR
+    client([HTTP client])
+
+    subgraph ns["Kubernetes namespace: auto-repair-shop"]
+        app["Deployment<br/>auto-repair-shop (Go / Gin)<br/>probes on /ping"]
+        svc["Service<br/>NodePort local · ClusterIP+Ingress on AWS"]
+        cm[["ConfigMap<br/>DB host/port, non-sensitive config"]]
+        sec[["Secret<br/>POSTGRES_PASSWORD · JWT_SECRET"]]
+        hpa["HPA<br/>1→5 · 70% CPU / 80% mem"]
+        job["Job: db-migrate<br/>waits for DB → golang-migrate up"]
+
+        svc --> app
+        cm -.envFrom.-> app
+        sec -.envFrom.-> app
+        hpa -.scales.-> app
+    end
+
+    db[("PostgreSQL")]
+    client -->|":8080 REST · JWT · Swagger"| svc
+    app -->|"SQL :5432"| db
+    job -->|"applies schema"| db
+```
+
+### Provisioned infrastructure (Terraform — AWS)
+
+`k8s/terraform/` describes the AWS side, split into four independent states:
+
+| State | Provisions | Cadence |
+|---|---|---|
+| `bootstrap/` | S3 bucket for remote tfstate (versioned, encrypted, native locking) | run once |
+| `shared/` | ECR · GitHub OIDC provider · IAM roles (`deploy-stg/prd`, `terraform`) | run once |
+| `aws/` | VPC · EKS · RDS · Secrets Manager (per Terraform workspace `stg`/`prd`) | per environment |
+| `addons/` | Helm add-ons: ALB Controller · metrics-server · External Secrets (+ IRSA) | per environment |
+
+```mermaid
+flowchart TB
+    gha["GitHub Actions"]
+    inet([Internet])
+
+    subgraph aws["AWS account"]
+        iam["IAM roles"]
+        ecr["ECR<br/>app images"]
+        sm["Secrets Manager<br/>app secret"]
+
+        subgraph vpc["VPC"]
+            subgraph pub["public subnets"]
+                igw["IGW / NAT"]
+                alb["ALB (public)"]
+            end
+            subgraph priv["private subnets"]
+                eks["EKS managed node group<br/>app pods"]
+                rds[("RDS PostgreSQL<br/>multi-AZ in prd")]
+            end
+            alb --> eks
+            eks -->|":5432 · SG: EKS nodes only"| rds
+        end
+
+        sm -->|"External Secrets Operator"| eks
+        ecr -.image pull.-> eks
+    end
+
+    gha -->|"OIDC (no static keys)"| iam
+    inet --> alb
+```
+
+Locally, the `overlays/local` Kustomize overlay stands in for all of this: an
+in-cluster PostgreSQL replaces RDS, a NodePort replaces the ALB, and a static
+Secret replaces Secrets Manager — so Kind reproduces the AWS topology with zero
+cloud dependency.
+
+### Deploy flow (GitHub Actions)
+
+```mermaid
+flowchart TB
+    pr["Pull Request"] --> ci["ci.yml<br/>lint · build · unit · integration · SonarCloud"]
+    prtf["PR on k8s/terraform/**"] --> infraval["infra.yml<br/>terraform fmt + validate (no creds)"]
+
+    disp["workflow_dispatch (manual)"] --> boot["infra-bootstrap.yml<br/>one-time seed (static keys):<br/>state bucket + shared (OIDC/IAM/ECR)"]
+    disp --> infrarun["infra.yml<br/>terraform plan/apply per layer+workspace<br/>via OIDC"]
+
+    dev["push develop"] --> docker
+    main["push main"] --> docker
+    docker["docker.yml"] --> stg{{"develop → STG"}}
+    docker --> prd{{"main → PRD"}}
+    stg --> steps
+    prd --> steps
+    steps["build image → push ECR → kubectl apply -k overlay<br/>→ set image (rollout) → wait for rollout<br/>(AWS auth via OIDC · migrations synced as ConfigMap)"]
+```
+
 ## Prerequisites
 
 - [Go 1.26+](https://go.dev/dl/)
@@ -87,6 +187,17 @@ pre-commit install
 ```
 
 ## Getting Started
+
+There are three ways to run this project — pick the one that fits what you want to do:
+
+| # | Path | Needs | Use when | Jump to |
+|---|---|---|---|---|
+| 1 | **Local (Docker Compose)** | Docker only, **no Kubernetes/infra** | Run the app + DB fast, for development | [Setup with Docker](#2-setup-with-docker) |
+| 2 | **Kubernetes on Kind** | Docker only (toolbox) | Exercise the *full* k8s workload locally (Deployment, HPA, migrate Job, Service) — a faithful stand-in for AWS | [Full environment on Kind](#bring-up-the-full-environment-locally-docker-only) |
+| 3 | **AWS with Terraform** | GitHub repo + AWS account | Provision the cloud infra (VPC/EKS/RDS) and deploy for real | [AWS (stg / prd)](#aws-stg--prd--driven-from-github) |
+
+> Paths 2 and 3 deploy the **same** Kustomize manifests — Kind locally reproduces the
+> AWS topology, so you can validate the entire Kubernetes behavior without any cloud cost.
 
 ### 1) Environment Variables
 
@@ -139,13 +250,16 @@ make docker-down
 
 The server starts on port `${PORT:-8080}` (default: 8080).
 
-## Swagger UI
+## API Collection (Swagger UI)
 
-You can access the service Swagger UI in your browser to view and test the available endpoints:
+Once the app is running locally (`make docker-up` or `make k8s-up`), the interactive
+API collection is served by the built-in Swagger UI — use it to browse and execute
+every endpoint directly against the running server:
 
-http://localhost:8080/swagger/index.html
+**➡️ http://localhost:8080/swagger/index.html**
 
-The UI loads the OpenAPI specification from `/swagger.yaml` and lets you execute requests directly against the running server.
+The UI loads the OpenAPI specification from `/swagger.yaml` (source: `docs/swagger.yaml`)
+and lets you fire requests without any external tool (Postman/Insomnia not required).
 
 ## Database Migrations
 
@@ -174,6 +288,136 @@ NNNNNN_description.down.sql
 ```
 
 Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status.up.sql`).
+
+## Infrastructure (`k8s/`)
+
+Kubernetes and Terraform configuration lives in `k8s/` (config files only — the
+tooling is driven from this root `Makefile` via `make k8s-*`).
+
+- **`k8s/terraform/`** — infrastructure, split into four states:
+  - `bootstrap/` — the S3 bucket for remote state (run once).
+  - `shared/` — ECR + GitHub OIDC provider + deploy/terraform IAM roles (run once).
+  - `aws/` — VPC, EKS, RDS per environment, selected by Terraform **workspace**
+    (`stg` / `prd`). Remote state (S3 + native locking).
+  - `addons/` — per-env cluster add-ons via Helm: AWS Load Balancer Controller,
+    metrics-server, External Secrets Operator (+ IRSA).
+- **`k8s/manifests/`** — the app's Kubernetes workload only (Deployment, Service,
+  ConfigMap, Secret, HPA, migration Job) as Kustomize overlays.
+- **`k8s/kind/`** — local Kind cluster config.
+- **`k8s/toolbox/`** — Docker-only path (toolbox image + runner).
+
+```
+k8s/
+├── terraform/
+│   ├── bootstrap/   # S3 state bucket (run once)
+│   ├── shared/      # ECR + GitHub OIDC + IAM roles (run once)
+│   ├── aws/         # VPC, EKS, RDS per env (workspaces: stg | prd)
+│   └── addons/      # ALB controller + metrics-server + External Secrets (per env)
+├── manifests/
+│   ├── base/        # Deployment, Service, ConfigMap, HPA, migrate Job
+│   └── overlays/
+│       ├── local/   # + static Secret + in-cluster Postgres, NodePort, dev values
+│       ├── stg/     # RDS host, ECR image, ALB Ingress, External Secrets, HPA 2-6
+│       └── prd/     # same as stg with prod values (HPA 3-10)
+├── kind/            # local Kind cluster config
+└── toolbox/         # Docker-only runner (kind/kubectl/terraform in a container)
+```
+
+### Bring up the full environment locally (Docker-only)
+
+**The only requirement on your machine is Docker.** `kind`, `kubectl`,
+`terraform` and `aws` run inside a toolbox container that drives the host Docker
+daemon (Docker-outside-of-Docker) — nothing else is installed. Three commands:
+
+```bash
+make k8s-up      # Kind cluster -> build+load image -> deploy -> smoke -> metrics-server (HPA)
+make k8s-down    # tear everything down (delete the Kind cluster)
+make k8s-shell   # shell inside the toolbox for anything else
+```
+
+After `make k8s-up` the app is reachable from the host:
+
+```bash
+curl http://localhost:8080/ping   # -> {"message":"pong"}
+```
+
+Anything else is plain `kubectl`/`kind`/`terraform`/`aws` from the toolbox shell:
+
+```bash
+make k8s-shell
+# then, inside the container:
+kubectl -n auto-repair-shop get pods,svc,job,hpa
+kubectl -n auto-repair-shop logs -l app=auto-repair-shop -f
+```
+
+How it works: with the Docker socket mounted, Kind and the app image land on the
+host daemon. The toolbox joins the `kind` network and reaches the cluster by the
+control-plane container name (works on macOS, where `--network host` is
+unreliable), while the `30080 -> localhost:8080` mapping lets you hit the app
+from the host. Locally Postgres runs in-cluster (stand-in for RDS), so there is
+no AWS dependency at all.
+
+### AWS (stg / prd) — driven from GitHub
+
+No AWS tooling is needed on your machine; all infra is applied by GitHub Actions.
+
+**One-time bootstrap** (the only step that uses static AWS keys):
+1. Set `github_repo` in `k8s/terraform/shared/variables.tf` to your `owner/repo`.
+2. Add repo secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (an admin user).
+3. Run the **Infra bootstrap (one-time)** workflow → creates the state bucket,
+   the GitHub OIDC provider, the IAM roles and ECR, and prints the outputs.
+4. Remove the two AWS key secrets — everything after this uses OIDC.
+
+**GitHub config** (Settings → Environments):
+- `infra` → variable `AWS_TERRAFORM_ROLE_ARN` = shared output `terraform_role_arn`
+  (add required reviewers to gate infra applies).
+- `STG` and `PRD` → variables:
+
+| Variable | Source |
+|---|---|
+| `AWS_REGION` | `us-east-1` |
+| `AWS_DEPLOY_ROLE_ARN` | shared output `deploy_role_arns` (STG / PRD) |
+| `EKS_CLUSTER_NAME` | aws output `cluster_name` (per workspace) |
+| `RDS_HOST` | aws output `db_host` (per workspace) |
+
+**Provision the clusters** — run the **Infra (Terraform)** workflow with
+`action=apply` for each: `aws` stg, `aws` prd, `addons` stg, `addons` prd. Copy
+the printed `cluster_name` / `db_host` into the STG/PRD variables above.
+
+**Deploy the app** — push to `develop` (→ STG) or `main` (→ PRD): the Docker
+workflow builds, pushes to ECR and applies the matching overlay.
+
+PRs touching `k8s/terraform/**` get an automatic `fmt` + `validate` (no creds).
+Prefer running infra by hand? `make k8s-shell` has terraform/kubectl/aws.
+
+### Accessing the app on AWS
+
+The app is exposed by an **ALB**, created automatically by the AWS Load Balancer
+Controller from the `Ingress` (the controller is installed by the `addons`
+state). Terraform provisions the VPC routing (route tables, IGW, NAT) and installs
+the controller; the ALB itself is created at deploy time from the Ingress.
+
+```bash
+make k8s-shell        # or use your own kubectl against the cluster
+aws eks update-kubeconfig --region us-east-1 --name auto-repair-shop-stg-eks
+kubectl -n auto-repair-shop get ingress auto-repair-shop
+# ADDRESS = k8s-autorepa-....elb.amazonaws.com  <- the ALB DNS name
+```
+
+The Ingress has a `host:` rule (`auto-repair-shop-stg.example.com`), so the ALB
+only routes requests carrying that Host header. To actually reach it either:
+- point a DNS record (Route 53) for that host at the ALB DNS name, then browse
+  `http://auto-repair-shop-stg.example.com/ping`; or
+- for a quick test, send the header: `curl -H 'Host: auto-repair-shop-stg.example.com' http://<alb-dns>/ping`.
+
+> **Notes:** the static Secret in `k8s/manifests/overlays/local/secret.yaml` holds
+> dev-only values and is used only by Kind. On AWS the `stg`/`prd` overlays get
+> `POSTGRES_PASSWORD` / `JWT_SECRET` from Secrets Manager via the External Secrets
+> Operator (Terraform generates the values and mirrors them into the secret) — real
+> values are never committed. Terraform state is stored remotely in the S3 bucket
+> created by the `bootstrap` stage, with **native S3 locking** (no DynamoDB). The
+> `.github/workflows/docker.yml` `publish`/`deploy` jobs are fully implemented
+> (build → push to ECR → `kubectl apply -k` → image rollout).
 
 ## Environment Variables
 
