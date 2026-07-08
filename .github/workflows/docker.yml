@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - develop
+  workflow_dispatch:
 
 # Only one deploy per branch at a time; newer pushes supersede in-flight runs.
 concurrency:
