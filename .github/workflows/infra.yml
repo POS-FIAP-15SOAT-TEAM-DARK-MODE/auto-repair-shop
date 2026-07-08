@@ -55,9 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: infra
     env:
-      AWS_AUTH_MODE: ${{ vars.AWS_AUTH_MODE || 'oidc' }}
-      MANAGE_IAM: ${{ vars.MANAGE_IAM || 'true' }}
-      EXECUTION_ROLE_ARN: ${{ vars.EXECUTION_ROLE_ARN }}
+      AWS_AUTH_MODE: ${{ vars.AWS_AUTH_MODE || (secrets.AWS_ACCESS_KEY_ID != '' && 'static' || 'oidc') }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -81,10 +79,23 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Resolve state bucket
+      - name: Resolve state bucket and mode
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "STATE_BUCKET=auto-repair-shop-tfstate-${ACCOUNT_ID}" >> "$GITHUB_ENV"
+          CALLER=$(aws sts get-caller-identity --query Arn --output text)
+          MANAGE_IAM="${{ vars.MANAGE_IAM }}"
+          EXEC_ROLE="${{ vars.EXECUTION_ROLE_ARN }}"
+          if [ -z "$MANAGE_IAM" ]; then
+            echo "$CALLER" | grep -qiE 'voclabs|labrole' && MANAGE_IAM=false || MANAGE_IAM=true
+          fi
+          if [ -z "$EXEC_ROLE" ] && [ "$MANAGE_IAM" = "false" ]; then
+            EXEC_ROLE="arn:aws:iam::${ACCOUNT_ID}:role/LabRole"
+          fi
+          {
+            echo "STATE_BUCKET=auto-repair-shop-tfstate-${ACCOUNT_ID}"
+            echo "MANAGE_IAM=$MANAGE_IAM"
+            echo "EXECUTION_ROLE_ARN=$EXEC_ROLE"
+          } >> "$GITHUB_ENV"
 
       - name: Terraform ${{ inputs.action }} — ${{ inputs.layer }} (${{ inputs.environment }})
         working-directory: k8s/terraform/${{ inputs.layer }}

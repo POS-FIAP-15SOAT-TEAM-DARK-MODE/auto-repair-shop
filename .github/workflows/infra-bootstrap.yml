@@ -12,7 +12,6 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  MANAGE_IAM: ${{ vars.MANAGE_IAM || 'true' }}
 
 jobs:
   bootstrap:
@@ -32,10 +31,18 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Resolve state bucket
+      - name: Resolve state bucket and mode
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "STATE_BUCKET=auto-repair-shop-tfstate-${ACCOUNT_ID}" >> "$GITHUB_ENV"
+          CALLER=$(aws sts get-caller-identity --query Arn --output text)
+          MANAGE_IAM="${{ vars.MANAGE_IAM }}"
+          if [ -z "$MANAGE_IAM" ]; then
+            echo "$CALLER" | grep -qiE 'voclabs|labrole' && MANAGE_IAM=false || MANAGE_IAM=true
+          fi
+          {
+            echo "STATE_BUCKET=auto-repair-shop-tfstate-${ACCOUNT_ID}"
+            echo "MANAGE_IAM=$MANAGE_IAM"
+          } >> "$GITHUB_ENV"
 
       - name: Ensure the Terraform state bucket exists
         run: |

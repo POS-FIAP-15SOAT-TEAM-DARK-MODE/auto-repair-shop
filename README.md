@@ -397,21 +397,23 @@ Prefer running infra by hand? `make k8s-shell` has terraform/kubectl/aws.
 #### Restricted accounts (AWS Academy Learner Lab)
 
 Learner Lab accounts forbid creating IAM roles / OIDC providers, so the stack
-runs in a degraded mode driven by three repo variables (defaults target a full
-account, so a normal AWS account needs none of these):
+runs in a degraded mode. **The only thing you configure is the three AWS
+credential secrets** — everything else is detected at runtime:
 
-| Repo variable | Full account | Learner Lab |
-|---|---|---|
-| `AWS_AUTH_MODE` | `oidc` (default) | `static` |
-| `MANAGE_IAM` | `true` (default) | `false` |
-| `EXECUTION_ROLE_ARN` | *(unset)* | `arn:aws:iam::<account_id>:role/LabRole` |
+- `AWS_AUTH_MODE` — `static` when `AWS_ACCESS_KEY_ID` is set, else `oidc`.
+- `MANAGE_IAM` / `EXECUTION_ROLE_ARN` — from `aws sts get-caller-identity`: a
+  `voclabs`/`LabRole` caller ⇒ `manage_iam=false` and
+  `execution_role_arn=arn:aws:iam::<account_id>:role/LabRole`.
 
-In `static` mode add secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` /
-`AWS_SESSION_TOKEN` (the lab's temporary credentials — refresh them each session,
-they expire). With `MANAGE_IAM=false` the stack reuses `LabRole` for the EKS
-cluster and nodes and creates **no** OIDC provider, deploy/terraform roles or
-IRSA — so the ALB Controller and External Secrets are skipped. Expose the app
-with `kubectl port-forward` (see below) instead of an ALB Ingress, and provide
+Each of these is still honoured as an explicit override if you set the matching
+repo variable (`AWS_AUTH_MODE`, `MANAGE_IAM`, `EXECUTION_ROLE_ARN`).
+
+Add secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN`
+(the lab's temporary credentials — refresh them each session, they expire). In
+lab mode the stack reuses `LabRole` for the EKS cluster and nodes and creates
+**no** OIDC provider, deploy/terraform roles or IRSA — so the ALB Controller and
+External Secrets are skipped. Expose the app with `kubectl port-forward` (see
+below) instead of an ALB Ingress, and provide
 the app secret as a plain Kubernetes `Secret`. Caveat: lab accounts are
 ephemeral — resources and the account id may reset between sessions.
 
