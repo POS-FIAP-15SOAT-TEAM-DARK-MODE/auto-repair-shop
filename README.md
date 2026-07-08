@@ -361,6 +361,10 @@ no AWS dependency at all.
 
 No AWS tooling is needed on your machine; all infra is applied by GitHub Actions.
 
+The state bucket name is derived automatically from your AWS account id
+(`auto-repair-shop-tfstate-<account_id>`), so it never collides globally and
+adapts to ephemeral lab accounts — you never pick a name by hand.
+
 **One-time bootstrap** (the only step that uses static AWS keys):
 1. Set `github_repo` in `k8s/terraform/shared/variables.tf` to your `owner/repo`.
 2. Add repo secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (an admin user).
@@ -389,6 +393,27 @@ workflow builds, pushes to ECR and applies the matching overlay.
 
 PRs touching `k8s/terraform/**` get an automatic `fmt` + `validate` (no creds).
 Prefer running infra by hand? `make k8s-shell` has terraform/kubectl/aws.
+
+#### Restricted accounts (AWS Academy Learner Lab)
+
+Learner Lab accounts forbid creating IAM roles / OIDC providers, so the stack
+runs in a degraded mode driven by three repo variables (defaults target a full
+account, so a normal AWS account needs none of these):
+
+| Repo variable | Full account | Learner Lab |
+|---|---|---|
+| `AWS_AUTH_MODE` | `oidc` (default) | `static` |
+| `MANAGE_IAM` | `true` (default) | `false` |
+| `EXECUTION_ROLE_ARN` | *(unset)* | `arn:aws:iam::<account_id>:role/LabRole` |
+
+In `static` mode add secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` /
+`AWS_SESSION_TOKEN` (the lab's temporary credentials — refresh them each session,
+they expire). With `MANAGE_IAM=false` the stack reuses `LabRole` for the EKS
+cluster and nodes and creates **no** OIDC provider, deploy/terraform roles or
+IRSA — so the ALB Controller and External Secrets are skipped. Expose the app
+with `kubectl port-forward` (see below) instead of an ALB Ingress, and provide
+the app secret as a plain Kubernetes `Secret`. Caveat: lab accounts are
+ephemeral — resources and the account id may reset between sessions.
 
 ### Accessing the app on AWS
 

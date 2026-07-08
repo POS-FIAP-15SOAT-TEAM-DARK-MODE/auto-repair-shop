@@ -11,8 +11,11 @@ resource "helm_release" "metrics_server" {
   }
 }
 
-# AWS Load Balancer Controller — turns the app Ingress into an ALB.
+# AWS Load Balancer Controller — turns the app Ingress into an ALB. Requires
+# IRSA, so it is skipped when manage_iam = false (Learner Lab): expose the app
+# with a NodePort / `kubectl port-forward` there instead of an ALB Ingress.
 resource "helm_release" "alb" {
+  count      = var.manage_iam ? 1 : 0
   name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
@@ -40,12 +43,15 @@ resource "helm_release" "alb" {
   }
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.alb_irsa.iam_role_arn
+    value = module.alb_irsa[0].iam_role_arn
   }
 }
 
-# External Secrets Operator — syncs Secrets Manager into k8s Secrets.
+# External Secrets Operator — syncs Secrets Manager into k8s Secrets. Requires
+# IRSA, so it is skipped when manage_iam = false: provide the app's secret as a
+# plain Kubernetes Secret there instead of syncing from Secrets Manager.
 resource "helm_release" "external_secrets" {
+  count            = var.manage_iam ? 1 : 0
   name             = "external-secrets"
   repository       = "https://charts.external-secrets.io"
   chart            = "external-secrets"
@@ -58,6 +64,6 @@ resource "helm_release" "external_secrets" {
   }
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.eso_irsa.iam_role_arn
+    value = module.eso_irsa[0].iam_role_arn
   }
 }

@@ -12,7 +12,9 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  STATE_BUCKET: auto-repair-shop-tfstate-4c2c18c0
+  # true on a full account (creates OIDC + IAM roles); false on restricted
+  # accounts like AWS Academy Learner Lab (ECR only). Set repo variable MANAGE_IAM.
+  MANAGE_IAM: ${{ vars.MANAGE_IAM || 'true' }}
 
 jobs:
   bootstrap:
@@ -32,6 +34,13 @@ jobs:
         with:
           terraform_wrapper: false
 
+      # Globally-unique, deterministic state bucket derived from the account id.
+      # Adapts automatically to an ephemeral lab account and never collides.
+      - name: Resolve state bucket
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "STATE_BUCKET=auto-repair-shop-tfstate-${ACCOUNT_ID}" >> "$GITHUB_ENV"
+
       - name: Ensure the Terraform state bucket exists
         run: |
           if aws s3api head-bucket --bucket "$STATE_BUCKET" 2>/dev/null; then
@@ -42,10 +51,12 @@ jobs:
               -var "state_bucket_name=$STATE_BUCKET"
           fi
 
-      - name: Apply shared (ECR + OIDC provider + IAM roles)
+      - name: Apply shared (ECR + optionally OIDC provider + IAM roles)
         run: |
-          terraform -chdir=k8s/terraform/shared init
-          terraform -chdir=k8s/terraform/shared apply -auto-approve
+          terraform -chdir=k8s/terraform/shared init \
+            -backend-config="bucket=$STATE_BUCKET"
+          terraform -chdir=k8s/terraform/shared apply -auto-approve \
+            -var "manage_iam=$MANAGE_IAM"
 
       - name: Show outputs (copy these into GitHub Environments)
         run: terraform -chdir=k8s/terraform/shared output

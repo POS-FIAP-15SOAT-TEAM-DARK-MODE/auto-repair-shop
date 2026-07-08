@@ -1,7 +1,10 @@
-# IRSA roles for the add-ons that need AWS permissions.
+# IRSA roles for the add-ons that need AWS permissions. Skipped entirely when
+# manage_iam = false (Learner Lab): those accounts cannot create IAM roles, and
+# there is no cluster IRSA OIDC provider to bind them to.
 
 # AWS Load Balancer Controller — provisions the ALB behind the app Ingress.
 module "alb_irsa" {
+  count   = var.manage_iam ? 1 : 0
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.0"
 
@@ -18,6 +21,7 @@ module "alb_irsa" {
 
 # External Secrets Operator — reads this environment's app secret from Secrets Manager.
 module "eso_irsa" {
+  count   = var.manage_iam ? 1 : 0
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 5.0"
 

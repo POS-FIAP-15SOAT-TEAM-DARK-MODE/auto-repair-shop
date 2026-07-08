@@ -1,13 +1,18 @@
+# Everything in this file is IAM and is skipped when manage_iam = false
+# (restricted accounts such as AWS Academy Learner Lab). In that mode the shared
+# stack creates only the ECR repo and the workflows use static credentials.
+
 # GitHub Actions OIDC provider — lets workflows assume IAM roles without any
 # long-lived access keys stored as secrets.
 resource "aws_iam_openid_connect_provider" "github" {
+  count          = var.manage_iam ? 1 : 0
   url            = "https://token.actions.githubusercontent.com"
   client_id_list = ["sts.amazonaws.com"]
   # thumbprint_list is optional for this well-known IdP with AWS provider v6.
 }
 
 locals {
-  environments = toset(var.environments)
+  environments = var.manage_iam ? toset(var.environments) : toset([])
 }
 
 data "aws_iam_policy_document" "deploy_assume" {
@@ -18,7 +23,7 @@ data "aws_iam_policy_document" "deploy_assume" {
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [aws_iam_openid_connect_provider.github[0].arn]
     }
 
     condition {
@@ -84,12 +89,14 @@ resource "aws_iam_role_policy" "deploy" {
 # Environment — to run the shared/aws/addons states. AdministratorAccess keeps
 # this simple for a study project; scope it down for real use.
 data "aws_iam_policy_document" "terraform_assume" {
+  count = var.manage_iam ? 1 : 0
+
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [aws_iam_openid_connect_provider.github[0].arn]
     }
 
     condition {
@@ -107,12 +114,14 @@ data "aws_iam_policy_document" "terraform_assume" {
 }
 
 resource "aws_iam_role" "terraform" {
+  count              = var.manage_iam ? 1 : 0
   name               = "${var.project}-terraform"
-  assume_role_policy = data.aws_iam_policy_document.terraform_assume.json
+  assume_role_policy = data.aws_iam_policy_document.terraform_assume[0].json
   tags               = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "terraform_admin" {
-  role       = aws_iam_role.terraform.name
+  count      = var.manage_iam ? 1 : 0
+  role       = aws_iam_role.terraform[0].name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }

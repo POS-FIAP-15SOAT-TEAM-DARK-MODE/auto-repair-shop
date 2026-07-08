@@ -10,8 +10,9 @@ terraform {
 
   # Remote state in the bucket created by ../bootstrap. Single (default)
   # workspace — these resources are shared across all environments.
+  # `bucket` is intentionally omitted (partial config): the workflows derive it
+  # from the AWS account id and pass it via `-backend-config="bucket=..."`.
   backend "s3" {
-    bucket       = "auto-repair-shop-tfstate-4c2c18c0"
     key          = "shared/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
