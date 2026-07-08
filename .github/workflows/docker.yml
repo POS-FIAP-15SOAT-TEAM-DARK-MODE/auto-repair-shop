@@ -98,8 +98,27 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
 
+      - name: Resolve cluster and RDS endpoint
+        run: |
+          ENV_NAME=$([ "$GITHUB_REF" = "refs/heads/main" ] && echo prd || echo stg)
+          REGION="${{ vars.AWS_REGION || 'us-east-1' }}"
+          CLUSTER="${{ vars.EKS_CLUSTER_NAME }}"
+          [ -z "$CLUSTER" ] && CLUSTER="auto-repair-shop-${ENV_NAME}-eks"
+          RDS="${{ vars.RDS_HOST }}"
+          if [ -z "$RDS" ]; then
+            RDS=$(aws rds describe-db-instances \
+              --db-instance-identifier "auto-repair-shop-${ENV_NAME}-db" \
+              --region "$REGION" \
+              --query 'DBInstances[0].Endpoint.Address' --output text)
+          fi
+          {
+            echo "DEPLOY_REGION=$REGION"
+            echo "DEPLOY_CLUSTER=$CLUSTER"
+            echo "DEPLOY_RDS=$RDS"
+          } >> "$GITHUB_ENV"
+
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region "${{ vars.AWS_REGION }}" --name "${{ vars.EKS_CLUSTER_NAME }}"
+        run: aws eks update-kubeconfig --region "$DEPLOY_REGION" --name "$DEPLOY_CLUSTER"
 
       - name: Resolve overlay
         id: overlay
@@ -122,10 +141,8 @@ jobs:
         run: |
           OVERLAY="${{ steps.overlay.outputs.path }}"
           kubectl apply -k "$OVERLAY"
-          # Point the app config at this environment's RDS endpoint.
           kubectl -n auto-repair-shop patch configmap app-config --type merge \
-            -p "{\"data\":{\"POSTGRES_HOST\":\"${{ vars.RDS_HOST }}\"}}"
-          # Pin the freshly-pushed image (triggers the rollout).
+            -p "{\"data\":{\"POSTGRES_HOST\":\"$DEPLOY_RDS\"}}"
           kubectl -n auto-repair-shop set image deploy/auto-repair-shop \
             app=${{ needs.publish.outputs.image }}
 
