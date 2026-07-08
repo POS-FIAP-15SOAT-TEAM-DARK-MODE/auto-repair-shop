@@ -9,7 +9,7 @@ data "terraform_remote_state" "aws" {
   workspace = terraform.workspace
 
   config = {
-    bucket = "auto-repair-shop-tfstate"
+    bucket = "auto-repair-shop-tfstate-4c2c18c0"
     key    = "aws/terraform.tfstate"
     region = var.region
   }

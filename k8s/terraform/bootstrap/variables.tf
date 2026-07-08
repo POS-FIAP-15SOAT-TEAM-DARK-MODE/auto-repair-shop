@@ -6,5 +6,5 @@ variable "region" {
 variable "state_bucket_name" {
   description = "Globally-unique S3 bucket name for Terraform remote state"
   type        = string
-  default     = "auto-repair-shop-tfstate"
+  default     = "auto-repair-shop-tfstate-4c2c18c0"
 }

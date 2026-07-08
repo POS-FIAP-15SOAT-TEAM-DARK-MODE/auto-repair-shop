@@ -2,7 +2,7 @@
 data "terraform_remote_state" "shared" {
   backend = "s3"
   config = {
-    bucket = "auto-repair-shop-tfstate"
+    bucket = "auto-repair-shop-tfstate-4c2c18c0"
     key    = "shared/terraform.tfstate"
     region = var.region
   }

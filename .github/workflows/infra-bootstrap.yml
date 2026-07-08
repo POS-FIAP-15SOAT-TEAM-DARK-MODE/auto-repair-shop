@@ -12,7 +12,7 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  STATE_BUCKET: auto-repair-shop-tfstate
+  STATE_BUCKET: auto-repair-shop-tfstate-4c2c18c0
 
 jobs:
   bootstrap:

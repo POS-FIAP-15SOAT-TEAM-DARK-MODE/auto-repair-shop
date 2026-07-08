@@ -11,7 +11,7 @@ terraform {
   # Remote state in the bucket created by ../bootstrap. Single (default)
   # workspace — these resources are shared across all environments.
   backend "s3" {
-    bucket       = "auto-repair-shop-tfstate"
+    bucket       = "auto-repair-shop-tfstate-4c2c18c0"
     key          = "shared/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true

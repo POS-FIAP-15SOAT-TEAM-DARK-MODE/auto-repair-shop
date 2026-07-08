@@ -15,7 +15,7 @@ terraform {
   # Remote state; stg/prd live in separate Terraform workspaces, stored under
   # the env:/<workspace>/ prefix of the same bucket/key.
   backend "s3" {
-    bucket       = "auto-repair-shop-tfstate"
+    bucket       = "auto-repair-shop-tfstate-4c2c18c0"
     key          = "aws/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
