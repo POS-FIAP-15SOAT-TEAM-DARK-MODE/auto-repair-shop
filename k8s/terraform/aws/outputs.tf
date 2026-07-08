@@ -7,11 +7,11 @@ output "region" {
 }
 
 output "cluster_name" {
-  value = module.eks.cluster_name
+  value = local.cluster_name
 }
 
 output "cluster_endpoint" {
-  value = module.eks.cluster_endpoint
+  value = local.cluster_endpoint
 }
 
 output "vpc_id" {
@@ -19,8 +19,8 @@ output "vpc_id" {
 }
 
 output "oidc_provider_arn" {
-  description = "Cluster OIDC provider ARN, for IRSA in the addons state"
-  value       = module.eks.oidc_provider_arn
+  description = "Cluster OIDC provider ARN, for IRSA in the addons state. Empty when manage_iam = false."
+  value       = local.oidc_provider_arn
 }
 
 output "db_host" {
@@ -39,5 +39,5 @@ output "app_secret_arn" {
 
 output "configure_kubectl" {
   description = "Point kubectl at this cluster"
-  value       = "aws eks update-kubeconfig --region ${var.region} --name ${module.eks.cluster_name}"
+  value       = "aws eks update-kubeconfig --region ${var.region} --name ${local.cluster_name}"
 }

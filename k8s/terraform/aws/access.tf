@@ -19,14 +19,14 @@ locals {
 # pipeline can `kubectl apply` after `aws eks update-kubeconfig`.
 resource "aws_eks_access_entry" "deploy" {
   count         = var.manage_iam ? 1 : 0
-  cluster_name  = module.eks.cluster_name
+  cluster_name  = local.cluster_name
   principal_arn = local.deploy_role_arn
   type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "deploy" {
   count         = var.manage_iam ? 1 : 0
-  cluster_name  = module.eks.cluster_name
+  cluster_name  = local.cluster_name
   principal_arn = local.deploy_role_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
 
