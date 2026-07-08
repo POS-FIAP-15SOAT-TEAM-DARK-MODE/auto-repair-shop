@@ -1,0 +1,112 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+# Only one deploy per branch at a time; newer pushes supersede in-flight runs.
+concurrency:
+  group: docker-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Required for GitHub OIDC -> AWS role assumption.
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  IMAGE_NAME: auto-repair-shop
+
+jobs:
+  publish:
+    name: Build & push image
+    runs-on: ubuntu-latest
+    # main -> Production (PRD); develop -> Staging (STG). The GitHub Environment
+    # scopes which secrets/vars (and OIDC subject) are used.
+    environment: ${{ github.ref == 'refs/heads/main' && 'PRD' || 'STG' }}
+    outputs:
+      image: ${{ steps.image.outputs.ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+
+      - name: Resolve image ref
+        id: image
+        run: echo "ref=${{ steps.ecr.outputs.registry }}/${IMAGE_NAME}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build and push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.image.outputs.ref }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: publish
+    environment: ${{ github.ref == 'refs/heads/main' && 'PRD' || 'STG' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region "${{ vars.AWS_REGION }}" --name "${{ vars.EKS_CLUSTER_NAME }}"
+
+      - name: Resolve overlay
+        id: overlay
+        run: |
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            echo "path=k8s/manifests/overlays/prd" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=k8s/manifests/overlays/stg" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Migrations ConfigMap (single source of truth: the repo migrations/ dir).
+      - name: Sync migrations ConfigMap
+        run: |
+          kubectl create namespace auto-repair-shop --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create configmap db-migrations --from-file=migrations \
+            -n auto-repair-shop --dry-run=client -o yaml | kubectl apply -f -
+          kubectl -n auto-repair-shop delete job db-migrate --ignore-not-found
+
+      - name: Deploy
+        run: |
+          OVERLAY="${{ steps.overlay.outputs.path }}"
+          kubectl apply -k "$OVERLAY"
+          # Point the app config at this environment's RDS endpoint.
+          kubectl -n auto-repair-shop patch configmap app-config --type merge \
+            -p "{\"data\":{\"POSTGRES_HOST\":\"${{ vars.RDS_HOST }}\"}}"
+          # Pin the freshly-pushed image (triggers the rollout).
+          kubectl -n auto-repair-shop set image deploy/auto-repair-shop \
+            app=${{ needs.publish.outputs.image }}
+
+      - name: Wait for rollout
+        run: kubectl -n auto-repair-shop rollout status deploy/auto-repair-shop --timeout=180s

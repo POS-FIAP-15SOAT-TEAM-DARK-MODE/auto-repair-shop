@@ -1,0 +1,10 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: auto-repair-shop
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # NodePort 30080 (the app Service) -> localhost:8080 on the host.
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP

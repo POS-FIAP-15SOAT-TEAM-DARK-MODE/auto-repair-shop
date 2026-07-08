@@ -132,6 +132,7 @@ func NewHistoryServiceOrderID() string {
 //go:generate go run github.com/vektra/mockery/v2@latest --name=ServiceOrderRepository --with-expecter
 type ServiceOrderRepository interface {
 	Save(context.Context, *ServiceOrder) error
+	UpdatePricing(ctx context.Context, serviceOrderID string, totalAmount decimal.Decimal) error
 	ExistsByID(ctx context.Context, id string) (bool, SERVICE_ORDER_STATUS, error)
 	FindByID(ctx context.Context, id string) (ServiceOrder, error)
 	Search(ctx context.Context, params *ServiceOrderFilterParams) ([]ServiceOrder, error)

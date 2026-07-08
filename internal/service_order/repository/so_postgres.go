@@ -74,6 +74,30 @@ func (r *soRepository) Save(ctx context.Context, so *domain.ServiceOrder) error 
 	return nil
 }
 
+// UpdatePricing persists only the total amount, leaving the status untouched so
+// it cannot overwrite a concurrent lifecycle transition.
+func (r *soRepository) UpdatePricing(ctx context.Context, serviceOrderID string, totalAmount decimal.Decimal) error {
+	tx, err := uowPkg.GetTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	res, err := tx.ExecContext(ctx, updateServiceOrderPricingQuery, serviceOrderID, totalAmount)
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return pgPkg.Error(ctx, err)
+	}
+	if affected == 0 {
+		return domain.ErrServiceOrderNotFound
+	}
+
+	return nil
+}
+
 func (r *soRepository) ExistsByID(ctx context.Context, id string) (bool, domain.SERVICE_ORDER_STATUS, error) {
 	db, err := uowPkg.GetOneTimeTransaction(ctx)
 	if err != nil {
