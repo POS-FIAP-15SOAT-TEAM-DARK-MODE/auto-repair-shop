@@ -116,3 +116,14 @@ jobs:
         if: inputs.action == 'apply'
         working-directory: k8s/terraform/${{ inputs.layer }}
         run: terraform output
+
+      - name: Apply addons after the cluster is up
+        if: inputs.layer == 'aws' && inputs.action == 'apply'
+        working-directory: k8s/terraform/addons
+        run: |
+          terraform init -backend-config="bucket=$STATE_BUCKET"
+          terraform workspace select "${{ inputs.environment }}" 2>/dev/null \
+            || terraform workspace new "${{ inputs.environment }}"
+          terraform apply -auto-approve \
+            -var "manage_iam=$MANAGE_IAM" \
+            -var "state_bucket=$STATE_BUCKET"
