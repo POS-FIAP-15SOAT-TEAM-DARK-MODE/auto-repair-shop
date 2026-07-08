@@ -50,14 +50,11 @@ jobs:
             terraform -chdir="k8s/terraform/$d" validate
           done
 
-  # Manual plan/apply against AWS. Auth is OIDC (Terraform role from the shared
-  # state) on a full account, or static credentials on restricted accounts.
   run:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: infra
     env:
-      # oidc (full account) | static (Learner Lab). Set repo variable AWS_AUTH_MODE.
       AWS_AUTH_MODE: ${{ vars.AWS_AUTH_MODE || 'oidc' }}
       MANAGE_IAM: ${{ vars.MANAGE_IAM || 'true' }}
       EXECUTION_ROLE_ARN: ${{ vars.EXECUTION_ROLE_ARN }}
@@ -97,7 +94,6 @@ jobs:
             terraform workspace select "${{ inputs.environment }}" 2>/dev/null \
               || terraform workspace new "${{ inputs.environment }}"
           fi
-          # Per-layer variables (only what each state declares).
           VARS=(-var "manage_iam=$MANAGE_IAM")
           case "${{ inputs.layer }}" in
             aws)    VARS+=(-var "state_bucket=$STATE_BUCKET" -var "execution_role_arn=$EXECUTION_ROLE_ARN") ;;

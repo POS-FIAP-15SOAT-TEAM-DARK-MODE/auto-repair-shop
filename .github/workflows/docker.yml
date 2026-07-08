@@ -18,8 +18,6 @@ permissions:
 
 env:
   IMAGE_NAME: auto-repair-shop
-  # oidc (full account, assume the deploy role) | static (Learner Lab, temporary
-  # keys as secrets). Set repo variable AWS_AUTH_MODE.
   AWS_AUTH_MODE: ${{ vars.AWS_AUTH_MODE || 'oidc' }}
 
 jobs:
