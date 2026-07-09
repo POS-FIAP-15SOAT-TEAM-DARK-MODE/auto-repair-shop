@@ -16,3 +16,4 @@ data:
   BCRYPT_COST: "12"
   LOG_LEVEL: "INFO"
   PORT: "8080"
+  POSTGRES_SSLMODE: "disable"

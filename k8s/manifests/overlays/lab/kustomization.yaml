@@ -15,3 +15,7 @@ patches:
     target:
       kind: Service
       name: auto-repair-shop
+  - path: patch-configmap.yaml
+    target:
+      kind: ConfigMap
+      name: app-config

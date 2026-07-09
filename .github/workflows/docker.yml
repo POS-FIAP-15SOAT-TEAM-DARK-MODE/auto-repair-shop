@@ -159,6 +159,9 @@ jobs:
       - name: Deploy
         run: |
           OVERLAY="${{ steps.overlay.outputs.path }}"
+          if [ "$LAB_MODE" = "true" ]; then
+            sed -i "s#RDS_HOST_PLACEHOLDER#$DEPLOY_RDS#" "$OVERLAY/patch-configmap.yaml"
+          fi
           kubectl apply -k "$OVERLAY"
           kubectl -n auto-repair-shop patch configmap app-config --type merge \
             -p "{\"data\":{\"POSTGRES_HOST\":\"$DEPLOY_RDS\"}}"
