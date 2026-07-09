@@ -20,12 +20,13 @@ var (
 func DBConnect() *sql.DB {
 	once.Do(func() {
 		connStr := fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+			"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 			env.GetString("POSTGRES_USER", "postgres"),
 			env.GetString("POSTGRES_PASSWORD", "postgres"),
 			env.GetString("POSTGRES_HOST", "localhost"),
 			env.GetString("POSTGRES_PORT", "5432"),
 			env.GetString("POSTGRES_DB", "autorepairshop"),
+			env.GetString("POSTGRES_SSLMODE", "disable"),
 		)
 
 		logger.Global().Debug("Database conn str", zap.String("value", connStr))

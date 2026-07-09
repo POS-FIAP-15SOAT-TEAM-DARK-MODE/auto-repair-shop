@@ -17,8 +17,8 @@ terraform {
   }
 
   # Cluster add-ons, per environment (workspaces stg | prd), applied after `aws`.
+  # `bucket` is a partial config passed via `-backend-config` by the workflows.
   backend "s3" {
-    bucket       = "auto-repair-shop-tfstate"
     key          = "addons/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true
