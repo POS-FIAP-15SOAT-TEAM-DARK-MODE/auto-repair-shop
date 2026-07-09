@@ -18,9 +18,9 @@ on:
         options: [stg, prd]
         default: stg
       action:
-        description: plan or apply
+        description: plan, apply or destroy
         type: choice
-        options: [plan, apply]
+        options: [plan, apply, destroy]
         default: plan
 
 permissions:
@@ -110,7 +110,7 @@ jobs:
             aws)    VARS+=(-var "state_bucket=$STATE_BUCKET" -var "execution_role_arn=$EXECUTION_ROLE_ARN") ;;
             addons) VARS+=(-var "state_bucket=$STATE_BUCKET") ;;
           esac
-          terraform ${{ inputs.action }} ${{ inputs.action == 'apply' && '-auto-approve' || '' }} "${VARS[@]}"
+          terraform ${{ inputs.action }} ${{ (inputs.action == 'apply' || inputs.action == 'destroy') && '-auto-approve' || '' }} "${VARS[@]}"
 
       - name: Show outputs
         if: inputs.action == 'apply'

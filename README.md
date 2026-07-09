@@ -417,6 +417,96 @@ below) instead of an ALB Ingress, and provide
 the app secret as a plain Kubernetes `Secret`. Caveat: lab accounts are
 ephemeral — resources and the account id may reset between sessions.
 
+#### Learner Lab — deploy from scratch (step by step)
+
+Everything can be driven from the terminal with the `gh` CLI; the equivalent
+GitHub UI action is listed under each step. Run the workflows from the branch
+that holds this code (examples use `develop`).
+
+```bash
+REPO=POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop
+REF=develop
+```
+
+**1. Publish the AWS credentials** (from *AWS Details → AWS CLI* in the lab; they
+expire each session, so refresh them right before a long step).
+
+```bash
+gh secret set AWS_ACCESS_KEY_ID     --repo "$REPO"   # paste when prompted
+gh secret set AWS_SECRET_ACCESS_KEY --repo "$REPO"
+gh secret set AWS_SESSION_TOKEN     --repo "$REPO"
+```
+
+> UI: **Settings → Secrets and variables → Actions → New repository secret**, one
+> per value. Nothing else is configured — mode is auto-detected.
+
+**2. Bootstrap** — creates the state bucket (named after your account id) and ECR.
+
+```bash
+gh workflow run infra-bootstrap.yml --repo "$REPO" --ref "$REF"
+gh run watch "$(gh run list --repo "$REPO" --workflow=infra-bootstrap.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
+```
+
+> UI: **Actions → Infra bootstrap (one-time) → Run workflow →** pick the branch.
+
+**3. Provision the infra** — VPC, EKS (via `LabRole`), node group, RDS; the
+`addons` (metrics-server) apply is chained automatically. Takes ~20 min, so
+refresh the secrets first.
+
+```bash
+gh workflow run infra.yml --repo "$REPO" --ref "$REF" \
+  -f layer=aws -f environment=stg -f action=apply
+gh run watch "$(gh run list --repo "$REPO" --workflow=infra.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
+```
+
+> UI: **Actions → Infra (Terraform) → Run workflow →** set `layer=aws`,
+> `environment=stg`, `action=apply`.
+
+**4. Build & deploy the app** — builds/pushes the image, creates the app Secret
+from Secrets Manager and applies the `lab` overlay (public ELB).
+
+```bash
+gh workflow run docker.yml --repo "$REPO" --ref "$REF"
+gh run watch "$(gh run list --repo "$REPO" --workflow=docker.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
+```
+
+> UI: **Actions → Docker → Run workflow →** pick the branch (or push to
+> `develop`/`main`).
+
+**5. Get the public URL** — printed in the deploy run's **Summary**
+(`API`/`Health`/`Swagger` links). From the terminal instead:
+
+```bash
+gh run view "$(gh run list --repo "$REPO" --workflow=docker.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
+# or, straight from the cluster:
+aws eks update-kubeconfig --region us-east-1 --name auto-repair-shop-stg-eks
+kubectl -n auto-repair-shop get svc auto-repair-shop \
+  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'; echo
+curl http://<elb-dns>/ping   # {"message":"pong"}
+```
+
+**Recovery after a lab restart** — if the lab stops/starts, nodes cycle and
+CoreDNS can be stranded on a dead node, breaking DNS. Reschedule it and restart
+the app:
+
+```bash
+kubectl -n kube-system rollout restart deploy/coredns
+kubectl -n auto-repair-shop rollout restart deploy/auto-repair-shop
+```
+
+**Tear down** — EKS/RDS/ELB/NAT bill while up. Stopping the lab wipes everything;
+to destroy explicitly, delete the app's `LoadBalancer` Service first (its ELB is
+not managed by Terraform and would block the VPC deletion), then destroy:
+
+```bash
+aws eks update-kubeconfig --region us-east-1 --name auto-repair-shop-stg-eks
+kubectl -n auto-repair-shop delete svc auto-repair-shop --ignore-not-found
+gh workflow run infra.yml --repo "$REPO" --ref "$REF" \
+  -f layer=aws -f environment=stg -f action=destroy
+```
+
+> UI: **Actions → Infra (Terraform) → Run workflow →** set `action=destroy`.
+
 ### Accessing the app on AWS
 
 The app is exposed by an **ALB**, created automatically by the AWS Load Balancer
