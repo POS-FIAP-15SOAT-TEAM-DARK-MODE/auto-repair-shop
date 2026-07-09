@@ -11,7 +11,7 @@ resources:
   - ../../base
 
 patches:
-  - path: patch-service-nodeport.yaml
+  - path: patch-service-loadbalancer.yaml
     target:
       kind: Service
       name: auto-repair-shop
