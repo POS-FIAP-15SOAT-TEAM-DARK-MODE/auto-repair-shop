@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/domain"
 	customerDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	serviceOrder "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order"
@@ -36,6 +37,18 @@ func (u *inMemoryUoW) Execute(ctx context.Context, steps ...uow.Step) error {
 		}
 	}
 	return nil
+}
+
+// spyNotifier is a StatusNotifier that records every notification it receives so
+// tests can assert the customer would have been notified of a status change.
+type spyNotifier struct {
+	calls []domain.StatusNotification
+	err   error
+}
+
+func (n *spyNotifier) NotifyStatusChange(_ context.Context, msg domain.StatusNotification) error {
+	n.calls = append(n.calls, msg)
+	return n.err
 }
 
 // stubCustomerFinder is a minimal CustomerFinder that always returns a preset customer.
@@ -110,6 +123,7 @@ func buildSvc(
 		wsoHistoryRepo,
 		customerFinder,
 		vehicleSvc,
+		adapters.NewLogStatusNotifier(),
 	)
 }
 
@@ -480,6 +494,88 @@ func TestSOService_Receive_AlreadyReceived_ReturnsError(t *testing.T) {
 	// Second receive must fail.
 	err := fix.svc.Receive(ctx, fix.soID)
 	assert.ErrorIs(t, err, domain.ErrServiceOrderNotNew)
+}
+
+// TestSOService_Receive_NotifiesCustomer verifies that advancing a service
+// order's status pushes a notification (the e-mail stand-in) to the customer,
+// carrying the correct recipient and the previous/new status.
+func TestSOService_Receive_NotifiesCustomer(t *testing.T) {
+	ctx := context.Background()
+	custID := "notify-cust"
+	vehID := "notify-veh"
+
+	workRepo := workMocks.NewWorkRepository(t)
+	supplySvc := supplyMocks.NewSupplyService(t)
+	vehicleSvc := vehicleMocks.NewVehicleService(t)
+	vehicleSvc.EXPECT().FindById(mock.Anything, vehID).Return(makeVehicle(vehID), nil).Maybe()
+
+	customer := customerDomain.Customer{
+		ID:   custID,
+		User: authDomain.NewUser(custID, "Ana Motorista", "ana@example.com", ""),
+	}
+
+	spy := &spyNotifier{}
+	svc := serviceOrder.NewService(
+		&inMemoryUoW{},
+		soRepo.NewSOMemory(),
+		workRepo,
+		supplySvc,
+		soRepo.NewWSOHistoryMemory(),
+		&stubCustomerFinder{customer: customer},
+		vehicleSvc,
+		spy,
+	)
+
+	resp, err := svc.Create(ctx, adapters.CreateSORequest{CustomerID: custID, VehicleID: vehID})
+	require.NoError(t, err)
+	// Creation is not a status transition, so no notification is emitted yet.
+	require.Empty(t, spy.calls)
+
+	require.NoError(t, svc.Receive(ctx, resp.ID))
+
+	require.Len(t, spy.calls, 1)
+	got := spy.calls[0]
+	assert.Equal(t, resp.ID, got.ServiceOrderID)
+	assert.Equal(t, "ana@example.com", got.CustomerEmail)
+	assert.Equal(t, "Ana Motorista", got.CustomerName)
+	require.NotNil(t, got.PreviousStatus)
+	assert.Equal(t, domain.SERVICE_ORDER_STATUS_NEW, *got.PreviousStatus)
+	assert.Equal(t, domain.SERVICE_ORDER_STATUS_RECEIVED, got.NewStatus)
+}
+
+// TestSOService_Notifier_FailureDoesNotBreakTransition ensures a notification
+// delivery error is swallowed: the status transition must still succeed.
+func TestSOService_Notifier_FailureDoesNotBreakTransition(t *testing.T) {
+	ctx := context.Background()
+	custID := "notify-cust-2"
+	vehID := "notify-veh-2"
+
+	workRepo := workMocks.NewWorkRepository(t)
+	supplySvc := supplyMocks.NewSupplyService(t)
+	vehicleSvc := vehicleMocks.NewVehicleService(t)
+	vehicleSvc.EXPECT().FindById(mock.Anything, vehID).Return(makeVehicle(vehID), nil).Maybe()
+
+	spy := &spyNotifier{err: errors.New("smtp unavailable")}
+	svc := serviceOrder.NewService(
+		&inMemoryUoW{},
+		soRepo.NewSOMemory(),
+		workRepo,
+		supplySvc,
+		soRepo.NewWSOHistoryMemory(),
+		&stubCustomerFinder{customer: makeCustomer(custID)},
+		vehicleSvc,
+		spy,
+	)
+
+	resp, err := svc.Create(ctx, adapters.CreateSORequest{CustomerID: custID, VehicleID: vehID})
+	require.NoError(t, err)
+
+	require.NoError(t, svc.Receive(ctx, resp.ID))
+	require.Len(t, spy.calls, 1)
+
+	status, err := svc.GetStatus(ctx, resp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "RECEIVED", status.Status)
 }
 
 // ─── SendToDiagnosis ──────────────────────────────────────────────────────────

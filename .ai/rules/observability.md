@@ -15,6 +15,8 @@ Reuse these — do not invent new names for the same operations:
 - `service_order.created`
 - `service_order.status_transition` — fields: `service_order_id`, `from_status`, `to_status`
 - `service_order.validation_failed`
+- `service_order.status_notification_sent` — customer status notification (e-mail stand-in); `recipient` is masked
+- `service_order.status_notification_failed` — notifier delivery error (best-effort; never fails the transition)
 
 ## Sensitive Field Redaction
 The logger automatically redacts keys matching: CPF, CNPJ, password, token, dsn, database_url.

@@ -32,6 +32,7 @@ type soService struct {
 	wsoHistoryRepo domain.WorkSOHistoryRepository
 	customerFinder CustomerFinder
 	vehicleService vehicleInterfaces.VehicleService
+	notifier       domain.StatusNotifier
 }
 
 func NewService(
@@ -42,8 +43,9 @@ func NewService(
 	wsoHistoryRepo domain.WorkSOHistoryRepository,
 	customerFinder CustomerFinder,
 	vehicleService vehicleInterfaces.VehicleService,
+	notifier domain.StatusNotifier,
 ) *soService {
-	return &soService{u, repo, workRepo, supplyService, wsoHistoryRepo, customerFinder, vehicleService}
+	return &soService{u, repo, workRepo, supplyService, wsoHistoryRepo, customerFinder, vehicleService, notifier}
 }
 
 func (s *soService) logValidationError(ctx context.Context, operation string, err error) {
@@ -62,6 +64,32 @@ func (s *soService) logStatusTransition(ctx context.Context, operation, soID str
 		zap.String("previous_status", prev.String()),
 		zap.String("new_status", next.String()),
 	)
+}
+
+func (s *soService) emitStatusTransition(ctx context.Context, operation string, so *domain.ServiceOrder, prev domain.SERVICE_ORDER_STATUS) {
+	s.logStatusTransition(ctx, operation, so.ID, prev, so.Status)
+
+	previous := prev
+	msg := domain.StatusNotification{
+		ServiceOrderID: so.ID,
+		PreviousStatus: &previous,
+		NewStatus:      so.Status,
+	}
+
+	if so.Customer != nil && so.Customer.User != nil {
+		msg.CustomerName = so.Customer.User.Name
+		msg.CustomerEmail = so.Customer.User.Email
+	}
+
+	if err := s.notifier.NotifyStatusChange(ctx, msg); err != nil {
+		logger.Of(ctx).Warn("service_order.status_notification_failed",
+			zap.String("operation", operation),
+			zap.String("entity", "service_order"),
+			zap.String("service_order_id", so.ID),
+			zap.String("new_status", so.Status.String()),
+			zap.Error(err),
+		)
+	}
 }
 
 func (s *soService) logWorkStatusTransition(ctx context.Context, operation, soID, workID string, prev, next domain.WORK_SERVICE_ORDER_STATUS) {
@@ -490,7 +518,7 @@ func (s *soService) Receive(ctx context.Context, soID string) error {
 		}
 		prev := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_RECEIVED
-		s.logStatusTransition(ctx, "receive_service_order", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "receive_service_order", &so, prev)
 		return s.repo.Save(ctx, &so)
 	})
 }
@@ -511,7 +539,7 @@ func (s *soService) SendToDiagnosis(ctx context.Context, soID string) error {
 		}
 		prev := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_IN_DIAGNOSIS
-		s.logStatusTransition(ctx, "send_service_order_to_diagnosis", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "send_service_order_to_diagnosis", &so, prev)
 		return s.repo.Save(ctx, &so)
 	})
 }
@@ -535,7 +563,7 @@ func (s *soService) SendToCustomerApproval(ctx context.Context, soID string) err
 		if err = s.repo.Save(ctx, &so); err != nil {
 			return err
 		}
-		s.logStatusTransition(ctx, "send_service_order_to_customer_approval", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "send_service_order_to_customer_approval", &so, prev)
 		return nil
 	})
 	if err != nil {
@@ -588,7 +616,7 @@ func (s *soService) Accept(ctx context.Context, soID, userID string) error {
 		if err := s.repo.Save(ctx, &so); err != nil {
 			return err
 		}
-		s.logStatusTransition(ctx, "accept_service_order", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "accept_service_order", &so, prev)
 		return nil
 	})
 }
@@ -652,7 +680,7 @@ func (s *soService) Reject(ctx context.Context, soID, userID string) error {
 		if err := s.repo.Save(ctx, &so); err != nil {
 			return err
 		}
-		s.logStatusTransition(ctx, "reject_service_order", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "reject_service_order", &so, prev)
 		return nil
 	})
 }
@@ -673,7 +701,7 @@ func (s *soService) Finish(ctx context.Context, soID string) error {
 		}
 		prev := so.Status
 		so.Status = domain.SERVICE_ORDER_STATUS_COMPLETED
-		s.logStatusTransition(ctx, "finish_service_order", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "finish_service_order", &so, prev)
 		return s.repo.Save(ctx, &so)
 	})
 }
@@ -697,7 +725,7 @@ func (s *soService) Deliver(ctx context.Context, soID string) error {
 		if err := s.repo.Save(ctx, &so); err != nil {
 			return err
 		}
-		s.logStatusTransition(ctx, "deliver_service_order", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "deliver_service_order", &so, prev)
 		return nil
 	})
 }
@@ -724,7 +752,7 @@ func (s *soService) Cancel(ctx context.Context, soID string) error {
 		if err := s.repo.Save(ctx, &so); err != nil {
 			return err
 		}
-		s.logStatusTransition(ctx, "cancel_service_order", so.ID, prev, so.Status)
+		s.emitStatusTransition(ctx, "cancel_service_order", &so, prev)
 		return nil
 	})
 }

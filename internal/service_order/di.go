@@ -10,6 +10,7 @@ import (
 	customerRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer/repository"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/id"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/adapters"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/interfaces"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/repository"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/supply"
@@ -38,7 +39,9 @@ func NewHTTPController(db *sql.DB) interfaces.ServiceOrderHTTPController {
 
 	var wRepo workInterfaces.WorkRepository = workRepo.NewPostgres()
 
-	svc := NewService(unitOfWork, soRepo, wRepo, supplySvc, wsoHistoryRepo, customerFinder, vehicleSvc)
+	notifier := adapters.NewLogStatusNotifier()
+
+	svc := NewService(unitOfWork, soRepo, wRepo, supplySvc, wsoHistoryRepo, customerFinder, vehicleSvc, notifier)
 	return NewController(svc)
 }
 
