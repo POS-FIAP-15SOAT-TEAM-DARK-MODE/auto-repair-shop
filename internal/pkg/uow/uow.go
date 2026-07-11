@@ -33,7 +33,7 @@ func (u *UnitOfWork) Execute(ctx context.Context, steps ...Step) error {
 	}
 
 	for _, step := range steps {
-		if err := step(enriched); err != nil {
+		if err = step(enriched); err != nil {
 			return u.fail(enriched, err)
 		}
 	}

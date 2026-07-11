@@ -101,19 +101,13 @@ func TestListWorks_FilterByStatus(t *testing.T) {
 }
 
 func TestListWorks_Unauthorized_Customer(t *testing.T) {
-	// CUSTOMER role cannot list works.
-	tok, _ := func() (string, error) {
-		return "", nil
-	}()
-	// Use an arbitrary customer user ID for the token.
-	tok = customerToken(t, "some-customer-id")
+	tok := customerToken(t, "some-customer-id")
 	resp := doRequest(t, http.MethodGet, "/v1/works", nil, tok)
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
 	resp.Body.Close()
 }
 
 func TestUpdateWork(t *testing.T) {
-	// Create a work to update.
 	createResp := doRequest(t, http.MethodPost, "/v1/works", map[string]any{
 		"name":        "Trabalho para atualizar",
 		"description": "Descrição original do trabalho para teste",
@@ -123,7 +117,6 @@ func TestUpdateWork(t *testing.T) {
 	require.Equal(t, http.StatusCreated, createResp.StatusCode)
 	created := decodeJSON[workResponse](t, createResp)
 
-	// Update it.
 	resp := doRequest(t, http.MethodPut, "/v1/works/"+created.ID, map[string]any{
 		"name":        "Trabalho atualizado",
 		"description": "Descrição atualizada para o mesmo trabalho",
@@ -180,7 +173,6 @@ func TestMechanicCanListWorks(t *testing.T) {
 }
 
 func TestMechanicCannotCreateWork(t *testing.T) {
-	// Works CREATE is AttendantRoles only (ATTENDANT, ADMIN).
 	resp := doRequest(t, http.MethodPost, "/v1/works", map[string]any{
 		"name":        "Mechanic Work",
 		"description": "Mechanic não deve criar trabalhos na API",

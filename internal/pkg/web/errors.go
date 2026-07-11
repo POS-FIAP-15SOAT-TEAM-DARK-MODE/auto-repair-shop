@@ -4,8 +4,16 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app"
+
+	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/domain"
+	customerDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer/domain"
+	jsonv2 "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/json"
+	soDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/domain"
+	soHistoryDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order_history/domain"
+	supplyDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/supply/domain"
+	vehicleDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/vehicle/domain"
+	workDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work/domain"
 )
 
 type errorResponse struct {
@@ -43,8 +51,6 @@ func getHTTPStatus(err error) int {
 		return http.StatusConflict
 	case isUnprocessableEntityError(err):
 		return http.StatusUnprocessableEntity
-	case isNotFoundError(err):
-		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError
 	}
@@ -85,89 +91,91 @@ func buildErrorMessages(err error, status int) ([]string, string) {
 }
 
 func isBadRequestError(err error) bool {
-	var validationErr domain.ValidationError
-	return errors.As(err, &validationErr) ||
-		errors.Is(err, domain.ErrUserPasswordDontMatch) ||
-		errors.Is(err, domain.ErrUserPasswordTooLong) ||
-		errors.Is(err, domain.ErrEmptyUserName) ||
-		errors.Is(err, domain.ErrInvalidUserName) ||
-		errors.Is(err, domain.ErrEmptyUserEmail) ||
-		errors.Is(err, domain.ErrInvalidUserEmail) ||
-		errors.Is(err, domain.ErrEmptyUserPassword) ||
-		errors.Is(err, domain.ErrInvalidUserPassword) ||
-		errors.Is(err, domain.ErrUserPasswordTooShort) ||
-		errors.Is(err, domain.ErrEmptyWorkName) ||
-		errors.Is(err, domain.ErrWorkNameShorterThenRequired) ||
-		errors.Is(err, domain.ErrEmptyWorkDescription) ||
-		errors.Is(err, domain.ErrWorkDescriptionShorterThenRequired) ||
-		errors.Is(err, domain.ErrInvalidWorkId) ||
-		errors.Is(err, domain.ErrInvalidServiceOrderId) ||
-		errors.Is(err, domain.ErrEmptyServicesList) ||
-		errors.Is(err, json.ErrJSONSyntax) ||
-		errors.Is(err, json.ErrJSONType) ||
-		errors.Is(err, json.ErrJSONUnexpectedEOF) ||
-		errors.Is(err, json.ErrJSONEmptyBody) ||
-		errors.Is(err, json.ErrWrongPayloadFormat) ||
-		errors.Is(err, domain.ErrVehicleInvalidPlate) ||
-		errors.Is(err, domain.ErrInvalidVehicleId) ||
-		errors.Is(err, domain.ErrPhoneRequired) ||
-		errors.Is(err, domain.ErrServiceOrderIDRequired) ||
-		errors.Is(err, domain.ErrInvalidCustomerId) ||
-		errors.Is(err, domain.ErrInvalidSupplyID) ||
-		errors.Is(err, domain.ErrInvalidSupplyAmount) ||
-		errors.Is(err, domain.ErrInvalidDocumentFormat) ||
-		errors.Is(err, domain.ErrCompanyNameNotAllowed) ||
-		errors.Is(err, domain.ErrInvalidCustomerType) ||
-		errors.Is(err, domain.ErrCompanyNameRequired)
+	return errors.Is(err, authDomain.ErrUserPasswordDontMatch) ||
+		errors.Is(err, authDomain.ErrUserPasswordTooLong) ||
+		errors.Is(err, authDomain.ErrEmptyUserName) ||
+		errors.Is(err, authDomain.ErrInvalidUserName) ||
+		errors.Is(err, authDomain.ErrEmptyUserEmail) ||
+		errors.Is(err, authDomain.ErrInvalidUserEmail) ||
+		errors.Is(err, authDomain.ErrEmptyUserPassword) ||
+		errors.Is(err, authDomain.ErrInvalidUserPassword) ||
+		errors.Is(err, authDomain.ErrUserPasswordTooShort) ||
+		errors.Is(err, workDomain.ErrEmptyWorkName) ||
+		errors.Is(err, workDomain.ErrWorkNameShorterThenRequired) ||
+		errors.Is(err, workDomain.ErrEmptyWorkDescription) ||
+		errors.Is(err, workDomain.ErrWorkDescriptionShorterThenRequired) ||
+		errors.Is(err, workDomain.ErrInvalidWorkId) ||
+		errors.Is(err, soDomain.ErrInvalidServiceOrderId) ||
+		errors.Is(err, soDomain.ErrEmptyServicesList) ||
+		errors.Is(err, soHistoryDomain.ErrServiceOrderIDRequired) ||
+		errors.Is(err, supplyDomain.ErrInvalidSupplyID) ||
+		errors.Is(err, supplyDomain.ErrInvalidSupplyAmount) ||
+		errors.Is(err, jsonv2.ErrJSONSyntax) ||
+		errors.Is(err, jsonv2.ErrJSONType) ||
+		errors.Is(err, jsonv2.ErrJSONUnexpectedEOF) ||
+		errors.Is(err, jsonv2.ErrJSONEmptyBody) ||
+		errors.Is(err, jsonv2.ErrWrongPayloadFormat) ||
+		errors.Is(err, vehicleDomain.ErrVehicleInvalidPlate) ||
+		errors.Is(err, vehicleDomain.ErrRequiredVehicleBrand) ||
+		errors.Is(err, vehicleDomain.ErrRequiredVehicleModel) ||
+		errors.Is(err, vehicleDomain.ErrParamVehicleYear) ||
+		errors.Is(err, vehicleDomain.ErrInvalidVehicleId) ||
+		errors.Is(err, vehicleDomain.ErrInvalidSearchVehicleParams) ||
+		errors.Is(err, customerDomain.ErrPhoneRequired) ||
+		errors.Is(err, customerDomain.ErrCompanyNameRequired) ||
+		errors.Is(err, customerDomain.ErrCompanyNameNotAllowed) ||
+		errors.Is(err, customerDomain.ErrInvalidCustomerType) ||
+		errors.Is(err, customerDomain.ErrInvalidDocumentFormat) ||
+		errors.Is(err, customerDomain.ErrInvalidCustomerId) ||
+		errors.Is(err, workDomain.ErrInvalidWorkStatusValue)
 }
 
 func isNotFoundError(err error) bool {
-	return errors.Is(err, domain.ErrCustomerNotFound) ||
-		errors.Is(err, domain.ErrVehicleNotFound) ||
-		errors.Is(err, domain.ErrWorkNotFound) ||
-		errors.Is(err, domain.ErrSupplyNotFound) ||
-		errors.Is(err, domain.ErrServiceOrderNotFound) ||
-		errors.Is(err, domain.ErrServiceOrderWorkNotFound) ||
-		errors.Is(err, domain.ErrServiceOrderSupplyNotFound) ||
-		errors.Is(err, domain.ErrWorkServiceOrderNotFound)
+	return errors.Is(err, workDomain.ErrWorkNotFound) ||
+		errors.Is(err, supplyDomain.ErrSupplyNotFound) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotFound) ||
+		errors.Is(err, soDomain.ErrServiceOrderWorkNotFound) ||
+		errors.Is(err, soDomain.ErrServiceOrderSupplyNotFound) ||
+		errors.Is(err, soDomain.ErrWorkServiceOrderNotFound) ||
+		errors.Is(err, vehicleDomain.ErrVehicleNotFound) ||
+		errors.Is(err, customerDomain.ErrCustomerNotFound)
 }
 
 func isUnauthorizedError(err error) bool {
-	return errors.Is(err, domain.ErrInvalidUserCredentials)
+	return errors.Is(err, authDomain.ErrInvalidUserCredentials)
 }
 
 func isInternalServerError(err error) bool {
-	return errors.Is(err, json.ErrJSONUnsupportedValue) ||
-		errors.Is(err, json.ErrJSONUnsupportedType) ||
-		errors.Is(err, json.ErrJSONInvalidUnmarshal)
+	return errors.Is(err, jsonv2.ErrJSONUnsupportedValue) ||
+		errors.Is(err, jsonv2.ErrJSONUnsupportedType) ||
+		errors.Is(err, jsonv2.ErrJSONInvalidUnmarshal)
 }
 
 func isConflictError(err error) bool {
-	return errors.Is(err, domain.ErrDataConflict) ||
-		errors.Is(err, domain.ErrInfraConflict) ||
-		errors.Is(err, domain.ErrCustomerHasServiceOrders) ||
-		errors.Is(err, domain.ErrServiceOrderNotNew) ||
-		errors.Is(err, domain.ErrServiceOrderNotInReceived) ||
-		errors.Is(err, domain.ErrServiceOrderNotInDiagnosis) ||
-		errors.Is(err, domain.ErrServiceOrderNotInProgress) ||
-		errors.Is(err, domain.ErrServiceOrderNotCompleted) ||
-		errors.Is(err, domain.ErrServiceOrderNotCancelable) ||
-		errors.Is(err, domain.ErrServiceOrderNotAwaitingApproval) ||
-		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCompleted) ||
-		errors.Is(err, domain.ErrWorkServiceOrderAlreadyCancelled) ||
-		errors.Is(err, domain.ErrWorkServiceOrderInvalidStatus)
+	return errors.Is(err, app.ErrDataConflict) ||
+		errors.Is(err, app.ErrInfraConflict) ||
+		errors.Is(err, customerDomain.ErrCustomerHasServiceOrders) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotNew) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotInReceived) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotInDiagnosis) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotInProgress) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotCompleted) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotCancelable) ||
+		errors.Is(err, soDomain.ErrServiceOrderNotAwaitingApproval) ||
+		errors.Is(err, soDomain.ErrWorkServiceOrderAlreadyCompleted) ||
+		errors.Is(err, soDomain.ErrWorkServiceOrderAlreadyCancelled) ||
+		errors.Is(err, soDomain.ErrWorkServiceOrderInvalidStatus)
 }
 
 func isUnprocessableEntityError(err error) bool {
-	return errors.Is(err, domain.ErrDataViolation) ||
-		errors.Is(err, domain.ErrWorkPriceLessThenOrEqualZero) ||
-		errors.Is(err, domain.ErrInvalidWorkPriceValue) ||
-		errors.Is(err, domain.ErrInvalidWorkStatusValue) ||
-		errors.Is(err, domain.ErrSupplyOutOfStock)
+	return errors.Is(err, app.ErrDataViolation) ||
+		errors.Is(err, workDomain.ErrWorkPriceLessThenOrEqualZero) ||
+		errors.Is(err, workDomain.ErrInvalidWorkPriceValue) ||
+		errors.Is(err, supplyDomain.ErrSupplyOutOfStock)
 }
 
 func isForbidden(err error) bool {
-	return errors.Is(err, domain.ErrInvalidCustomerProperty)
+	return errors.Is(err, customerDomain.ErrInvalidCustomerProperty)
 }
 
 func unwrapAll(err error) []string {

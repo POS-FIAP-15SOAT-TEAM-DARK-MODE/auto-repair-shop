@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
@@ -36,17 +36,17 @@ func Error(ctx context.Context, err error) error {
 
 	switch pgErr.Code {
 	case pgUniqueViolation:
-		return domain.ErrDataConflict
+		return app.ErrDataConflict
 
 	case pgCheckViolation, pgForeignKeyViolation, pgNotNullViolation, pgExclusionViolation:
-		return domain.ErrDataViolation
+		return app.ErrDataViolation
 
 	case pgSerializationFailure, pgDeadlockDetected:
 		logger.Of(ctx).Warn("PostgreSQL serialization/deadlock issue",
 			zap.String("code", string(pgErr.Code)),
 			zap.String("message", pgErr.Message),
 		)
-		return domain.ErrInfraConflict
+		return app.ErrInfraConflict
 
 	default:
 		logger.Of(ctx).Warn("Unhandled PostgreSQL error",

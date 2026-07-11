@@ -26,7 +26,6 @@ func TestCreateCustomer_Individual(t *testing.T) {
 	assert.NotEmpty(t, c.ID)
 	assert.Equal(t, "Ana Pereira", c.Name)
 	assert.Equal(t, "INDIVIDUAL", c.Type)
-	// document is stored and returned as digits-only (sanitized by the domain)
 	assert.Equal(t, cpf, c.Document)
 }
 
@@ -45,7 +44,6 @@ func TestCreateCustomer_Company(t *testing.T) {
 	c := decodeJSON[customerResponse](t, resp)
 	assert.NotEmpty(t, c.ID)
 	assert.Equal(t, "COMPANY", c.Type)
-	// CNPJ is sanitized (alphanumeric only) before storage
 	assert.Equal(t, cnpj1Sanitized, c.Document)
 	assert.Equal(t, "Empresa Teste LTDA", c.CompanyName)
 }
@@ -53,7 +51,6 @@ func TestCreateCustomer_Company(t *testing.T) {
 func TestCreateCustomer_DuplicateCPF(t *testing.T) {
 	sharedCPF := nextCPF()
 
-	// First creation should succeed.
 	first := doRequest(t, http.MethodPost, "/v1/customers", map[string]any{
 		"name": "Primeiro Cliente", "email": nextEmail(),
 		"password": "Test@12345", "type": "INDIVIDUAL",
@@ -62,7 +59,6 @@ func TestCreateCustomer_DuplicateCPF(t *testing.T) {
 	require.Equal(t, http.StatusCreated, first.StatusCode)
 	first.Body.Close()
 
-	// Second creation with same CPF must fail.
 	second := doRequest(t, http.MethodPost, "/v1/customers", map[string]any{
 		"name": "Segundo Cliente", "email": nextEmail(),
 		"password": "Test@12345", "type": "INDIVIDUAL",
@@ -83,7 +79,6 @@ func TestCreateCustomer_DuplicateEmail(t *testing.T) {
 	require.Equal(t, http.StatusCreated, first.StatusCode)
 	first.Body.Close()
 
-	// Same email, different CPF.
 	second := doRequest(t, http.MethodPost, "/v1/customers", map[string]any{
 		"name": "Dup Email", "email": sharedEmail,
 		"password": "Test@12345", "type": "INDIVIDUAL",
@@ -151,8 +146,6 @@ func TestGetCustomerByID_NotFound(t *testing.T) {
 }
 
 func TestGetCustomerByDocument(t *testing.T) {
-	// Query with formatted CPF; service sanitizes before lookup.
-	// Seed customer João Silva has CPF stored as "52998224725" (sanitized).
 	resp := doRequest(t, http.MethodGet, "/v1/customers?document=529.982.247-25", nil, attendantToken(t))
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -182,7 +175,6 @@ func TestDeleteCustomer(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 	resp.Body.Close()
 
-	// Verify it's gone.
 	getResp := doRequest(t, http.MethodGet, "/v1/customers/"+created.ID, nil, attendantToken(t))
 	assert.Equal(t, http.StatusNotFound, getResp.StatusCode)
 	getResp.Body.Close()

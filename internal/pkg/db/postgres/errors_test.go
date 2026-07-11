@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/db/postgres"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
@@ -22,32 +22,32 @@ func TestError_Mapping(t *testing.T) {
 		{
 			"UniqueViolation",
 			&pq.Error{Code: "23505", Message: "duplicate key"},
-			domain.ErrDataConflict,
+			app.ErrDataConflict,
 		},
 		{
 			"CheckViolation",
 			&pq.Error{Code: "23514", Message: "check constraint"},
-			domain.ErrDataViolation,
+			app.ErrDataViolation,
 		},
 		{
 			"ForeignKeyViolation",
 			&pq.Error{Code: "23503", Message: "fk violation"},
-			domain.ErrDataViolation,
+			app.ErrDataViolation,
 		},
 		{
 			"NotNullViolation",
 			&pq.Error{Code: "23502", Message: "not null violation"},
-			domain.ErrDataViolation,
+			app.ErrDataViolation,
 		},
 		{
 			"SerializationFailure",
 			&pq.Error{Code: "40001", Message: "serialization failure"},
-			domain.ErrInfraConflict,
+			app.ErrInfraConflict,
 		},
 		{
 			"DeadlockDetected",
 			&pq.Error{Code: "40P01", Message: "deadlock detected"},
-			domain.ErrInfraConflict,
+			app.ErrInfraConflict,
 		},
 		{
 			"NonPQError",
