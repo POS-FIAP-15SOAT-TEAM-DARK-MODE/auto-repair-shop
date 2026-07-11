@@ -26,6 +26,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/id"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	serviceOrderPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order"
+	serviceOrderAdapters "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/adapters"
 	soRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/repository"
 	soHistoryPkg "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order_history"
 	soHistoryRepo "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order_history/repository"
@@ -96,7 +97,8 @@ func TestMain(m *testing.M) {
 	wsoHistoryRepository := soRepo.NewWSOHistoryMemory()
 	customerFinder := newCustomerFinder(custRepository)
 	var wRepo workInterfaces.WorkRepository = wRepository
-	soSvc := serviceOrderPkg.NewService(noopUoW, soRepository, wRepo, supplySvc, wsoHistoryRepository, customerFinder, vehicleSvc)
+	soNotifier := serviceOrderAdapters.NewLogStatusNotifier()
+	soSvc := serviceOrderPkg.NewService(noopUoW, soRepository, wRepo, supplySvc, wsoHistoryRepository, customerFinder, vehicleSvc, soNotifier)
 	soCtrl := serviceOrderPkg.NewController(soSvc)
 
 	memUserRepo = userRepository
