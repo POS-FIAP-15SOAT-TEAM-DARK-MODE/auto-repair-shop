@@ -1,6 +1,6 @@
 # Auto Repair Shop
 
-Monolithic layered backend for an auto repair shop management system. Manages service orders (SO), customers, vehicles, parts/stock, and administrative operations.
+Backend for an auto repair shop management system, organized by domain following a clean/hexagonal architecture. Manages service orders (SO), customers, vehicles, parts/stock, and administrative operations.
 
 **Stack:** Go · Gin · PostgreSQL · JWT · Swagger
 
@@ -9,7 +9,7 @@ Monolithic layered backend for an auto repair shop management system. Manages se
 - **SO (Service Order)** — Service order, the central aggregate
 - **Customer** — Customer identified by CPF (individual) or CNPJ (company)
 - **Vehicle** — Vehicle (plate, brand, model, year), linked to a Customer
-- **Service** — Billable service (name, description, unit price)
+- **Work** — Billable service item (name, description, unit price), exposed under `/v1/works`
 - **Part/Supply** — Part or supply with stock quantity and unit price
 - **Budget** — Budget, auto-calculated from services and parts on a SO
 - **Stock** — Stock/inventory of Parts
@@ -46,20 +46,29 @@ Every status change is recorded as an immutable entry in `work_service_order_sta
 
 ## Project Structure
 
+Each business domain is a self-contained package under `internal/`, wired together
+by `internal/app`. Shared, domain-agnostic helpers live in `internal/pkg`.
+
 ```
 cmd/
-  service/          # Application entrypoint
+  service/              # Application entrypoint
 internal/
-  domain/           # Domain models (framework-free)
-  infra/
-    db/             # Database clients, uow, and seed
-    factory/        # Dependency wiring
-    handler/        # HTTP handlers
-    http/           # Handlers wrapper and middlewares
-    repository/     # Repository implementations
-    server/         # HTTP server bootstrap
-  routing/          # Route definitions
-  services/         # Business logic layer
+  app/                  # Application wiring & HTTP layer
+    bootstrap/          # Startup sequence
+    container/          # Handler & middleware containers
+    middleware/         # Auth, logger, recovery
+    routing/            # Route definitions
+    server.go, db.go, seed.go, ...
+  auth/                 # Domain package (auth, customer, supply, vehicle,
+  customer/             #   work, service_order, service_order_history)
+  supply/               #   Each contains:
+  vehicle/              #     domain/      — models & errors (framework-free)
+  work/                 #     interfaces/  — service/repo/controller ports + mocks
+  service_order/        #     adapters/    — request/response DTOs
+  service_order_history/#     repository/  — postgres + in-memory implementations
+  ...                   #     controller.go, service.go, di.go
+  integration/          # Integration test suite
+  pkg/                  # Shared utilities (db, uow, logger, web, auth, env, ...)
 ```
 
 ## Architecture
@@ -78,7 +87,7 @@ flowchart LR
 
     subgraph ns["Kubernetes namespace: auto-repair-shop"]
         app["Deployment<br/>auto-repair-shop (Go / Gin)<br/>probes on /ping"]
-        svc["Service<br/>NodePort local · ClusterIP+Ingress on AWS"]
+        svc["Service<br/>NodePort local · LoadBalancer lab · ClusterIP+Ingress stg/prd"]
         cm[["ConfigMap<br/>DB host/port, non-sensitive config"]]
         sec[["Secret<br/>POSTGRES_PASSWORD · JWT_SECRET"]]
         hpa["HPA<br/>1→5 · 70% CPU / 80% mem"]
@@ -317,6 +326,7 @@ k8s/
 │   ├── base/        # Deployment, Service, ConfigMap, HPA, migrate Job
 │   └── overlays/
 │       ├── local/   # + static Secret + in-cluster Postgres, NodePort, dev values
+│       ├── lab/     # AWS Academy Learner Lab: LabRole, public ELB, static Secret
 │       ├── stg/     # RDS host, ECR image, ALB Ingress, External Secrets, HPA 2-6
 │       └── prd/     # same as stg with prod values (HPA 3-10)
 ├── kind/            # local Kind cluster config
@@ -592,10 +602,11 @@ only routes requests carrying that Host header. To actually reach it either:
 | Method | Path                         | Roles                      |
 |--------|------------------------------|----------------------------|
 | GET    | `/v1/vehicles`               | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/vehicles/:customerId`   | ADMIN, ATTENDANT, MECHANIC |
 | POST   | `/v1/vehicles`               | ADMIN, ATTENDANT           |
 | PUT    | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
 | DELETE | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
+
+`GET /v1/vehicles` accepts optional `customerId`, `plate`, `page` and `pageSize` query filters.
 
 ### Supplies
 
