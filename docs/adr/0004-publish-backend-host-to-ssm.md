@@ -7,7 +7,7 @@
 
 ## Context
 
-`auto-repair-shop-infra-k8s`'s new API Gateway (Fase 3 issue #5) needs to proxy non-Lambda routes to this app's public endpoint. In Learner Lab mode the app is exposed via a Kubernetes `LoadBalancer` Service (`k8s/manifests/overlays/lab/patch-service-loadbalancer.yaml`), which provisions a Classic ELB through Kubernetes' in-tree AWS cloud provider — not through any Terraform `apply`.
+`auto-repair-shop-infra-k8s`'s new API Gateway (issue #5) needs to proxy non-Lambda routes to this app's public endpoint. In Learner Lab mode the app is exposed via a Kubernetes `LoadBalancer` Service (`k8s/manifests/overlays/lab/patch-service-loadbalancer.yaml`), which provisions a Classic ELB through Kubernetes' in-tree AWS cloud provider — not through any Terraform `apply`.
 
 This means there is no Terraform state, in this repo or any sibling infra repo, that owns that ELB. `terraform_remote_state` — the mechanism already used to hand off `db_host`, `app_secret_arn`, `function_arn`, etc. between the 4 repos — has nothing to read here, because nothing in Terraform created the resource. A raw AWS API lookup by tag was also considered and rejected: Classic ELBs get a random Kubernetes-generated name, and Terraform's `aws_elb` data source only supports lookup by exact name (unlike `aws_lb` for ALB/NLB, which supports tag filtering).
 
@@ -28,7 +28,7 @@ The `deploy-stg`/`deploy-prd` IAM roles (created in `infra-k8s`'s `shared` state
 ### Negative
 
 - Introduces an implicit *deploy-order* dependency: the `gateway` layer's first `apply` will fail (parameter not found) until the app has deployed at least once. Documented in `infra-k8s`'s README, not enforced by tooling.
-- The parameter is a plain `String`, not tied to any resource lifecycle — if the app's Kubernetes Service is deleted without a subsequent deploy, the parameter goes stale until the next deploy overwrites it. Acceptable for a coursework deployment; would want a cleanup/expiry story for anything longer-lived.
+- The parameter is a plain `String`, not tied to any resource lifecycle — if the app's Kubernetes Service is deleted without a subsequent deploy, the parameter goes stale until the next deploy overwrites it. Acceptable at this deployment's current scale; would want a cleanup/expiry story for anything longer-lived.
 
 ## Alternatives considered
 
