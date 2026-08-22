@@ -544,7 +544,11 @@ only routes requests carrying that Host header. To actually reach it either:
 > values are never committed. Terraform state is stored remotely in the S3 bucket
 > created by the `bootstrap` stage, with **native S3 locking** (no DynamoDB). The
 > `.github/workflows/docker.yml` `publish`/`deploy` jobs are fully implemented
-> (build → push to ECR → `kubectl apply -k` → image rollout).
+> (build → push to ECR → `kubectl apply -k` → image rollout). In Lab mode,
+> the deploy job also publishes the app's LoadBalancer hostname to SSM
+> parameter `/auto-repair-shop/<env>/app-backend-host` — the handoff point
+> `auto-repair-shop-infra-k8s`'s API Gateway state reads it from, since that
+> ELB is Kubernetes-created rather than Terraform-managed.
 
 ## Environment Variables
 
