@@ -30,6 +30,11 @@ JOIN service_order_status_history prev
     AND prev.new_status = h.previous_status`
 )
 
+// getOneTimeTransaction wraps uowPkg.GetOneTimeTransaction as a package var
+// (same seam internal/app/db.go uses for sqlOpenFn) so tests can swap in a
+// sqlmock *sql.DB instead of the real connection.
+var getOneTimeTransaction = uowPkg.GetOneTimeTransaction
+
 type postgres struct{}
 
 func NewPostgres() interfaces.ServiceOrderHistoryRepository {
@@ -43,7 +48,7 @@ func NewMetricsRepository() interfaces.ServiceOrderStatusDurationReader {
 }
 
 func (r *postgres) AverageDurationByStatusInHours(ctx context.Context) ([]domain.StatusDuration, error) {
-	db, err := uowPkg.GetOneTimeTransaction(ctx)
+	db, err := getOneTimeTransaction(ctx)
 	if err != nil {
 		return nil, err
 	}
