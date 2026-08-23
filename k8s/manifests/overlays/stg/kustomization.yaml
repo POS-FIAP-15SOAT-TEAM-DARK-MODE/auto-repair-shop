@@ -10,6 +10,9 @@ resources:
   - secrets.yaml
   - ingress.yaml
 
+components:
+  - ../../components/observability
+
 # Image published to ECR. The pipeline overrides newTag with the commit SHA.
 images:
   - name: auto-repair-shop
