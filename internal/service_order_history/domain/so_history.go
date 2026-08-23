@@ -28,6 +28,13 @@ type SearchParams struct {
 	ID string
 }
 
+// StatusDuration is the average time a service order takes to reach Status
+// from whatever status preceded it.
+type StatusDuration struct {
+	Status       soDomain.SERVICE_ORDER_STATUS
+	AverageHours float64
+}
+
 func (p *SearchParams) Validate() error {
 	if p.ID == "" {
 		return ErrServiceOrderIDRequired

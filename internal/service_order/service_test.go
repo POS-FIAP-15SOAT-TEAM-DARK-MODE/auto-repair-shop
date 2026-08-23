@@ -7,6 +7,7 @@ import (
 
 	authDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth/domain"
 	customerDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer/domain"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/metrics"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	serviceOrder "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/adapters"
@@ -19,6 +20,7 @@ import (
 	vehicleMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/vehicle/interfaces/mocks"
 	workDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work/domain"
 	workMocks "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work/interfaces/mocks"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -576,6 +578,70 @@ func TestSOService_Notifier_FailureDoesNotBreakTransition(t *testing.T) {
 	status, err := svc.GetStatus(ctx, resp.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "RECEIVED", status.Status)
+}
+
+// ─── Prometheus metrics ────────────────────────────────────────────────────────
+
+// TestSOService_Create_IncrementsCreatedCounter checks the counter behind the
+// "volume diário de ordens de serviço" dashboard panel.
+func TestSOService_Create_IncrementsCreatedCounter(t *testing.T) {
+	before := testutil.ToFloat64(metrics.ServiceOrdersCreatedTotal)
+
+	vehID := "metrics-veh"
+	vehicleSvc := vehicleMocks.NewVehicleService(t)
+	vehicleSvc.EXPECT().FindById(mock.Anything, vehID).Return(makeVehicle(vehID), nil).Maybe()
+
+	svc := buildSvc(workMocks.NewWorkRepository(t), supplyMocks.NewSupplyService(t), vehicleSvc, &stubCustomerFinder{customer: makeCustomer("metrics-cust")})
+	_, err := svc.Create(context.Background(), adapters.CreateSORequest{CustomerID: "metrics-cust", VehicleID: vehID})
+	require.NoError(t, err)
+
+	assert.Equal(t, before+1, testutil.ToFloat64(metrics.ServiceOrdersCreatedTotal))
+}
+
+// TestSOService_Receive_IncrementsStatusTransitionCounter checks the counter
+// behind the "tempo médio de execução por status" / volume-by-status panels.
+func TestSOService_Receive_IncrementsStatusTransitionCounter(t *testing.T) {
+	counter := metrics.ServiceOrderStatusTransitionsTotal.WithLabelValues(domain.SERVICE_ORDER_STATUS_RECEIVED.String())
+	before := testutil.ToFloat64(counter)
+
+	ctx := context.Background()
+	fix := newSvcFixture(t)
+	require.NoError(t, fix.svc.Receive(ctx, fix.soID))
+
+	assert.Equal(t, before+1, testutil.ToFloat64(counter))
+}
+
+// TestSOService_Notifier_FailureIncrementsFailureCounter checks the counter
+// behind the "erros e falhas nas integrações" panel.
+func TestSOService_Notifier_FailureIncrementsFailureCounter(t *testing.T) {
+	before := testutil.ToFloat64(metrics.ServiceOrderNotificationFailuresTotal)
+
+	ctx := context.Background()
+	custID := "notify-cust-3"
+	vehID := "notify-veh-3"
+
+	workRepo := workMocks.NewWorkRepository(t)
+	supplySvc := supplyMocks.NewSupplyService(t)
+	vehicleSvc := vehicleMocks.NewVehicleService(t)
+	vehicleSvc.EXPECT().FindById(mock.Anything, vehID).Return(makeVehicle(vehID), nil).Maybe()
+
+	spy := &spyNotifier{err: errors.New("smtp unavailable")}
+	svc := serviceOrder.NewService(
+		&inMemoryUoW{},
+		soRepo.NewSOMemory(),
+		workRepo,
+		supplySvc,
+		soRepo.NewWSOHistoryMemory(),
+		&stubCustomerFinder{customer: makeCustomer(custID)},
+		vehicleSvc,
+		spy,
+	)
+
+	resp, err := svc.Create(ctx, adapters.CreateSORequest{CustomerID: custID, VehicleID: vehID})
+	require.NoError(t, err)
+	require.NoError(t, svc.Receive(ctx, resp.ID))
+
+	assert.Equal(t, before+1, testutil.ToFloat64(metrics.ServiceOrderNotificationFailuresTotal))
 }
 
 // ─── SendToDiagnosis ──────────────────────────────────────────────────────────

@@ -11,6 +11,7 @@ import (
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
@@ -29,6 +30,8 @@ func SetupRouter(c *container.HandlersWrapper, m *container.Middlewares) *gin.En
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(http2.StatusOK, gin.H{"message": "pong"})
 	})
+
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	v1 := router.Group("/v1")
 
