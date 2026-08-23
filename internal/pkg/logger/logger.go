@@ -62,8 +62,16 @@ func Global() *customLogger {
 	return globalLog
 }
 
-func Request(ctx context.Context) (context.Context, string) {
-	reqId := uuid.New().String()
+// Request attaches a per-request logger to ctx, tagging every log line with
+// a request_id. If incomingID is non-empty (e.g. forwarded by an upstream
+// API Gateway or a client-supplied X-Request-Id), it's reused as-is so log
+// lines for the same request stay correlated across services; otherwise a
+// new one is generated.
+func Request(ctx context.Context, incomingID string) (context.Context, string) {
+	reqId := incomingID
+	if reqId == "" {
+		reqId = uuid.New().String()
+	}
 	l := initLogger().With(
 		zap.String("request_id", reqId),
 	)
