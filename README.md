@@ -8,7 +8,7 @@ Backend for an auto repair shop management system, organized by domain following
 > 3). This repo holds the application; infrastructure lives in its own repos:
 > - [auto-repair-shop-infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) — Kubernetes cluster (EKS/VPC/add-ons)
 > - [auto-repair-shop-infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) — managed database (RDS)
-
+> - [auto-repair-shop-lambda-auth](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth) - JWT Generator (Lambda Function)
 ## Domain
 
 - **SO (Service Order)** — Service order, the central aggregate
