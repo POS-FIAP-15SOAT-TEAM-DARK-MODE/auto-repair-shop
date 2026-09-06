@@ -24,12 +24,19 @@ func TestOf_NilContext(t *testing.T) {
 
 func TestRequest(t *testing.T) {
 	ctx := context.Background()
-	ctx, reqId := logger.Request(ctx)
+	ctx, reqId := logger.Request(ctx, "")
 
 	assert.NotEmpty(t, reqId)
 	l := logger.Of(ctx)
 	assert.NotNil(t, l)
 	assert.NotEqual(t, logger.Global(), l)
+}
+
+func TestRequest_ReusesIncomingID(t *testing.T) {
+	ctx := context.Background()
+	_, reqId := logger.Request(ctx, "upstream-request-id-123")
+
+	assert.Equal(t, "upstream-request-id-123", reqId)
 }
 
 func TestLoggerMethods(t *testing.T) {
@@ -61,7 +68,7 @@ func TestGetLogLevel(t *testing.T) {
 func TestGetLogLevel_Debug(t *testing.T) {
 	t.Setenv("LOG_LEVEL", "DEBUG")
 	ctx := context.Background()
-	ctx, reqId := logger.Request(ctx)
+	ctx, reqId := logger.Request(ctx, "")
 	assert.NotEmpty(t, reqId)
 	l := logger.Of(ctx)
 	assert.NotNil(t, l)
@@ -70,7 +77,7 @@ func TestGetLogLevel_Debug(t *testing.T) {
 func TestGetLogLevel_Panic(t *testing.T) {
 	t.Setenv("LOG_LEVEL", "PANIC")
 	ctx := context.Background()
-	ctx, reqId := logger.Request(ctx)
+	ctx, reqId := logger.Request(ctx, "")
 	assert.NotEmpty(t, reqId)
 	l := logger.Of(ctx)
 	assert.NotNil(t, l)
