@@ -8,6 +8,7 @@ namespace: auto-repair-shop
 resources:
   - namespace.yaml
   - configmap.yaml
+  - rbac.yaml
   - deployment.yaml
   - service.yaml
   - hpa.yaml
