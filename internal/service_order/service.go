@@ -8,6 +8,7 @@ import (
 
 	customerDomain "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer/domain"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/logger"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/metrics"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/uow"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/adapters"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order/domain"
@@ -68,6 +69,7 @@ func (s *soService) logStatusTransition(ctx context.Context, operation, soID str
 
 func (s *soService) emitStatusTransition(ctx context.Context, operation string, so *domain.ServiceOrder, prev domain.SERVICE_ORDER_STATUS) {
 	s.logStatusTransition(ctx, operation, so.ID, prev, so.Status)
+	metrics.ServiceOrderStatusTransitionsTotal.WithLabelValues(so.Status.String()).Inc()
 
 	previous := prev
 	msg := domain.StatusNotification{
@@ -82,6 +84,7 @@ func (s *soService) emitStatusTransition(ctx context.Context, operation string, 
 	}
 
 	if err := s.notifier.NotifyStatusChange(ctx, msg); err != nil {
+		metrics.ServiceOrderNotificationFailuresTotal.Inc()
 		logger.Of(ctx).Warn("service_order.status_notification_failed",
 			zap.String("operation", operation),
 			zap.String("entity", "service_order"),
@@ -172,6 +175,7 @@ func (s *soService) Create(ctx context.Context, req adapters.CreateSORequest) (a
 		zap.String("service_order_id", so.ID),
 		zap.String("status", so.Status.String()),
 	)
+	metrics.ServiceOrdersCreatedTotal.Inc()
 
 	if len(req.WorkIDs) > 0 || len(req.Supplies) > 0 {
 		go func() {

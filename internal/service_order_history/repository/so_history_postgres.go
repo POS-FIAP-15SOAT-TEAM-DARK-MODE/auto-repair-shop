@@ -16,12 +16,66 @@ const (
 	selectSOHistory = `SELECT soh.previous_status, soh.new_status, soh.created_at FROM service_order_status_history soh`
 
 	selectWorkSOHistory = `SELECT wsosh.work_id, wsosh.previous_status, wsosh.new_status, wsosh.created_at FROM work_service_order_status_history wsosh`
+
+	// averageStatusDurationQuery self-joins each status_history row to the row
+	// recording its own previous_status, so the average is the real elapsed
+	// time between consecutive transitions of the same service order.
+	averageStatusDurationQuery = `
+SELECT
+    h.new_status,
+    COALESCE(AVG(EXTRACT(EPOCH FROM (h.created_at - prev.created_at)) / 3600), 0) AS avg_hours
+FROM service_order_status_history h
+JOIN service_order_status_history prev
+    ON prev.service_order_id = h.service_order_id
+    AND prev.new_status = h.previous_status`
 )
+
+// getOneTimeTransaction wraps uowPkg.GetOneTimeTransaction as a package var
+// (same seam internal/app/db.go uses for sqlOpenFn) so tests can swap in a
+// sqlmock *sql.DB instead of the real connection.
+var getOneTimeTransaction = uowPkg.GetOneTimeTransaction
 
 type postgres struct{}
 
 func NewPostgres() interfaces.ServiceOrderHistoryRepository {
 	return &postgres{}
+}
+
+// NewMetricsRepository exposes the same postgres reader through the narrower
+// metrics-only interface, used by the Prometheus status-duration collector.
+func NewMetricsRepository() interfaces.ServiceOrderStatusDurationReader {
+	return &postgres{}
+}
+
+func (r *postgres) AverageDurationByStatusInHours(ctx context.Context) ([]domain.StatusDuration, error) {
+	db, err := getOneTimeTransaction(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query, args := dbPkg.QueryBuilder(averageStatusDurationQuery).
+		GroupBy("h.new_status").
+		OrderBy("h.new_status", dbPkg.ASC).
+		Build()
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var result []domain.StatusDuration
+	for rows.Next() {
+		var d domain.StatusDuration
+		if err = rows.Scan(&d.Status, &d.AverageHours); err != nil {
+			return nil, pgPkg.Error(ctx, err)
+		}
+		result = append(result, d)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, pgPkg.Error(ctx, err)
+	}
+	return result, nil
 }
 
 func (r *postgres) Search(ctx context.Context, params *domain.SearchParams) ([]domain.ServiceOrderHistoryItem, error) {
