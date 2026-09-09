@@ -113,16 +113,48 @@ flowchart LR
 ### Provisioned infrastructure (Terraform — AWS)
 
 > **This repository no longer contains the Terraform for AWS.** As part of
-> Tech Challenge Fase 3's 4-repository requirement, provisioning moved to two
-> sibling repos:
-> - [**auto-repair-shop-infra-k8s**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) — `bootstrap` (state bucket), `shared` (ECR, GitHub OIDC, IAM roles), `aws` (VPC, EKS), `addons` (ALB Controller, metrics-server, External Secrets).
+> Tech Challenge Fase 3's 4-repository requirement, provisioning moved to
+> three sibling repos:
+> - [**auto-repair-shop-infra-k8s**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) — `bootstrap` (state bucket), `shared` (ECR, GitHub OIDC, IAM roles), `aws` (VPC, EKS), `addons` (ALB Controller, metrics-server, External Secrets, **kube-prometheus-stack + Loki/Promtail — see [Observability](#observability) below**), `gateway` (AWS API Gateway — see [Authentication](#authentication) below).
 > - [**auto-repair-shop-infra-db**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) — RDS PostgreSQL + Secrets Manager, placed into the VPC provisioned by `infra-k8s` (read via `terraform_remote_state`).
+> - [**auto-repair-shop-lambda-auth**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth) — Function Serverless that issues JWTs for CPF-only customer login, fronted by `infra-k8s`'s API Gateway.
 >
 > This repo only builds and deploys the application **onto** infra those repos
 > already provisioned — see [Deploy the app](#deploy-the-app) below.
 
-The diagram below is still the accurate deployed topology — it is now just
-split across three repositories instead of one:
+### Authentication
+
+Two ways to get a token, same middleware, same secret:
+- **Staff / existing accounts**: `POST /v1/auth/login` (email/password) — this repo, unchanged.
+- **Customer, CPF-only**: `POST /auth/customer-login` on `infra-k8s`'s API
+  Gateway, proxied to `auto-repair-shop-lambda-auth`, which looks up the
+  customer by CPF and issues a JWT with the same claim shape and
+  `JWT_SECRET`. This app's `internal/app/middleware/auth.go` accepts either
+  token unmodified — no second auth mechanism exists on this side.
+
+Everything else (all routes below) is reached the same way regardless of
+which login path issued the token; the Gateway proxies every other route
+straight through to this app's own LoadBalancer.
+
+### Observability
+
+- **Metrics**: this app exposes `/metrics` (Prometheus format) via
+  `internal/pkg/metrics` + a `Metrics()` Gin middleware — API latency by
+  route, service-order counters, status-transition durations. A
+  `ServiceMonitor` (`k8s/manifests/components/observability`, only on the
+  `lab`/`stg`/`prd` overlays — see below) tells the Prometheus in
+  `infra-k8s` to scrape it. Grafana there ships a custom "Auto Repair Shop —
+  App Metrics" dashboard alongside the cluster's own CPU/memory dashboards.
+- **Logs**: structured JSON (Zap), every line correlated by a `request_id`
+  (`internal/app/middleware/logger.go`) — shipped by Promtail into Loki
+  (also in `infra-k8s`), queryable from the same Grafana.
+- **Alerting**: not implemented — a deliberate scope cut, see `infra-k8s`'s
+  ADR on the observability add-ons.
+
+The diagram below is still the accurate deployed topology for this slice
+(app + cluster + database) — it is now split across repositories instead of
+one; the API Gateway + Lambda in front of it are covered in
+[Authentication](#authentication) above.
 
 ```mermaid
 flowchart TB
@@ -488,8 +520,19 @@ only routes requests carrying that Host header. To actually reach it either:
 
 | Method | Path                           | Description          |
 |--------|--------------------------------|----------------------|
-| POST   | `/v1/auth/login`               | Get JWT              |
+| POST   | `/v1/auth/login`               | Get JWT (email/password) |
 | GET    | `/v1/service-order/:id/status` | Customer SO tracking |
+
+There is a **second way to get a JWT**, for customers only, by CPF instead of
+email/password: `POST /auth/customer-login` — not a route on this app, but on
+the **API Gateway** in front of it (provisioned by
+[auto-repair-shop-infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s)'s
+`gateway` state), which proxies that one path to a
+[Lambda](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth)
+and everything else straight through to this app. The token it issues has the
+same claim shape and signing secret as this app's own `/v1/auth/login`, so the
+auth middleware below accepts either one unmodified — see the [Two ways to
+authenticate](#two-ways-to-authenticate) note under Architecture.
 
 ### Users
 
