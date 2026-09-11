@@ -22,7 +22,10 @@ spec:
       # leaving the app running with zero seed data.
       initContainers:
         - name: wait-for-migrations
-          image: bitnami/kubectl:1.31
+          # bitnami/kubectl:1.31 was removed from Docker Hub (Bitnami deprecated
+          # legacy container tags), causing ImagePullBackOff on every app pod.
+          # alpine/k8s bundles kubectl and is confirmed pullable/maintained.
+          image: alpine/k8s:1.31.2
           command:
             - sh
             - -c
