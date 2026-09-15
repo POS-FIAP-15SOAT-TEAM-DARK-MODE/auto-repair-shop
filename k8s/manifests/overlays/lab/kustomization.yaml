@@ -10,6 +10,9 @@ namespace: auto-repair-shop
 resources:
   - ../../base
 
+components:
+  - ../../components/observability
+
 patches:
   - path: patch-service-loadbalancer.yaml
     target:

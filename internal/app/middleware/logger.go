@@ -20,7 +20,7 @@ func Logger() gin.HandlerFunc {
 		}
 
 		ctx := c.Request.Context()
-		ctx, reqId := logger.Request(ctx)
+		ctx, reqId := logger.Request(ctx, c.GetHeader("X-Request-Id"))
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Writer.Header().Set("X-Request-ID", reqId)

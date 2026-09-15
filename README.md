@@ -1,15 +1,20 @@
 # Auto Repair Shop
 
-Monolithic layered backend for an auto repair shop management system. Manages service orders (SO), customers, vehicles, parts/stock, and administrative operations.
+Backend for an auto repair shop management system, organized by domain following a clean/hexagonal architecture. Manages service orders (SO), customers, vehicles, parts/stock, and administrative operations.
 
 **Stack:** Go · Gin · PostgreSQL · JWT · Swagger
 
+> This is one of 4 repositories that make up the system (Tech Challenge Fase
+> 3). This repo holds the application; infrastructure lives in its own repos:
+> - [auto-repair-shop-infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) — Kubernetes cluster (EKS/VPC/add-ons)
+> - [auto-repair-shop-infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) — managed database (RDS)
+> - [auto-repair-shop-lambda-auth](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth) - JWT Generator (Lambda Function)
 ## Domain
 
 - **SO (Service Order)** — Service order, the central aggregate
 - **Customer** — Customer identified by CPF (individual) or CNPJ (company)
 - **Vehicle** — Vehicle (plate, brand, model, year), linked to a Customer
-- **Service** — Billable service (name, description, unit price)
+- **Work** — Billable service item (name, description, unit price), exposed under `/v1/works`
 - **Part/Supply** — Part or supply with stock quantity and unit price
 - **Budget** — Budget, auto-calculated from services and parts on a SO
 - **Stock** — Stock/inventory of Parts
@@ -46,20 +51,29 @@ Every status change is recorded as an immutable entry in `work_service_order_sta
 
 ## Project Structure
 
+Each business domain is a self-contained package under `internal/`, wired together
+by `internal/app`. Shared, domain-agnostic helpers live in `internal/pkg`.
+
 ```
 cmd/
-  service/          # Application entrypoint
+  service/              # Application entrypoint
 internal/
-  domain/           # Domain models (framework-free)
-  infra/
-    db/             # Database clients, uow, and seed
-    factory/        # Dependency wiring
-    handler/        # HTTP handlers
-    http/           # Handlers wrapper and middlewares
-    repository/     # Repository implementations
-    server/         # HTTP server bootstrap
-  routing/          # Route definitions
-  services/         # Business logic layer
+  app/                  # Application wiring & HTTP layer
+    bootstrap/          # Startup sequence
+    container/          # Handler & middleware containers
+    middleware/         # Auth, logger, recovery
+    routing/            # Route definitions
+    server.go, db.go, seed.go, ...
+  auth/                 # Domain package (auth, customer, supply, vehicle,
+  customer/             #   work, service_order, service_order_history)
+  supply/               #   Each contains:
+  vehicle/              #     domain/      — models & errors (framework-free)
+  work/                 #     interfaces/  — service/repo/controller ports + mocks
+  service_order/        #     adapters/    — request/response DTOs
+  service_order_history/#     repository/  — postgres + in-memory implementations
+  ...                   #     controller.go, service.go, di.go
+  integration/          # Integration test suite
+  pkg/                  # Shared utilities (db, uow, logger, web, auth, env, ...)
 ```
 
 ## Architecture
@@ -78,7 +92,7 @@ flowchart LR
 
     subgraph ns["Kubernetes namespace: auto-repair-shop"]
         app["Deployment<br/>auto-repair-shop (Go / Gin)<br/>probes on /ping"]
-        svc["Service<br/>NodePort local · ClusterIP+Ingress on AWS"]
+        svc["Service<br/>NodePort local · LoadBalancer lab · ClusterIP+Ingress stg/prd"]
         cm[["ConfigMap<br/>DB host/port, non-sensitive config"]]
         sec[["Secret<br/>POSTGRES_PASSWORD · JWT_SECRET"]]
         hpa["HPA<br/>1→5 · 70% CPU / 80% mem"]
@@ -98,14 +112,49 @@ flowchart LR
 
 ### Provisioned infrastructure (Terraform — AWS)
 
-`k8s/terraform/` describes the AWS side, split into four independent states:
+> **This repository no longer contains the Terraform for AWS.** As part of
+> Tech Challenge Fase 3's 4-repository requirement, provisioning moved to
+> three sibling repos:
+> - [**auto-repair-shop-infra-k8s**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) — `bootstrap` (state bucket), `shared` (ECR, GitHub OIDC, IAM roles), `aws` (VPC, EKS), `addons` (ALB Controller, metrics-server, External Secrets, **kube-prometheus-stack + Loki/Promtail — see [Observability](#observability) below**), `gateway` (AWS API Gateway — see [Authentication](#authentication) below).
+> - [**auto-repair-shop-infra-db**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) — RDS PostgreSQL + Secrets Manager, placed into the VPC provisioned by `infra-k8s` (read via `terraform_remote_state`).
+> - [**auto-repair-shop-lambda-auth**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth) — Function Serverless that issues JWTs for CPF-only customer login, fronted by `infra-k8s`'s API Gateway.
+>
+> This repo only builds and deploys the application **onto** infra those repos
+> already provisioned — see [Deploy the app](#deploy-the-app) below.
 
-| State | Provisions | Cadence |
-|---|---|---|
-| `bootstrap/` | S3 bucket for remote tfstate (versioned, encrypted, native locking) | run once |
-| `shared/` | ECR · GitHub OIDC provider · IAM roles (`deploy-stg/prd`, `terraform`) | run once |
-| `aws/` | VPC · EKS · RDS · Secrets Manager (per Terraform workspace `stg`/`prd`) | per environment |
-| `addons/` | Helm add-ons: ALB Controller · metrics-server · External Secrets (+ IRSA) | per environment |
+### Authentication
+
+Two ways to get a token, same middleware, same secret:
+- **Staff / existing accounts**: `POST /v1/auth/login` (email/password) — this repo, unchanged.
+- **Customer, CPF-only**: `POST /auth/customer-login` on `infra-k8s`'s API
+  Gateway, proxied to `auto-repair-shop-lambda-auth`, which looks up the
+  customer by CPF and issues a JWT with the same claim shape and
+  `JWT_SECRET`. This app's `internal/app/middleware/auth.go` accepts either
+  token unmodified — no second auth mechanism exists on this side.
+
+Everything else (all routes below) is reached the same way regardless of
+which login path issued the token; the Gateway proxies every other route
+straight through to this app's own LoadBalancer.
+
+### Observability
+
+- **Metrics**: this app exposes `/metrics` (Prometheus format) via
+  `internal/pkg/metrics` + a `Metrics()` Gin middleware — API latency by
+  route, service-order counters, status-transition durations. A
+  `ServiceMonitor` (`k8s/manifests/components/observability`, only on the
+  `lab`/`stg`/`prd` overlays — see below) tells the Prometheus in
+  `infra-k8s` to scrape it. Grafana there ships a custom "Auto Repair Shop —
+  App Metrics" dashboard alongside the cluster's own CPU/memory dashboards.
+- **Logs**: structured JSON (Zap), every line correlated by a `request_id`
+  (`internal/app/middleware/logger.go`) — shipped by Promtail into Loki
+  (also in `infra-k8s`), queryable from the same Grafana.
+- **Alerting**: not implemented — a deliberate scope cut, see `infra-k8s`'s
+  ADR on the observability add-ons.
+
+The diagram below is still the accurate deployed topology for this slice
+(app + cluster + database) — it is now split across repositories instead of
+one; the API Gateway + Lambda in front of it are covered in
+[Authentication](#authentication) above.
 
 ```mermaid
 flowchart TB
@@ -145,13 +194,15 @@ cloud dependency.
 
 ### Deploy flow (GitHub Actions)
 
+This repo's CI/CD only builds and deploys the app image — Terraform
+plan/apply for the cluster and the database run in their own workflows, in
+the [infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s)
+and [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db)
+repos.
+
 ```mermaid
 flowchart TB
     pr["Pull Request"] --> ci["ci.yml<br/>lint · build · unit · integration · SonarCloud"]
-    prtf["PR on k8s/terraform/**"] --> infraval["infra.yml<br/>terraform fmt + validate (no creds)"]
-
-    disp["workflow_dispatch (manual)"] --> boot["infra-bootstrap.yml<br/>one-time seed (static keys):<br/>state bucket + shared (OIDC/IAM/ECR)"]
-    disp --> infrarun["infra.yml<br/>terraform plan/apply per layer+workspace<br/>via OIDC"]
 
     dev["push develop"] --> docker
     main["push main"] --> docker
@@ -194,7 +245,7 @@ There are three ways to run this project — pick the one that fits what you wan
 |---|---|---|---|---|
 | 1 | **Local (Docker Compose)** | Docker only, **no Kubernetes/infra** | Run the app + DB fast, for development | [Setup with Docker](#2-setup-with-docker) |
 | 2 | **Kubernetes on Kind** | Docker only (toolbox) | Exercise the *full* k8s workload locally (Deployment, HPA, migrate Job, Service) — a faithful stand-in for AWS | [Full environment on Kind](#bring-up-the-full-environment-locally-docker-only) |
-| 3 | **AWS with Terraform** | GitHub repo + AWS account | Provision the cloud infra (VPC/EKS/RDS) and deploy for real | [AWS (stg / prd)](#aws-stg--prd--driven-from-github) |
+| 3 | **AWS (real deploy)** | Cloud infra already provisioned by [infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) + [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) | Deploy the app for real, onto an existing EKS cluster + RDS | [AWS (stg / prd)](#aws-stg--prd--driven-from-github) |
 
 > Paths 2 and 3 deploy the **same** Kustomize manifests — Kind locally reproduces the
 > AWS topology, so you can validate the entire Kubernetes behavior without any cloud cost.
@@ -291,43 +342,37 @@ Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status
 
 ## Infrastructure (`k8s/`)
 
-Kubernetes and Terraform configuration lives in `k8s/` (config files only — the
-tooling is driven from this root `Makefile` via `make k8s-*`).
+`k8s/` now holds only the app's **workload** — the Kubernetes cluster and the
+database are provisioned by the sibling
+[infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s)
+and [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db)
+repos (Terraform config lives there, not here).
 
-- **`k8s/terraform/`** — infrastructure, split into four states:
-  - `bootstrap/` — the S3 bucket for remote state (run once).
-  - `shared/` — ECR + GitHub OIDC provider + deploy/terraform IAM roles (run once).
-  - `aws/` — VPC, EKS, RDS per environment, selected by Terraform **workspace**
-    (`stg` / `prd`). Remote state (S3 + native locking).
-  - `addons/` — per-env cluster add-ons via Helm: AWS Load Balancer Controller,
-    metrics-server, External Secrets Operator (+ IRSA).
-- **`k8s/manifests/`** — the app's Kubernetes workload only (Deployment, Service,
+- **`k8s/manifests/`** — the app's Kubernetes workload (Deployment, Service,
   ConfigMap, Secret, HPA, migration Job) as Kustomize overlays.
-- **`k8s/kind/`** — local Kind cluster config.
-- **`k8s/toolbox/`** — Docker-only path (toolbox image + runner).
+- **`k8s/kind/`** — local Kind cluster config, for the Docker-only full-stack
+  local environment below (never touches AWS).
+- **`k8s/toolbox/`** — Docker-only runner (`kind`/`kubectl` in a container) that
+  builds the app image and deploys it onto the local Kind cluster.
 
 ```
 k8s/
-├── terraform/
-│   ├── bootstrap/   # S3 state bucket (run once)
-│   ├── shared/      # ECR + GitHub OIDC + IAM roles (run once)
-│   ├── aws/         # VPC, EKS, RDS per env (workspaces: stg | prd)
-│   └── addons/      # ALB controller + metrics-server + External Secrets (per env)
 ├── manifests/
 │   ├── base/        # Deployment, Service, ConfigMap, HPA, migrate Job
 │   └── overlays/
 │       ├── local/   # + static Secret + in-cluster Postgres, NodePort, dev values
+│       ├── lab/     # AWS Academy Learner Lab: LabRole, public ELB, static Secret
 │       ├── stg/     # RDS host, ECR image, ALB Ingress, External Secrets, HPA 2-6
 │       └── prd/     # same as stg with prod values (HPA 3-10)
 ├── kind/            # local Kind cluster config
-└── toolbox/         # Docker-only runner (kind/kubectl/terraform in a container)
+└── toolbox/         # Docker-only runner (kind/kubectl in a container)
 ```
 
 ### Bring up the full environment locally (Docker-only)
 
-**The only requirement on your machine is Docker.** `kind`, `kubectl`,
-`terraform` and `aws` run inside a toolbox container that drives the host Docker
-daemon (Docker-outside-of-Docker) — nothing else is installed. Three commands:
+**The only requirement on your machine is Docker.** `kind` and `kubectl` run
+inside a toolbox container that drives the host Docker daemon
+(Docker-outside-of-Docker) — nothing else is installed. Three commands:
 
 ```bash
 make k8s-up      # Kind cluster -> build+load image -> deploy -> smoke -> metrics-server (HPA)
@@ -341,7 +386,7 @@ After `make k8s-up` the app is reachable from the host:
 curl http://localhost:8080/ping   # -> {"message":"pong"}
 ```
 
-Anything else is plain `kubectl`/`kind`/`terraform`/`aws` from the toolbox shell:
+Anything else is plain `kubectl`/`kind` from the toolbox shell:
 
 ```bash
 make k8s-shell
@@ -359,131 +404,51 @@ no AWS dependency at all.
 
 ### AWS (stg / prd) — driven from GitHub
 
-No AWS tooling is needed on your machine; all infra is applied by GitHub Actions.
+No AWS tooling is needed on your machine; the app is deployed by GitHub
+Actions in **this** repo, but it needs an already-provisioned cluster and
+database. Provisioning (bootstrap, VPC/EKS, add-ons, RDS) lives entirely in
+the two infra repos — follow their READMEs first:
 
-The state bucket name is derived automatically from your AWS account id
-(`auto-repair-shop-tfstate-<account_id>`), so it never collides globally and
-adapts to ephemeral lab accounts — you never pick a name by hand.
+1. [**auto-repair-shop-infra-k8s**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s#readme) —
+   one-time bootstrap (state bucket, GitHub OIDC, ECR), then `aws` (VPC+EKS)
+   and `addons` (ALB Controller, metrics-server, External Secrets) per
+   environment (`stg`/`prd`).
+2. [**auto-repair-shop-infra-db**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db#readme) —
+   RDS PostgreSQL, applied after step 1 (it reads the VPC from infra-k8s's
+   state).
 
-**One-time bootstrap** (the only step that uses static AWS keys):
-1. Set `github_repo` in `k8s/terraform/shared/variables.tf` to your `owner/repo`.
-2. Add repo secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (an admin user).
-3. Run the **Infra bootstrap (one-time)** workflow → creates the state bucket,
-   the GitHub OIDC provider, the IAM roles and ECR, and prints the outputs.
-4. Remove the two AWS key secrets — everything after this uses OIDC.
-
-**GitHub config** (Settings → Environments):
-- `infra` → variable `AWS_TERRAFORM_ROLE_ARN` = shared output `terraform_role_arn`
-  (add required reviewers to gate infra applies).
-- `STG` and `PRD` → variables:
+**GitHub config in *this* repo** (Settings → Environments `STG` and `PRD`):
 
 | Variable | Source |
 |---|---|
 | `AWS_REGION` | `us-east-1` |
-| `AWS_DEPLOY_ROLE_ARN` | shared output `deploy_role_arns` (STG / PRD) |
-| `EKS_CLUSTER_NAME` | aws output `cluster_name` (per workspace) |
-| `RDS_HOST` | aws output `db_host` (per workspace) |
+| `AWS_DEPLOY_ROLE_ARN` | infra-k8s `shared` output `deploy_role_arns` (STG / PRD) |
+| `EKS_CLUSTER_NAME` | infra-k8s `aws` output `cluster_name` (per workspace) |
+| `RDS_HOST` | infra-db output `db_host` (per workspace) |
 
-**Provision the clusters** — run the **Infra (Terraform)** workflow with
-`action=apply` for each: `aws` stg, `aws` prd, `addons` stg, `addons` prd. Copy
-the printed `cluster_name` / `db_host` into the STG/PRD variables above.
+### Deploy the app
 
-**Deploy the app** — push to `develop` (→ STG) or `main` (→ PRD): the Docker
-workflow builds, pushes to ECR and applies the matching overlay.
-
-PRs touching `k8s/terraform/**` get an automatic `fmt` + `validate` (no creds).
-Prefer running infra by hand? `make k8s-shell` has terraform/kubectl/aws.
+Push to `develop` (→ STG) or `main` (→ PRD): the Docker workflow builds,
+pushes to ECR and applies the matching Kustomize overlay onto the cluster
+provisioned by the infra repos.
 
 #### Restricted accounts (AWS Academy Learner Lab)
 
-Learner Lab accounts forbid creating IAM roles / OIDC providers, so the stack
-runs in a degraded mode. **The only thing you configure is the three AWS
-credential secrets** — everything else is detected at runtime:
-
-- `AWS_AUTH_MODE` — `static` when `AWS_ACCESS_KEY_ID` is set, else `oidc`.
-- `MANAGE_IAM` / `EXECUTION_ROLE_ARN` — from `aws sts get-caller-identity`: a
-  `voclabs`/`LabRole` caller ⇒ `manage_iam=false` and
-  `execution_role_arn=arn:aws:iam::<account_id>:role/LabRole`.
-
-Each of these is still honoured as an explicit override if you set the matching
-repo variable (`AWS_AUTH_MODE`, `MANAGE_IAM`, `EXECUTION_ROLE_ARN`).
+On a Learner Lab account, the *provisioning* side (IAM/OIDC skipped, `LabRole`
+reused, no ALB Controller/External Secrets) is handled entirely in the two
+infra repos — see their READMEs. On the **deploy** side (this repo),
+`docker.yml` auto-detects lab mode from `aws sts get-caller-identity` (a
+`voclabs`/`LabRole` caller) and, when active:
+- applies the `lab` overlay (public ELB, `kubectl port-forward`-friendly)
+  instead of the ALB `Ingress`;
+- creates the app `Secret` directly from Secrets Manager (no External Secrets
+  Operator in lab mode) instead of relying on the synced one.
 
 Add secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN`
-(the lab's temporary credentials — refresh them each session, they expire). In
-lab mode the stack reuses `LabRole` for the EKS cluster and nodes and creates
-**no** OIDC provider, deploy/terraform roles or IRSA — so the ALB Controller and
-External Secrets are skipped. Expose the app with `kubectl port-forward` (see
-below) instead of an ALB Ingress, and provide
-the app secret as a plain Kubernetes `Secret`. Caveat: lab accounts are
-ephemeral — resources and the account id may reset between sessions.
-
-#### Learner Lab — deploy from scratch (step by step)
-
-Everything can be driven from the terminal with the `gh` CLI; the equivalent
-GitHub UI action is listed under each step. Run the workflows from the branch
-that holds this code (examples use `develop`).
-
-```bash
-REPO=POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop
-REF=develop
-```
-
-**1. Publish the AWS credentials** (from *AWS Details → AWS CLI* in the lab; they
-expire each session, so refresh them right before a long step).
-
-```bash
-gh secret set AWS_ACCESS_KEY_ID     --repo "$REPO"   # paste when prompted
-gh secret set AWS_SECRET_ACCESS_KEY --repo "$REPO"
-gh secret set AWS_SESSION_TOKEN     --repo "$REPO"
-```
-
-> UI: **Settings → Secrets and variables → Actions → New repository secret**, one
-> per value. Nothing else is configured — mode is auto-detected.
-
-**2. Bootstrap** — creates the state bucket (named after your account id) and ECR.
-
-```bash
-gh workflow run infra-bootstrap.yml --repo "$REPO" --ref "$REF"
-gh run watch "$(gh run list --repo "$REPO" --workflow=infra-bootstrap.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
-```
-
-> UI: **Actions → Infra bootstrap (one-time) → Run workflow →** pick the branch.
-
-**3. Provision the infra** — VPC, EKS (via `LabRole`), node group, RDS; the
-`addons` (metrics-server) apply is chained automatically. Takes ~20 min, so
-refresh the secrets first.
-
-```bash
-gh workflow run infra.yml --repo "$REPO" --ref "$REF" \
-  -f layer=aws -f environment=stg -f action=apply
-gh run watch "$(gh run list --repo "$REPO" --workflow=infra.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
-```
-
-> UI: **Actions → Infra (Terraform) → Run workflow →** set `layer=aws`,
-> `environment=stg`, `action=apply`.
-
-**4. Build & deploy the app** — builds/pushes the image, creates the app Secret
-from Secrets Manager and applies the `lab` overlay (public ELB).
-
-```bash
-gh workflow run docker.yml --repo "$REPO" --ref "$REF"
-gh run watch "$(gh run list --repo "$REPO" --workflow=docker.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
-```
-
-> UI: **Actions → Docker → Run workflow →** pick the branch (or push to
-> `develop`/`main`).
-
-**5. Get the public URL** — printed in the deploy run's **Summary**
-(`API`/`Health`/`Swagger` links). From the terminal instead:
-
-```bash
-gh run view "$(gh run list --repo "$REPO" --workflow=docker.yml -L1 --json databaseId -q '.[0].databaseId')" --repo "$REPO"
-# or, straight from the cluster:
-aws eks update-kubeconfig --region us-east-1 --name auto-repair-shop-stg-eks
-kubectl -n auto-repair-shop get svc auto-repair-shop \
-  -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'; echo
-curl http://<elb-dns>/ping   # {"message":"pong"}
-```
+to **this** repo too (the lab's temporary credentials — refresh them each
+session, they expire) so `docker.yml` can authenticate. `AWS_AUTH_MODE` /
+`MANAGE_IAM` / `EXECUTION_ROLE_ARN` are still honoured as explicit repo
+variable overrides if you need them.
 
 **Recovery after a lab restart** — if the lab stops/starts, nodes cycle and
 CoreDNS can be stranded on a dead node, breaking DNS. Reschedule it and restart
@@ -494,18 +459,16 @@ kubectl -n kube-system rollout restart deploy/coredns
 kubectl -n auto-repair-shop rollout restart deploy/auto-repair-shop
 ```
 
-**Tear down** — EKS/RDS/ELB/NAT bill while up. Stopping the lab wipes everything;
-to destroy explicitly, delete the app's `LoadBalancer` Service first (its ELB is
-not managed by Terraform and would block the VPC deletion), then destroy:
+**Tear down** the cluster/database — see the *Tear down* sections in the
+[infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s#readme)
+and [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db#readme)
+READMEs — delete the app's `LoadBalancer`/`Ingress` Service first from this
+side if one was created, so it doesn't block VPC deletion:
 
 ```bash
 aws eks update-kubeconfig --region us-east-1 --name auto-repair-shop-stg-eks
 kubectl -n auto-repair-shop delete svc auto-repair-shop --ignore-not-found
-gh workflow run infra.yml --repo "$REPO" --ref "$REF" \
-  -f layer=aws -f environment=stg -f action=destroy
 ```
-
-> UI: **Actions → Infra (Terraform) → Run workflow →** set `action=destroy`.
 
 ### Accessing the app on AWS
 
@@ -530,10 +493,9 @@ only routes requests carrying that Host header. To actually reach it either:
 > **Notes:** the static Secret in `k8s/manifests/overlays/local/secret.yaml` holds
 > dev-only values and is used only by Kind. On AWS the `stg`/`prd` overlays get
 > `POSTGRES_PASSWORD` / `JWT_SECRET` from Secrets Manager via the External Secrets
-> Operator (Terraform generates the values and mirrors them into the secret) — real
-> values are never committed. Terraform state is stored remotely in the S3 bucket
-> created by the `bootstrap` stage, with **native S3 locking** (no DynamoDB). The
-> `.github/workflows/docker.yml` `publish`/`deploy` jobs are fully implemented
+> Operator — the values are generated and mirrored into Secrets Manager by
+> `auto-repair-shop-infra-db`'s Terraform, real values are never committed here.
+> The `.github/workflows/docker.yml` `publish`/`deploy` jobs are fully implemented
 > (build → push to ECR → `kubectl apply -k` → image rollout).
 
 ## Environment Variables
@@ -558,8 +520,19 @@ only routes requests carrying that Host header. To actually reach it either:
 
 | Method | Path                           | Description          |
 |--------|--------------------------------|----------------------|
-| POST   | `/v1/auth/login`               | Get JWT              |
+| POST   | `/v1/auth/login`               | Get JWT (email/password) |
 | GET    | `/v1/service-order/:id/status` | Customer SO tracking |
+
+There is a **second way to get a JWT**, for customers only, by CPF instead of
+email/password: `POST /auth/customer-login` — not a route on this app, but on
+the **API Gateway** in front of it (provisioned by
+[auto-repair-shop-infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s)'s
+`gateway` state), which proxies that one path to a
+[Lambda](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth)
+and everything else straight through to this app. The token it issues has the
+same claim shape and signing secret as this app's own `/v1/auth/login`, so the
+auth middleware below accepts either one unmodified — see the [Two ways to
+authenticate](#two-ways-to-authenticate) note under Architecture.
 
 ### Users
 
@@ -592,10 +565,11 @@ only routes requests carrying that Host header. To actually reach it either:
 | Method | Path                         | Roles                      |
 |--------|------------------------------|----------------------------|
 | GET    | `/v1/vehicles`               | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/vehicles/:customerId`   | ADMIN, ATTENDANT, MECHANIC |
 | POST   | `/v1/vehicles`               | ADMIN, ATTENDANT           |
 | PUT    | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
 | DELETE | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
+
+`GET /v1/vehicles` accepts optional `customerId`, `plate`, `page` and `pageSize` query filters.
 
 ### Supplies
 

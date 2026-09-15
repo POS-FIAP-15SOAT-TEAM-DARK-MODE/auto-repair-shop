@@ -188,6 +188,17 @@ jobs:
               echo "- Health: http://$HOST/ping"
               echo "- Swagger: http://$HOST/swagger/index.html"
             } >> "$GITHUB_STEP_SUMMARY"
+
+            # Handoff point for auto-repair-shop-infra-k8s's gateway state:
+            # this ELB is Kubernetes-created, not Terraform-managed, so
+            # there's no terraform_remote_state output for it. SSM is the
+            # stable place the gateway's data source reads it from.
+            aws ssm put-parameter \
+              --name "/auto-repair-shop/$ENV_NAME/app-backend-host" \
+              --type String \
+              --value "$HOST" \
+              --overwrite \
+              --region "$DEPLOY_REGION"
           else
             echo "LoadBalancer hostname not ready yet — rerun or check the service." >> "$GITHUB_STEP_SUMMARY"
           fi

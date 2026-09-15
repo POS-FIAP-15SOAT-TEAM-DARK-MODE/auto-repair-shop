@@ -8,6 +8,9 @@ resources:
   - secrets.yaml
   - ingress.yaml
 
+components:
+  - ../../components/observability
+
 images:
   - name: auto-repair-shop
     newName: 000000000000.dkr.ecr.us-east-1.amazonaws.com/auto-repair-shop

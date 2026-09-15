@@ -27,6 +27,23 @@ func TestLoggerMiddleware(t *testing.T) {
 	assert.NotEmpty(t, rec.Header().Get("X-Request-ID"))
 }
 
+func TestLoggerMiddleware_ReusesIncomingRequestID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(middleware.Logger())
+	router.GET("/test", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-Request-Id", "upstream-request-id-123")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "upstream-request-id-123", rec.Header().Get("X-Request-ID"))
+}
+
 func TestLoggerMiddleware_Swagger(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
