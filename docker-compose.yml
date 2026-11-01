@@ -247,6 +247,8 @@ services:
       DB_PORT: "5432"
       DB_USER: lambda_auth_ro
       DB_NAME: customer
+      # The local Postgres serves no TLS; the lambda defaults to sslmode=require (AWS).
+      DB_SSLMODE: disable
       APP_SECRET_ID: auto-repair-shop-local/lambda-auth
       JWT_EXPIRES_IN: 24h
     depends_on:

@@ -6,7 +6,7 @@ Format: `<type>(<scope>): <short description>`, with a body and footers when the
 
 Types: `feat` · `fix` · `refactor` · `test` · `chore` · `docs` · `perf` · `style` · `revert` · `ci`
 
-Scopes: `gateway` · `routing` · `proxy` · `observability` · `k8s` · `ci` · `docs`
+Scopes: `gateway` · `routing` · `proxy` · `observability` · `k8s` · `ci` · `docs` · `local` · `e2e`
 
 Rules:
 - Subject at most 72 characters, lowercase, imperative mood, no trailing period.
