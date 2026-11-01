@@ -1,28 +1,19 @@
 # Observability
 
-## Logger
-Structured JSON via Zap. Initialized in `internal/pkg/logger/logger.go` with centralized sensitive-field redaction (Issue #223).
+## Logs
 
-## Log Levels
-| Level | Use |
-|---|---|
-| `INFO` | Business events (service order created, status changed) |
-| `WARN` | Business rule violations (invalid transition attempt, out-of-stock) |
-| `ERROR` | Unexpected failures (DB errors, unhandled panics) |
+- One JSON line per request, written when the response completes: `method`, `path`, `ip`, `upstream`, `status`, `duration_ms`, plus `request_id` on the logger.
+- Levels: `INFO` for requests and readiness, `WARN` for an upstream that failed `/ready`, `ERROR` for proxy failures and recovered panics. `LOG_LEVEL=PANIC` silences tests.
+- Proxy failures log the cause with `upstream` and `status`; the client gets the fixed message.
+- Never log the query string or request bodies (see `security.md`).
 
-## Canonical Event Names (Issue #236)
-Reuse these — do not invent new names for the same operations:
-- `service_order.created`
-- `service_order.status_transition` — fields: `service_order_id`, `from_status`, `to_status`
-- `service_order.validation_failed`
-- `service_order.status_notification_sent` — customer status notification (e-mail stand-in); `recipient` is masked
-- `service_order.status_notification_failed` — notifier delivery error (best-effort; never fails the transition)
+## Metrics
 
-## Sensitive Field Redaction
-The logger automatically redacts keys matching: CPF, CNPJ, password, token, dsn, database_url.
-- Prefer explicit fields (`zap.String("customer_id", id)`) over `zap.Any("customer", obj)`.
-- Never add logging that passes raw domain objects or request bodies with PII.
+- `http_request_duration_seconds` histogram with labels `method`, `route`, `upstream`, `status`.
+- `route` is the route template from the table (`/v1/works*`), `/docs/*path` for documentation, or `unmatched`. Never the raw path: raw paths would explode the cardinality.
+- `upstream` is the target name, `gateway` for the gateway's own endpoints, or `none` when nothing was proxied.
 
-## Read Operations
-- Keep success logs minimal (debug or omit).
-- Always log errors from DB calls at `ERROR` level with operation context.
+## Health
+
+- `/ping` is liveness and readiness of the gateway process; the Deployment probes use it.
+- `/ready` checks the upstreams and is not used as a Kubernetes probe, so one slow service does not restart the gateway.

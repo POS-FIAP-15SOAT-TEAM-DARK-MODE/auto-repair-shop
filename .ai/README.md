@@ -8,18 +8,16 @@ Single source of truth for all AI agent rules in this project.
 ```
 .ai/
   rules/               # topic-scoped rule files — open on demand
-    architecture.md        layered arch, UoW, DI root, repository context pattern
-    domain.md              ubiquitous language, status lifecycle, RBAC, business rules
-    go-conventions.md      Go idioms, decimal, UUID/ULID, no framework leakage, Mockery
-    database.md            PostgreSQL conventions, migrations, indexes, FK
-    api.md                 endpoint reference, error format, Swagger
-    testing.md             coverage thresholds, unit/integration patterns
-    security.md            JWT, RBAC enforcement, bcrypt, PII protection
-    observability.md       Zap, log levels, event names, redaction
+    architecture.md        packages, allowed imports, what the gateway is not
+    routing.md             routing table semantics, precedence, invariants
+    api.md                 gateway endpoints, error envelope, adding an endpoint
+    go-conventions.md      Go idioms, dependencies
+    security.md            credentials, logs, blocked paths, error leakage
+    observability.md       JSON logs, metrics labels, health endpoints
+    testing.md             coverage gates, httptest rules, routing test rows
     workflow.md            Conventional Commits, pre-commit hooks, dev commands
   commands/            # reusable playbooks (also Claude Code slash commands via symlinks)
-    new-domain.md          scaffold a new domain end-to-end
-    add-migration.md       create and apply a versioned migration
+    add-route.md           expose a new service endpoint through the gateway
   hooks/               # pre-commit hook scripts
     check-ai-rules.sh      enforces .ai/ as the only rule source
 ```
@@ -28,26 +26,23 @@ Single source of truth for all AI agent rules in this project.
 
 | Topic | File | Key contents |
 |---|---|---|
-| Architecture | `rules/architecture.md` | Layer diagram, layer contracts, DI root, UoW, QueryBuilder |
-| Domain & Business Rules | `rules/domain.md` | Ubiquitous language, status lifecycle, RBAC, budget, stock |
-| Go Conventions | `rules/go-conventions.md` | Tech stack, UUID/ULID, decimal, no framework leakage, Mockery |
-| Database | `rules/database.md` | NUMERIC(10,2), migrations, indexes, FK constraints |
-| API | `rules/api.md` | Endpoints with roles, error format, Swagger |
-| Testing | `rules/testing.md` | 90%/80% coverage, unit vs integration patterns |
-| Security | `rules/security.md` | JWT, RBAC, bcrypt, PII rules |
-| Observability | `rules/observability.md` | Zap, log levels, event names, redaction |
+| Architecture | `rules/architecture.md` | Package responsibilities, import rules |
+| Routing | `rules/routing.md` | Table order, patterns, blocked and optional routes |
+| API | `rules/api.md` | Own endpoints, error envelope, status messages |
+| Go Conventions | `rules/go-conventions.md` | Stack, idioms, dependency policy |
+| Security | `rules/security.md` | Credential forwarding, log redaction, error leakage |
+| Observability | `rules/observability.md` | Log fields, metric labels, probes |
+| Testing | `rules/testing.md` | Coverage gates, httptest, routing rows |
 | Workflow | `rules/workflow.md` | Conventional Commits, pre-commit, dev commands |
 
 ## Task Routing — Required Reading by Task Type
 
 | Task type | Files to read |
 |---|---|
-| New feature or domain change | `architecture.md` · `domain.md` · `go-conventions.md` |
-| Database schema or migration | `database.md` · `go-conventions.md` |
-| API endpoint | `api.md` · `architecture.md` · `security.md` |
-| Auth, RBAC, or security | `security.md` · `domain.md` |
+| New route or routing change | `routing.md` · `architecture.md` · `testing.md` |
+| New gateway endpoint | `api.md` · `architecture.md` · `security.md` |
+| Proxy or timeout behaviour | `architecture.md` · `security.md` · `observability.md` |
 | Tests | `testing.md` · `architecture.md` |
 | Logging or observability | `observability.md` · `security.md` |
 | Git workflow | `workflow.md` |
-| Scaffold new domain (command) | `commands/new-domain.md` |
-| Add migration (command) | `commands/add-migration.md` |
+| Expose a service endpoint (command) | `commands/add-route.md` |
