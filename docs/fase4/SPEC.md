@@ -161,7 +161,8 @@ Todos os serviços validam o JWT (HS256, mesmo `JWT_SECRET`) com o middleware at
 | 2 | **F1 + F2 + F3 + F7 + F8** | Catalog, Customer & Identity, Billing (com o pacote `messaging`), `infra-db` e `infra-k8s` (mensageria, bancos, ECRs) | onda 1 |
 | 3 | **F4 + F5 + F6** (+ F1b/F2b) | Execution, History, Service Order (copiam o `messaging` do Billing); F1b/F2b ampliam os contratos internos de Catalog e Customer | onda 2 |
 | 4 | **F9 + F10** | lambda apontando para o database `customer`; gateway, ecossistema local e e2e | onda 3 (F9 também usa F2 e F7, já prontos) |
-| 5 | **F11** | deploy em STG, README, PDF, vídeo | onda 4 |
+| 5 | **FA** | Ajustes e validação local: endurecimento de erros 5xx, validação ponta a ponta com Docker, backlog das ondas 2–4 | onda 4 |
+| 6 | **F11** | deploy em STG, README, PDF, vídeo (grava o sistema já validado pela FA) | onda 5 |
 
 Regras de convivência dentro de uma onda:
 - As fases só se tocam pelos **contratos do §3**; nomes de tópicos, filas, databases e tabela DynamoDB devem ser exatamente os do §3.4 e §4/F7, porque existem em três lugares (Terraform da F8, `init-aws.sh` de cada serviço e do ecossistema).
@@ -267,6 +268,20 @@ Regras de convivência dentro de uma onda:
 - **Ecossistema local (este repo):** `scripts/clone-services.sh` clona os 6 repos em `services/` (gitignored); `docker-compose.yml` sobe **um** MiniStack (`local/init-aws.sh` cria *todos* os tópicos/filas/tabela com os nomes do Terraform), **um** Postgres (`local/postgres-init/` cria os 5 databases + usuários + `lambda_auth_ro`), os 6 serviços (`build: services/<svc>`), a `lambda-auth` (Lambda Runtime Interface Emulator, rota `/auth/customer-login`) e o gateway em `:8080`. Alvos: `make clone`, `make up-all`, `make down-all`, `make seed`, `make e2e`.
 - **e2e/BDD (godog)** rodando contra o ecossistema (job de CI do repo): (1) caminho feliz até `COMPLETED`; (2) pagamento recusado → compensação → `REJECTED` (`reason=PAYMENT_REJECTED`); (3) execução falha → estorno + liberação de estoque → `CANCELLED`; (4) login de cliente por CPF via lambda → `accept` com esse JWT; (5) mensagem duplicada não duplica efeito; (6) cliente rejeita o orçamento → `REJECTED` (`reason=BUDGET_REJECTED`) e estoque liberado.
 - **CI:** baseline do §4 (sem integração com Postgres) + job `e2e`; cobertura ≥ 80% do gateway.
+
+### FA — Ajustes e validação local (última onda de implementação)
+Objetivo: fechar pendências acumuladas e **provar que o sistema inteiro funciona** antes de gravar o vídeo e montar o PDF (F11).
+
+| # | Tarefa | Detalhe / aceite |
+|---|---|---|
+| A1 | **Endurecer erros 5xx** | `internal/pkg/web/errors.go` (copiado do monólito) devolve a mensagem da causa raiz em 500/502 e em erros de infra não mapeados (pode vazar texto do driver Postgres). Trocar por mensagem genérica (`internal server error` / `upstream unavailable`) e registrar o erro completo no log com `request_id`. Aplicar nos **6 serviços** e no **gateway**; teste unitário por serviço garantindo que o corpo 5xx não contém a causa. Mapeamentos 4xx permanecem. |
+| A2 | **Validação local ponta a ponta** | `scripts/validate-local.sh` + `make validate` no repo `auto-repair-shop`: sobe o ecossistema (`make up-all`), espera todos os `/ping`, roda a suíte e2e/BDD e imprime um checklist PASS/FAIL: (1) login de staff e de cliente via lambda por CPF; (2) OS completa até `DELIVERED` com `PAYMENT_MODE=auto-approve`; (3) pagamento recusado (`auto-reject`) ⇒ `REJECTED` e estoque devolvido; (4) falha de execução ⇒ `CANCELLED` e estorno; (5) `GET /history` e relatório de tempo médio; (6) mensagem duplicada não duplica efeito; (7) `/metrics` de cada serviço; (8) rotas `/internal/*` bloqueadas pelo gateway. **Exige daemon Docker** (a máquina de desenvolvimento do agente não tem): roda na CI do repo (job `e2e`) e na máquina do usuário. Aceite: `make validate` termina com 0 falhas. |
+| A3 | **Checagem de exclusão de cliente/veículo** | Customer chama `GET /internal/service-orders/exists` antes de `DELETE` (`409` se houver OS); remove os `TODO(F6)`; variável `SERVICE_ORDER_URL` no Customer; teste com `httptest`. |
+| A4 | **Observabilidade da saga** | Métricas `saga_started/completed/compensated_total`, `saga_step_duration_seconds`, `outbox_pending`, `dlq_messages` nos serviços aplicáveis; `ServiceMonitor` em cada serviço; dashboard Grafana "Saga" em `infra-k8s/terraform/addons/dashboards/`. Aceite: um `saga_id` rastreável no Loki e métricas visíveis no Grafana (insumo do vídeo). |
+| A5 | **Verificações adiadas por falta de Docker/AWS** | `docker compose up` isolado de cada serviço (checklist por serviço); `bootstrap.sh` contra `postgres:15-alpine` real; `terraform plan` de `shared`/`messaging`/`aws` (ler se o node group é *replace*); login do admin; teste "golden" do `GET /history` contra a saída real do monólito (`monolith-v1`). Resultado de cada item registrado no README do repo correspondente. |
+| A6 | **Proteção de branch completa** | Adicionar os status checks obrigatórios (`pre-commit`, `build`, `unit-tests`, `integration-tests`, `sonarqube`, `coverage`) a `main` e `develop` de todos os repos de serviço (S7), agora que a CI já rodou; requer secrets/Sonar configurados. |
+| A7 | **Limpeza e entregáveis por serviço** | Auditar `.ai/rules/*`, README (evidência de cobertura), `docs/swagger.yaml` (ou collection Postman) e ADRs de cada serviço; remover `internal/pkg/{db,uow}` não usados; `go mod tidy`; remover código morto. |
+Ordem sugerida: A1 e A3 e A4 em paralelo (repos diferentes), depois A2 (depende de A1/A3/A4 para validar o estado final), por fim A5/A6/A7.
 
 ### F11 — Fechamento e entrega
 - Deploy em STG de todos os serviços que ainda não estiverem implantados (ordem: infra-db → infra-k8s `shared`/`messaging`/`aws`/`addons` → customer, catalog, billing, execution, history → service-order → lambda → gateway) e validação do e2e contra STG.
