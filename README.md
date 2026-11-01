@@ -142,14 +142,22 @@ Asynchronous saga results are awaited with bounded polling (20 s). The fixed ide
 
 The CI job `e2e` (`.github/workflows/ci.yml`) runs the same sequence on pull requests: `make clone`, `docker compose up -d --build`, wait for `/ready`, `make e2e`, logs on failure, `docker compose down -v` always.
 
-### Status of this change (read this first)
+### Status of this change
 
-- **The ecosystem and the e2e suite have not been run in the environment where they were written: that environment has no Docker daemon.** What was verified there: `docker compose config -q`, `sh -n` on the scripts, `gofmt`, `go vet` for the gateway and the e2e module, `go test -run XXX` (compilation), the Go adapter build, and a check that every feature step matches a registered step definition. The `aws-init` counts were checked by reading `local/init-aws.sh` (4 topics, 10 queues, 8 subscriptions, 1 table, 1 secret).
-- The e2e suite is validated by the CI job of the pull request and on the developer's machine once the service branches containing the waves 2 and 3 are merged into `develop`. Until then the job is expected to fail, because the service repositories do not provide the endpoints yet.
-- **Known blocker for scenario `customer_login` (and any lambda call):** the login lambda connects to PostgreSQL with `sslmode=require` hard-coded (`cmd/lambda/main.go`). The local PostgreSQL does not serve TLS, so the lambda cannot query the database and answers `500`. Options, to be decided: enable TLS on the local PostgreSQL with a development certificate, or make the lambda's `sslmode` configurable (a change in the lambda repository). Not changed here.
-- Scenario 5 of the ficha asks for the token to be accepted by `GET /v1/service-order/{id}/status`, but that endpoint is public (no JWT in the service contract). The suite therefore proves token acceptance with `PUT /v1/service-order/{id}/accept`.
+The ecosystem was brought up with Docker and the suite was run against it (2026-11-01), using the service branches of the wave 2 and 3 pull requests (the services were cloned from local branches because `develop` of the service repositories is still empty):
+
+- **9 scenarios, 120 steps, all passed.** The happy path (create, receive, diagnose, send, approve, pay, execute, deliver, with the history and the average-time report), the rejected payment, the execution failure with refund and stock return, the rejected budget, the duplicated `accept`/`confirm`, the customer login through the lambda (known and unknown CPF) and the blocked `/internal/*` route.
+- After the run: no error line in any service log, every queue and dead-letter queue empty, and no pending outbox row in Billing, Execution and Service Order.
+- The login lambda needs `DB_SSLMODE=disable` locally (its default is `sslmode=require`, the AWS behaviour); the compose sets it.
+- Scenario 5 proves token acceptance with `PUT /v1/service-order/{id}/accept`, because `GET /v1/service-order/{id}/status` is public.
+- The services answer a missing token with the body `{"error":"Unauthorized"}` (inherited from the monolith middleware), which differs from the `{"code","errors"}` body of other errors; the suite asserts only the `401` status.
 - `scripts/clone-services.sh` clones over HTTPS without credentials: the service repositories must be public for the CI job (or the job needs a token).
 
+### Troubleshooting
+
+- **`go.mod requires go >= 1.26.5 (running go 1.26.4)`**: your local `golang:1.26-alpine` image is stale. Run `docker pull golang:1.26-alpine` and build again.
+- **`ResourceExhausted` while building**: the Docker VM ran out of memory building several images at once. `make up-all` builds one image at a time; if it still happens, raise the memory of Docker Desktop.
+- **A service shows `unhealthy` forever**: check `docker compose logs <service>`; the MiniStack image has no `wget`/`curl`, so health checks use `python3`.
 
 ## Quality gates
 

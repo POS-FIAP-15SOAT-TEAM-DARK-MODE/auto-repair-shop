@@ -40,9 +40,13 @@ E2E_BASE_URL ?= http://localhost:8080
 clone: ## Clone the service repositories (or fast-forward the existing clones)
 	sh scripts/clone-services.sh
 
+build-all: ## Build the images one at a time (building them in parallel exhausts a small Docker VM)
+	for s in customer-service catalog-service billing-service execution-service history-service service-order-service lambda lambda-adapter gateway; do $(COMPOSE) build $$s || exit 1; done
+
 up-all: ## Clone what is missing, build and start the whole ecosystem, wait for /ping and /ready
 	sh scripts/clone-services.sh --if-missing
-	$(COMPOSE) up -d --build
+	$(MAKE) build-all
+	$(COMPOSE) up -d
 	sh scripts/wait-ready.sh 180
 
 down-all: ## Stop the ecosystem and remove its volumes
@@ -54,4 +58,4 @@ logs: ## Follow the logs of the ecosystem
 e2e: ## Run the BDD end-to-end suite (godog) against E2E_BASE_URL
 	cd e2e && E2E_BASE_URL=$(E2E_BASE_URL) go test ./... -count=1 -v
 
-.PHONY: clone up-all down-all logs e2e
+.PHONY: clone build-all up-all down-all logs e2e
