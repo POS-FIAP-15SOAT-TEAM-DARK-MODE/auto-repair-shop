@@ -5,7 +5,6 @@ namespace: auto-repair-shop
 
 resources:
   - ../../base
-  - secrets.yaml
   - ingress.yaml
 
 components:

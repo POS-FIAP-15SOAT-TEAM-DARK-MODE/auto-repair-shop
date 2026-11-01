@@ -4,16 +4,16 @@ metadata:
   name: app-config
   labels:
     app: auto-repair-shop
-# Non-sensitive runtime config (mirrors .env). Sensitive values live in the
-# Secret. POSTGRES_HOST points at the in-cluster Postgres by default and is
-# overridden to the RDS endpoint in the aws overlay.
+# Gateway runtime configuration. Upstreams default to the in-cluster Services
+# of the namespace. The lambda upstream stays unset: the customer login is
+# served by the AWS API Gateway in front of this service.
 data:
-  POSTGRES_USER: "postgres"
-  POSTGRES_DB: "autorepairshop"
-  POSTGRES_HOST: "postgres"
-  POSTGRES_PORT: "5432"
-  JWT_EXPIRES_IN: "24h"
-  BCRYPT_COST: "12"
-  LOG_LEVEL: "INFO"
   PORT: "8080"
-  POSTGRES_SSLMODE: "disable"
+  LOG_LEVEL: "INFO"
+  UPSTREAM_TIMEOUT: "30s"
+  CUSTOMER_UPSTREAM: "http://customer-service:8081"
+  CATALOG_UPSTREAM: "http://catalog-service:8082"
+  BILLING_UPSTREAM: "http://billing-service:8083"
+  EXECUTION_UPSTREAM: "http://execution-service:8084"
+  HISTORY_UPSTREAM: "http://history-service:8085"
+  SERVICE_ORDER_UPSTREAM: "http://service-order-service:8086"
