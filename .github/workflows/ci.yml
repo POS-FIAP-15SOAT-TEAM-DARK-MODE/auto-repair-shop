@@ -140,3 +140,41 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+
+  e2e:
+    name: E2E (local ecosystem)
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      # The services' develop branch must already contain the F3-F6 work (waves 2 and 3) for this job to pass.
+      SERVICES_BRANCH: develop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: e2e/go.sum
+
+      - name: Clone the service repositories
+        run: make clone
+
+      - name: Start the local ecosystem
+        run: docker compose up -d --build
+
+      - name: Wait for the services and the gateway (ready, up to 3 minutes)
+        run: sh scripts/wait-ready.sh 180
+
+      - name: Run the e2e scenarios
+        run: make e2e
+
+      - name: Dump the ecosystem logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=300
+
+      - name: Tear the ecosystem down
+        if: always()
+        run: docker compose down -v
