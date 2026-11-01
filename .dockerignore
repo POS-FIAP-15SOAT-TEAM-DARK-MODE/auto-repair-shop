@@ -1,0 +1,16 @@
+# The gateway image is built from the repository root. Keep the other repositories, the
+# ecosystem and the private planning notes out of that build context.
+.git
+.github
+.ai
+.cursor
+.windsurf
+.claude
+services
+e2e
+local
+k8s
+scripts
+docs/fase4
+*.out
+coverage.*
