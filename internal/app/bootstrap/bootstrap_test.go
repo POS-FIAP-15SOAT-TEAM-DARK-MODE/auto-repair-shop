@@ -3,43 +3,26 @@ package bootstrap
 import (
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestHttpContainer(t *testing.T) {
-	db, _, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+func TestHTTPServer_BuildsGatewayFromEnvironment(t *testing.T) {
+	t.Setenv("PORT", "18080")
+	t.Setenv("UPSTREAM_TIMEOUT", "10s")
+	t.Setenv("LOG_LEVEL", "PANIC")
 
-	c := httpContainer(db)
+	srv, err := HTTPServer()
 
-	assert.NotNil(t, c)
-	assert.NotNil(t, c.UserHandler)
-	assert.NotNil(t, c.CustomerHandler)
-	assert.NotNil(t, c.WorkHandler)
-	assert.NotNil(t, c.VehicleHandler)
-	assert.NotNil(t, c.SupplyHandler)
-	assert.NotNil(t, c.ServiceOrderHandler)
-	assert.NotNil(t, c.ServiceOrderHistoryHandler)
+	require.NoError(t, err)
+	assert.Equal(t, "gateway", srv.Name())
 }
 
-func TestMiddlewaresContainer(t *testing.T) {
-	m := middlewaresContainer()
-	assert.NotNil(t, m)
-	assert.Contains(t, *m, "Logger")
-	assert.Contains(t, *m, "Recovery")
-	assert.Contains(t, *m, "ErrorHandler")
-}
+func TestHTTPServer_FailsOnInvalidConfiguration(t *testing.T) {
+	t.Setenv("UPSTREAM_TIMEOUT", "0s")
 
-func TestHTTPServerBootstrap(t *testing.T) {
-	db, _, err := sqlmock.New()
-	assert.NoError(t, err)
-	defer func() { _ = db.Close() }()
+	srv, err := HTTPServer()
 
-	app.ConnectWithDB(db)
-
-	s := HTTPServer()
-	assert.NotNil(t, s)
+	assert.Error(t, err)
+	assert.Nil(t, srv)
 }
