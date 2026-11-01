@@ -105,7 +105,7 @@ func do(t *testing.T, base, method, target string, headers ...string) result {
 	}
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	return result{Code: resp.StatusCode, Header: resp.Header, Body: string(body)}
