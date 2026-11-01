@@ -30,8 +30,8 @@ func TestEmbeddedRoutingTable(t *testing.T) {
 		block    bool
 	}{
 		// line 1: /internal/* is never exposed
-		{"internal blocked", "GET", "/internal/customers/123", "", true},
-		{"internal blocked for any method", "DELETE", "/internal/reservations/1", "", true},
+		{"internal blocked", "GET", "/internal/resource/123", "", true},
+		{"internal blocked for any method", "DELETE", "/internal/other/1", "", true},
 		// lines 2-4: execution commands under service-order
 		{"next work", "PUT", "/v1/service-order/so-1/work/w-1/next", "execution", false},
 		{"cancel work", "PUT", "/v1/service-order/so-1/work/w-1/cancel", "execution", false},

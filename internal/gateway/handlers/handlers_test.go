@@ -292,7 +292,7 @@ func TestProxy_InternalRoutesAreNeverForwarded(t *testing.T) {
 	urls, seens := allServices(t)
 	h := gatewayFor(t, urls, 5*time.Second)
 
-	for _, target := range []string{"/internal/customers/1", "/internal/works/1"} {
+	for _, target := range []string{"/internal/resource/1", "/internal/other/1"} {
 		rec := do(t, h, http.MethodGet, target)
 		assert.Equal(t, http.StatusNotFound, rec.Code, target)
 		assert.JSONEq(t, `{"code":404,"errors":["route not found"]}`, rec.Body)
@@ -310,7 +310,7 @@ func TestProxy_UnmatchedAndDotSegmentsAreNotFound(t *testing.T) {
 		{http.MethodGet, "/nope"},
 		{http.MethodDelete, "/v1/execution/queue"},
 		{http.MethodPost, "/ping"},
-		{http.MethodGet, "/v1/works/../internal/customers/1"},
+		{http.MethodGet, "/v1/works/../internal/resource/1"},
 	} {
 		rec := do(t, h, c.method, c.target)
 		assert.Equal(t, http.StatusNotFound, rec.Code, c.method+" "+c.target)

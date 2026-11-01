@@ -56,7 +56,7 @@ func TestMatch_InternalPathsAreBlockedBeforeAnyUpstream(t *testing.T) {
 	)
 
 	for _, method := range []string{"GET", "POST", "PUT", "DELETE"} {
-		r, ok := m.Match(method, "/internal/customers/123")
+		r, ok := m.Match(method, "/internal/resource/123")
 		require.True(t, ok)
 		assert.True(t, r.Block)
 		assert.Empty(t, r.Upstream)
