@@ -65,5 +65,7 @@ Este repositório (`auto-repair-shop`) é o ponto de entrada do sistema: o gatew
 | # | Pendência | Recomendação |
 |---|---|---|
 | P1 | `internal/pkg/web/errors.go`, herdado do monólito, devolve a mensagem da causa raiz em respostas 5xx | trocar por mensagem genérica e manter o erro completo no log (tarefa A1 da onda 5) |
+| P1b | Os 401/403 dos serviços respondem `{"error":"Unauthorized"}`, diferente do padrão `{"code","errors"}` dos demais erros | padronizar o corpo em todos os serviços e no gateway (tarefa A1) |
+| P1c | Formato dos logs não é uniforme entre os serviços | mesmo conjunto de campos JSON (`request_id`, `service`, `saga_id`, `service_order_id`, `message_id`) (tarefa A4) |
 | P2 | Exclusão de cliente/veículo não verifica OS vinculadas desde a separação | Customer chamar `GET /internal/service-orders/exists` (tarefa A3) |
 | P3 | Checks obrigatórios nas branches protegidas | adicionar depois que a CI tiver rodado em `develop` (tarefa A6) |
