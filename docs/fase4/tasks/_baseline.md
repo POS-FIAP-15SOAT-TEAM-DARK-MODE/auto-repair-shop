@@ -78,3 +78,16 @@ Verificação: `docker compose config -q` e `docker compose up -d --build` segui
 2. `git push -u origin feat/bootstrap-<svc>` e `gh pr create --base develop --title "feat: bootstrap <svc>" --body "<resumo + evidência de cobertura>"`.
 3. Aguardar a CI: `gh pr checks --watch`. Falha de `sonarqube` por falta de `SONAR_TOKEN` **não** é falha de código — reportar.
 4. **Não** fazer merge sem a autorização definida pelo usuário (ver F0/decisões). Reportar URL do PR, resultado de cada job e % de cobertura.
+
+## B9 — Lições da onda 2 (aplicar em F4–F6)
+1. **Ambiente local sem daemon Docker**: não rodar `docker compose up`/`docker build`. Verificar com `go build`, `go vet` (também `-tags=integration`), `go test --race`, `kubectl kustomize` e `docker compose config -q`. Os testes de integração (Postgres/MiniStack) são validados pela CI do PR.
+2. **Cobertura**: o gate ignora mocks gerados (B5 já atualizado); além do total ≥ 80%, adicionar gate por pacote crítico quando a ficha pedir ≥ 90%.
+3. **Código de referência (copiar, não importar)** — repos irmãos em `/Users/caetanofreitas/projects/study/fases-pos/`:
+   - Mensageria: `auto-repair-shop-billing-service` → `internal/pkg/messaging/{config,consumer,envelope,outbox,relay,sns,sqs}.go` e testes. Enquanto o PR #1 do Billing não estiver mergeado, ler da branch: `git -C <billing> show origin/feat/bootstrap-billing-service:<caminho>`; depois do merge, de `origin/develop`.
+   - `InternalAuth` (header `X-Internal-Token`) e `uow` com transação "joinable": `auto-repair-shop-catalog-service` → `internal/app/middleware/internal_auth.go`, `internal/pkg/uow/postgres.go` (mesma regra de leitura por branch).
+4. **`saga_id` persistido**: todo serviço cujos eventos podem nascer fora de uma mensagem (REST) grava o `saga_id` recebido e o reutiliza (ver `contracts/messaging.md`).
+5. **Sonar**: o job `sonarqube` vermelho por `SONAR_TOKEN` ausente é esperado. **Não** alterar código/IaC só para satisfazer uma regra do Sonar sem entender o efeito em produção (na onda 2 isso introduziu mudanças arriscadas que foram revertidas).
+6. **`.ai/rules/*`**: reescrever `security.md`, `testing.md` e `observability.md` (além de `domain/api/database/go-conventions`) para o domínio do serviço — remover exemplos do monólito.
+7. **IDs fixos de seed** e documentos **sem formatação** (CPF/CNPJ só dígitos) — ver `resources.md`.
+8. **Conduta do agente**: commits pequenos e temáticos, `git push` cedo, PR para `develop` sem merge, relatar desvios da ficha; em **ambiguidade de contrato, parar e reportar** em vez de improvisar.
+9. **Lint**: o `pre-commit` da CI fixa a versão do `golangci-lint`; versões mais novas acusam itens em código copiado do monólito — ignorar os preexistentes, não "consertar" código copiado fora do escopo.

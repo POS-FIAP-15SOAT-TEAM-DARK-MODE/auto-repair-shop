@@ -159,7 +159,7 @@ Todos os serviços validam o JWT (HS256, mesmo `JWT_SECRET`) com o middleware at
 |---|---|---|---|
 | 1 | **F0** | tag `monolith-v1`, 6 repos criados e protegidos | — |
 | 2 | **F1 + F2 + F3 + F7 + F8** | Catalog, Customer & Identity, Billing (com o pacote `messaging`), `infra-db` e `infra-k8s` (mensageria, bancos, ECRs) | onda 1 |
-| 3 | **F4 + F5 + F6** | Execution, History, Service Order (copiam o `messaging` do Billing) | onda 2 |
+| 3 | **F4 + F5 + F6** (+ F1b/F2b) | Execution, History, Service Order (copiam o `messaging` do Billing); F1b/F2b ampliam os contratos internos de Catalog e Customer | onda 2 |
 | 4 | **F9 + F10** | lambda apontando para o database `customer`; gateway, ecossistema local e e2e | onda 3 (F9 também usa F2 e F7, já prontos) |
 | 5 | **F11** | deploy em STG, README, PDF, vídeo | onda 4 |
 
@@ -203,32 +203,30 @@ Regras de convivência dentro de uma onda:
 - **Entrega:** aqui nasce `internal/pkg/messaging` (S5) — fica como referência para os próximos.
 - **Config:** `PORT`, `POSTGRES_*`, `JWT_SECRET`, `AWS_ENDPOINT_URL`, `BILLING_QUEUE_URL`, `BILLING_EVENTS_TOPIC_ARN`, `PAYMENT_MODE`.
 
-### F4 — Execution (`auto-repair-shop-execution-service`, :8084, PG `execution`) — serviço novo
-- **Tabelas:** `execution_task(id, service_order_id UNIQUE, status QUEUED|IN_PROGRESS|COMPLETED|CANCELLED, created_at, started_at, completed_at)`, `execution_work(id, task_id, work_id, name, status AWAITING_START|IN_PROGRESS|COMPLETED|CANCELLED)`, `execution_work_history(id, task_id, work_id, previous_status, new_status, created_at)`, `outbox`, `processed_message`.
-- **Regras:** ciclo do work igual ao atual (`AWAITING_START → IN_PROGRESS → COMPLETED`, cancelável em qualquer não terminal); `finish` só quando todos os works estão `COMPLETED`/`CANCELLED`.
-- **Endpoints (mecânico):** `GET /v1/execution/queue`, `PUT /v1/service-order/{id}/work/{workId}/next`, `PUT /v1/service-order/{id}/work/{workId}/cancel`, `PUT /v1/service-order/{id}/finish` (paths preservados; o gateway os roteia para cá).
-- **Mensageria:** consome `EnqueueExecution`, `CancelExecution`; publica `ExecutionQueued`, `ExecutionWorkStatusChanged`, `ExecutionCompleted`, `ExecutionFailed` em `execution-events`.
-- **`ExecutionFailed`:** emitido quando `EnqueueExecution` é inválido (sem works, tarefa duplicada em estado incompatível) ou quando todos os works são cancelados (nada a entregar).
+### F4 — Execution (`auto-repair-shop-execution-service`, :8084, PG `execution`) — serviço novo — ficha: `docs/fase4/tasks/F4-execution.md`
+- **Tabelas:** `execution_task` (guarda o `saga_id` do `EnqueueExecution`), `execution_work`, `execution_work_history`, `outbox`, `processed_message` (DDL em `contracts/ddl.md`).
+- **Regras:** ciclo do work igual ao monólito (`AWAITING_START → IN_PROGRESS → COMPLETED`, `CANCELLED` terminal); `finish` exige todos os works `COMPLETED`/`CANCELLED` (regra nova): todos `CANCELLED` → `ExecutionFailed{ALL_WORKS_CANCELLED}`, senão `ExecutionCompleted`.
+- **Endpoints (mecânico):** `GET /v1/execution/queue`, `PUT /v1/service-order/{id}/work/{workId}/next|cancel`, `PUT /v1/service-order/{id}/finish` (paths preservados; o gateway os roteia para cá).
+- **Mensageria:** consome `EnqueueExecution`, `CancelExecution`; publica `ExecutionQueued`, `ExecutionWorkStatusChanged` (com `work_name`; `previous` nulo na criação), `ExecutionCompleted`, `ExecutionFailed` em `execution-events`, **sempre com o `saga_id` da tarefa**, também nos eventos disparados por REST.
 - **Observação:** o diagnóstico continua sendo transição de status da OS (Service Order); Execution cuida da fila e do reparo.
-- **Config:** `PORT`, `POSTGRES_*`, `JWT_SECRET`, `AWS_ENDPOINT_URL`, `EXECUTION_QUEUE_URL`, `EXECUTION_EVENTS_TOPIC_ARN`.
+- **Config:** `PORT`, `POSTGRES_*`, `JWT_SECRET`, `AWS_REGION`, `AWS_ENDPOINT_URL`, `EXECUTION_QUEUE_URL`, `EXECUTION_EVENTS_TOPIC_ARN`.
 
-### F5 — History & Reporting (`auto-repair-shop-history-service`, :8085, DynamoDB) — serviço novo
-- **Origem:** contrato de resposta de `service_order_history` (ADR 0001: transições de work aninhadas) — **preservar o formato**.
-- **Tabela DynamoDB `history`** (`PAY_PER_REQUEST`): `PK` (string), `SK` (string). Itens: `PK=SO#<id>`, `SK=EVT#<occurred_at>#<message_id>` (eventos de status da OS, orçamento, pagamento, execução e works); `PK=SO#<id>`, `SK=META` (`queued_at`, gravado em `ExecutionQueued`); `PK=REPORT#avg-execution`, `SK=TOTAL` (`count`, `total_seconds`, incrementados com `ADD` atômico em `ExecutionCompleted`; mede o tempo real de execução, sem a espera do pagamento que agora acontece em `IN_PROGRESS`); `PK=MSG#<message_id>`, `SK=DEDUPE` (escrita condicional → idempotência).
-- **Endpoints:** `GET /v1/service-order/{id}/history` (atendente+mecânico), `GET /v1/reports/average-execution-time` (atendente).
-- **Mensageria:** consome tudo de `so-events`, `billing-events`, `execution-events` via `history-queue`. Não publica. **Sem Postgres** (sem `migrate` no compose).
-- **Config:** `PORT`, `JWT_SECRET`, `AWS_ENDPOINT_URL`, `HISTORY_QUEUE_URL`, `DYNAMODB_TABLE=history`.
+### F5 — History & Reporting (`auto-repair-shop-history-service`, :8085, DynamoDB) — serviço novo — ficha: `docs/fase4/tasks/F5-history.md`
+- **Modelo de itens** (`contracts/ddl.md`, seção `history`): eventos de status da OS (`S#…`), transições de work (`W#…`), marcador de início do work (`R#…`), **agregado do relatório por work** (`REPORT#WORK/W#…`: `count`, `total_seconds`) e dedupe (`MSG#…`). Toda escrita é um `TransactWriteItems` (dedupe + item + agregado).
+- **Endpoints (formatos idênticos ao monólito):** `GET /v1/service-order/{id}/history` (transições da OS; as transições de work aninhadas só na entrada `IN_PROGRESS`, ADR 0001 do monólito) e `GET /v1/reports/average-execution-time?work_id=…` (**por work**: `[{workId, workName, averageExecutionTimeHours}]`, média entre `IN_PROGRESS` e `COMPLETED` do work).
+- **Mensageria:** consome `history-queue` mas **trata só** `ServiceOrderStatusChanged` e `ExecutionWorkStatusChanged`; demais tipos são descartados com log. Não publica. **Sem Postgres.**
+- **Config:** `PORT`, `JWT_SECRET`, `AWS_REGION`, `AWS_ENDPOINT_URL`, `HISTORY_QUEUE_URL`, `DYNAMODB_TABLE`.
 
-### F6 — Service Order + orquestrador (`auto-repair-shop-service-order-service`, :8086, PG `service_order`)
-- **Origem:** `internal/service_order`, `StatusNotifier`, métricas de OS.
-- **Tabelas:** `service_order(id ULID, customer_id, customer_user_id, vehicle_id, license_plate, status, total_amount, quote_sent_at, completed_at, delivered_at, created_at, updated_at)`, `service_order_work(id, service_order_id FK, work_id, name, unit_price)`, `service_order_supply(id, service_order_id FK, supply_id, reservation_id, name, quantity, unit_price)`, `saga_instance`, `outbox`, `processed_message`. As tabelas de histórico **saem** (agora é o History). `total_amount` e `quote_sent_at` passam a vir de `BudgetGenerated`.
-- **Regras de transição a ajustar no domínio:** `send` só vira `AWAITING_APPROVAL` com `BudgetGenerated`; `accept` → `IN_PROGRESS` imediato (409 sem orçamento/decisão prévia); nova transição `IN_PROGRESS → REJECTED` permitida apenas pela saga; `cancel` dispara as compensações aplicáveis (§3.2).
-- **Endpoints:** `POST /v1/service-order`; `…/{id}/works` (+DELETE `/{serviceId}`), `…/{id}/supplies` (+DELETE `/{supplyId}`), `…/{id}/received`, `…/{id}/start-diagnosis`, `…/{id}/send` (inicia a saga), `…/{id}/accept` (204; `IN_PROGRESS` imediato + dispara `RequestPayment`), `…/{id}/reject`, `…/{id}/cancel`, `…/{id}/deliver`; `GET /v1/service-order`, `/{id}`, `/{id}/works`, `/{id}/supplies`; `GET /v1/service-order/{id}/status` (público). Mesmos papéis de hoje.
-- **REST de saída:** Customer (cliente/veículo na criação), Catalog (work ao adicionar; reserva/liberação de supply). Falha do REST → erro ao chamador, sem estado parcial.
-- **Mensageria:** publica comandos em `saga-commands` e `ServiceOrderStatusChanged` em `so-events` (outbox); consome `so-saga-replies`. Implementa a tabela de §3.2 e o job de *deadline*.
-- **Config:** `PORT`, `POSTGRES_*`, `JWT_SECRET`, `INTERNAL_TOKEN`, `CUSTOMER_URL`, `CATALOG_URL`, `AWS_ENDPOINT_URL`, `SO_SAGA_REPLIES_QUEUE_URL`, `SAGA_COMMANDS_TOPIC_ARN`, `SO_EVENTS_TOPIC_ARN`, `SAGA_STEP_TIMEOUT`, `SAGA_PAYMENT_TIMEOUT`.
-- **Compose isolado:** stubs de Customer e Catalog; Billing/Execution simulados por um *responder* de teste que publica as respostas esperadas (fixtures), até F10.
-- **Pendência herdada do F2:** `DELETE /v1/customers/:id` deixou de checar OS (a tabela agora é do Service Order). Expor `GET /internal/service-orders/exists?customer_id={id}` (e `vehicle_id`) neste serviço e fazer o Customer chamá-lo antes de excluir (`409` se existir).
+### F6 — Service Order + orquestrador (`auto-repair-shop-service-order-service`, :8086, PG `service_order`) — ficha: `docs/fase4/tasks/F6-service-order.md`
+- **Origem:** `internal/service_order` (sem as partes de histórico, works/execução e relatório, que migraram para Execution/History).
+- **Tabelas** (`contracts/ddl.md`): `service_order` com **snapshot de cliente e veículo** (as respostas de listagem/detalhe e a notificação os usam), `service_order_work`, `service_order_supply` (com `reservation_id`), `saga_instance` (flags do que já foi comandado), `outbox`, `processed_message`.
+- **Endpoints:** os mesmos de hoje para criação, works/supplies, `received`, `start-diagnosis`, `send` (inicia a saga), `accept` (204, **`IN_PROGRESS` imediato** + `RequestPayment`), `reject`, `cancel`, `deliver` e as leituras (`GET …`, `/{id}`, `/works`, `/supplies`, `/status`). Mais `GET /internal/service-orders/exists` (para o Customer restaurar a checagem de exclusão na onda 4).
+- **Saga:** tabela de gatilhos/guardas/efeitos no §3.2 e na ficha (fire-and-forget nas compensações; job de prazos: `BUDGET` falha sem mudar o status, `PAYMENT`/`EXECUTION_QUEUE` compensam e cancelam).
+- **REST de saída:** Customer (cliente/veículo na criação), Catalog (work; reserva/liberação de supply); falha de rede → `502`.
+- **Mensageria:** publica comandos em `saga-commands` e `ServiceOrderStatusChanged` em `so-events` (outbox); consome `so-saga-replies`.
+- **Config:** `PORT`, `POSTGRES_*`, `JWT_SECRET`, `INTERNAL_TOKEN`, `CUSTOMER_URL`, `CATALOG_URL`, `AWS_REGION`, `AWS_ENDPOINT_URL`, `SO_SAGA_REPLIES_QUEUE_URL`, `SAGA_COMMANDS_TOPIC_ARN`, `SO_EVENTS_TOPIC_ARN`, `SAGA_STEP_TIMEOUT`, `SAGA_PAYMENT_TIMEOUT`.
+- **Compose isolado:** stubs de Customer e Catalog; Billing/Execution simulados pelos testes (que leem os comandos em filas de teste e publicam as respostas) até a integração real na onda 4.
+- **Pendência herdada do F2:** `DELETE /v1/customers/:id` deixou de checar OS; o Customer passa a chamar o endpoint interno acima (ajuste na onda 4).
 
 ### F7 — `auto-repair-shop-infra-db` (tudo de dados) — ficha: `docs/fase4/tasks/F7-infra-db.md`
 - **Mantém** a instância RDS única, o master `postgres` e o secret legado `${name}/app`; o plano **só adiciona** recursos.

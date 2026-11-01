@@ -54,12 +54,17 @@ Valores monetários são **strings decimais** (`"221.00"`), nunca número JSON.
 | `PaymentFailed` | `billing-events` | Billing | `{"payment_id":"…","amount":"221.00","reason":"PAYMENT_REJECTED"}` |
 | `PaymentRefunded` | `billing-events` | Billing | `{"payment_id":"…","amount":"221.00"}` |
 | `ExecutionQueued` | `execution-events` | Execution | `{"task_id":"…"}` |
-| `ExecutionWorkStatusChanged` | `execution-events` | Execution | `{"work_id":"…","previous":"AWAITING_START","new":"IN_PROGRESS"}` |
+| `ExecutionWorkStatusChanged` | `execution-events` | Execution | `{"work_id":"…","work_name":"Troca de óleo","previous":"AWAITING_START","new":"IN_PROGRESS"}` (`previous` é `null` na criação do work como `AWAITING_START`; `work_name` alimenta o relatório do History) |
 | `ExecutionCompleted` | `execution-events` | Execution | `{"task_id":"…"}` |
 | `ExecutionFailed` | `execution-events` | Execution | `{"task_id":"…","reason":"ALL_WORKS_CANCELLED"}` |
 | `ServiceOrderStatusChanged` | `so-events` | Service Order | `{"previous":"IN_DIAGNOSIS","new":"AWAITING_APPROVAL","reason":null,"total_amount":"221.00"}` |
 
 `reason` de `ServiceOrderStatusChanged` quando `new=REJECTED`: `BUDGET_REJECTED` ou `PAYMENT_REJECTED`; quando `new=CANCELLED`: `USER_CANCELLED`, `EXECUTION_FAILED` ou `SAGA_TIMEOUT`; nos demais casos `null`. `ExecutionFailed.reason`: `INVALID_REQUEST` ou `ALL_WORKS_CANCELLED`.
+
+## Quem trata o quê
+- **Service Order** (`so-saga-replies`): `BudgetGenerated`, `PaymentApproved`, `PaymentFailed`, `ExecutionQueued`, `ExecutionCompleted`, `ExecutionFailed`; ignora `BudgetCancelled`, `PaymentRefunded` e `ExecutionWorkStatusChanged` (só log).
+- **History** (`history-queue`): trata **apenas** `ServiceOrderStatusChanged` e `ExecutionWorkStatusChanged`; qualquer outro tipo recebido é descartado com log.
+- `saga_id`: Execution grava o `saga_id` do `EnqueueExecution` na tarefa e o usa em **todos** os eventos seguintes (inclusive os disparados por REST: `ExecutionWorkStatusChanged`, `ExecutionCompleted`, `ExecutionFailed`); o SO usa o `saga_id` ativo da OS em todo comando.
 
 ## Garantias exigidas
 
