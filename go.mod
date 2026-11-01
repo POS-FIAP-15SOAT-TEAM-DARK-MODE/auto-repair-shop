@@ -28,6 +28,7 @@ require (
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (

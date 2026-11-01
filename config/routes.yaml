@@ -1,0 +1,21 @@
+# Gateway routing table. Order is priority: the first route whose method and
+# path match wins. Patterns: ":name" matches one segment, a trailing "*" matches
+# any suffix. Upstream names map to <NAME>_UPSTREAM environment variables.
+routes:
+  - {methods: ["*"],   path: "/internal/*",                                  block: true}      # 404, never exposed
+  - {methods: ["PUT"], path: "/v1/service-order/:id/work/:workId/next",      upstream: execution}
+  - {methods: ["PUT"], path: "/v1/service-order/:id/work/:workId/cancel",    upstream: execution}
+  - {methods: ["PUT"], path: "/v1/service-order/:id/finish",                 upstream: execution}
+  - {methods: ["GET"], path: "/v1/execution/*",                              upstream: execution}
+  - {methods: ["GET"], path: "/v1/service-order/:id/history",                upstream: history}
+  - {methods: ["GET"], path: "/v1/reports/*",                                upstream: history}
+  - {methods: ["*"],   path: "/v1/auth/*",                                   upstream: customer}
+  - {methods: ["*"],   path: "/v1/users/*",                                  upstream: customer}
+  - {methods: ["*"],   path: "/v1/customers*",                               upstream: customer}
+  - {methods: ["*"],   path: "/v1/vehicles*",                                upstream: customer}
+  - {methods: ["*"],   path: "/v1/works*",                                   upstream: catalog}
+  - {methods: ["*"],   path: "/v1/supplies*",                                upstream: catalog}
+  - {methods: ["*"],   path: "/v1/budgets*",                                 upstream: billing}
+  - {methods: ["*"],   path: "/v1/payments*",                                upstream: billing}
+  - {methods: ["*"],   path: "/v1/service-order*",                           upstream: service_order}
+  - {methods: ["POST"], path: "/auth/customer-login",                        upstream: lambda, optional: true}
