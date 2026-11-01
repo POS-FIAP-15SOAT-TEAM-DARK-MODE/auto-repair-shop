@@ -64,7 +64,7 @@ Valores monetários são **strings decimais** (`"221.00"`), nunca número JSON.
 ## Quem trata o quê
 - **Service Order** (`so-saga-replies`): `BudgetGenerated`, `PaymentApproved`, `PaymentFailed`, `ExecutionQueued`, `ExecutionCompleted`, `ExecutionFailed`; ignora `BudgetCancelled`, `PaymentRefunded` e `ExecutionWorkStatusChanged` (só log).
 - **History** (`history-queue`): trata **apenas** `ServiceOrderStatusChanged` e `ExecutionWorkStatusChanged`; qualquer outro tipo recebido é descartado com log.
-- `saga_id`: Execution grava o `saga_id` do `EnqueueExecution` na tarefa e o usa em **todos** os eventos seguintes (inclusive os disparados por REST: `ExecutionWorkStatusChanged`, `ExecutionCompleted`, `ExecutionFailed`); o SO usa o `saga_id` ativo da OS em todo comando.
+- `saga_id`: Execution grava o `saga_id` do `EnqueueExecution` na tarefa e o usa em **todos** os eventos seguintes (inclusive os disparados por REST: `ExecutionWorkStatusChanged`, `ExecutionCompleted`, `ExecutionFailed`); o SO usa o `saga_id` ativo da OS em todo comando. **Mensagens fora de saga** (ex.: `ServiceOrderStatusChanged` de `received`, `start-diagnosis`, `deliver`, criação, ou `cancel` sem saga) levam um `saga_id` novo (UUID v4) por mensagem, sem valor de correlação. Work inativo no catálogo é rejeitado pelo SO como não encontrado (`404`). `DELETE /internal/reservations/{id}` com `404` é tratado pelo SO como "já liberada" (idempotência).
 
 ## Garantias exigidas
 

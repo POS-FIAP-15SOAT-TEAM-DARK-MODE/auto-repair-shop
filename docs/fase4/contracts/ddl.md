@@ -234,10 +234,12 @@ CREATE INDEX idx_saga_deadline ON saga_instance (deadline) WHERE status = 'RUNNI
 
 | Item | `PK` | `SK` | Atributos |
 |---|---|---|---|
-| Transição de status da OS | `SO#<service_order_id>` | `S#<occurred_at RFC3339Nano UTC>#<message_id>` | `previous_status` (ausente na criação), `new_status`, `reason?`, `created_at` |
-| Transição de work | `SO#<service_order_id>` | `W#<work_id>#<occurred_at RFC3339Nano UTC>#<message_id>` | `work_id`, `work_name`, `previous_status?`, `new_status`, `created_at` |
+| Transição de status da OS | `SO#<service_order_id>` | `S#<occurred_at>#<message_id>` | `previous_status` (ausente na criação), `new_status`, `reason?`, `created_at` |
+| Transição de work | `SO#<service_order_id>` | `W#<work_id>#<occurred_at>#<message_id>` | `work_id`, `work_name`, `previous_status?`, `new_status`, `created_at` |
 | Marcador de execução do work | `SO#<service_order_id>` | `R#<work_id>` | `started_at` (gravado quando o work vai a `IN_PROGRESS`) |
 | Agregado do relatório por work | `REPORT#WORK` | `W#<work_id>` | `work_name`, `count` (N), `total_seconds` (N) |
 | Dedupe de mensagem | `MSG#<message_id>` | `DEDUPE` | `processed_at` |
 
 Regras: toda escrita de uma mensagem usa **`TransactWriteItems`** (dedupe com `attribute_not_exists(PK)` + item do evento + marcador/agregado quando aplicável) — se a transação falhar por dedupe já existente, a mensagem é duplicada: descartar e apagar da fila. Em `ExecutionWorkStatusChanged` com `new=IN_PROGRESS`: gravar o marcador `R#`. Com `previous=IN_PROGRESS` e `new=COMPLETED`: ler o marcador (leitura consistente); se existir, `duração = occurred_at(envelope) − started_at` e incrementar o agregado (`ADD count 1, total_seconds :d`, `SET work_name`) na **mesma** transação; se não existir (mensagens fora de ordem), gravar só o evento e logar. Datas sempre do envelope (`occurred_at`), nunca do relógio de processamento.
+
+**Formato de `<occurred_at>` nas chaves:** UTC com **largura fixa** — `2006-01-02T15:04:05.000000000Z` (sempre 9 casas de nanossegundo). O RFC 3339 comum omite casas decimais e quebra a ordenação por string (`…00Z` ficaria depois de `…00.1Z`). `processed_at` do item de dedupe usa o `occurred_at` do envelope; em empate de instante no mesmo work, a ordem desempata pelo `message_id`.
