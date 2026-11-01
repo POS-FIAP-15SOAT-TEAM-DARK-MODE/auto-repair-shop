@@ -99,6 +99,7 @@ CREATE TABLE payment (
     id               VARCHAR(36) PRIMARY KEY,
     budget_id        VARCHAR(36) NOT NULL REFERENCES budget (id),
     service_order_id VARCHAR(26) NOT NULL,
+    saga_id          VARCHAR(36) NOT NULL,     -- do envelope do RequestPayment; reutilizado nos eventos de confirm/reject manuais
     amount           NUMERIC(10, 2) NOT NULL,
     status           VARCHAR(20) NOT NULL DEFAULT 'PENDING'
                      CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'REFUNDED', 'CANCELLED')),

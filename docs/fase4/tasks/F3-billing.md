@@ -26,6 +26,10 @@ B1–B3 e B6–B7. Não há código de domínio para copiar (só `internal/pkg/a
 | `RefundPayment` | `PENDING`→`CANCELLED` (sem evento); `APPROVED`→`REFUNDED` (+`Refund`); outros → nada | `PaymentRefunded{payment_id,amount}` (só em `APPROVED→REFUNDED`) |
 
 Eventos e `saga_id`/`service_order_id`/`request_id` do envelope de entrada são **propagados** para o envelope de saída. Payload inválido → erro (mensagem volta à fila e vai à DLQ).
+**`saga_id` dos eventos manuais:** o `RequestPayment` grava o `saga_id` do envelope em `payment.saga_id`; `confirm`/`reject` (REST) usam esse valor no envelope de `PaymentApproved`/`PaymentFailed` (`service_order_id` vem da linha; `request_id` = `X-Request-Id` da chamada REST ou um novo UUID).
+**`RequestPayment` com pagamento aberto** (`PENDING`/`APPROVED`) já existente para a OS: descartar com log, **sem erro** (evita loop até a DLQ; o índice parcial `uq_payment_open_per_so` é a rede de segurança).
+`Charge` é chamado dentro da transação (seguro para o provider `internal`); registrar no ADR que um provider externo (Mercado Pago) exigirá separar a chamada da transação.
+Layout: portas (interfaces de serviço/repositório) podem ficar no próprio pacote em vez de pastas `interfaces/`/`adapters/`, mas devem existir como interfaces Go para permitir repositórios in-memory/fakes; repositórios Postgres em `repository/` com testes `sqlmock` (já presente no `go.mod`) para atingir a cobertura exigida.
 
 ## T4 — API REST (papéis de `internal/pkg/auth`)
 | Rota | Papéis | Resposta |

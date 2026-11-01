@@ -195,7 +195,7 @@ Regras de convivência dentro de uma onda:
 - **Config:** `PORT`, `POSTGRES_*`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `BCRYPT_COST`, `INTERNAL_TOKEN`.
 
 ### F3 — Billing (`auto-repair-shop-billing-service`, :8083, PG `billing`) — serviço novo — ficha: `docs/fase4/tasks/F3-billing.md`
-- **Tabelas:** `budget(id, service_order_id, status GENERATED|CANCELLED, total_amount, created_at)`, `budget_item(id, budget_id, kind WORK|SUPPLY, ref_id, name, quantity, unit_price)`, `payment(id, budget_id, service_order_id, amount, status PENDING|APPROVED|REJECTED|REFUNDED|CANCELLED, provider, created_at, updated_at)`, `outbox`, `processed_message`.
+- **Tabelas:** `budget(id, service_order_id, status GENERATED|CANCELLED, total_amount, created_at)`, `budget_item(id, budget_id, kind WORK|SUPPLY, ref_id, name, quantity, unit_price)`, `payment(id, budget_id, service_order_id, saga_id, amount, status PENDING|APPROVED|REJECTED|REFUNDED|CANCELLED, provider, created_at, updated_at)`, `outbox`, `processed_message`.
 - **Regras:** `total = Σ work.unit_price + Σ supply.unit_price × quantity` (mesma fórmula do monólito), calculado dos snapshots recebidos em `GenerateBudget`.
 - **`PaymentProvider { Charge, Refund }`**, adaptador `internal` guiado por `PAYMENT_MODE`: `manual` (fica `PENDING` até o atendente agir), `auto-approve`, `auto-reject` (para demonstrar a compensação). O adaptador Mercado Pago será outra implementação futura, sem mexer na saga.
 - **Endpoints:** `GET /v1/budgets/{serviceOrderId}`, `GET /v1/payments/{serviceOrderId}`, `POST /v1/payments/{id}/confirm`, `POST /v1/payments/{id}/reject` (atendente).
