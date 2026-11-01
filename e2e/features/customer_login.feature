@@ -5,6 +5,7 @@ Feature: Customer login through the login lambda
   Scenario: A known CPF receives a token that the services accept
     Given the gateway is ready
     And I am logged in as "attendant"
+    And I am logged in as "mechanic"
     When I create a service order for customer A with the oil change work
     And the attendant marks the vehicle as received
     And the mechanic starts the diagnosis

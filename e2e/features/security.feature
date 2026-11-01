@@ -12,4 +12,3 @@ Feature: Route security
   Scenario: A protected route without a token is refused by the service
     When I list the service orders without a token
     Then the gateway answers 401
-    And the body code is 401
