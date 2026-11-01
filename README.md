@@ -3,7 +3,8 @@
 The single public entry point of the Auto Repair Shop. It is a reverse proxy written in Go (Gin and `net/http/httputil.ReverseProxy`): it sends each request to the service that owns it, and nothing else. It validates no token, reads no database and holds no secret. Each service validates its own tokens.
 
 - Port: `8080` · Namespace `auto-repair-shop` · Kubernetes name `auto-repair-shop`
-- Decisions: [`docs/adr/`](docs/adr) (ADR 0005 explains why this repository is the gateway)
+- Decisions: [`docs/adr/`](docs/adr) (ADR 0005 explains why this repository is the gateway; ADR 0006 is the overall architecture)
+- Phase 4 documentation: [`docs/decisions.md`](docs/decisions.md) (decision register) · [`docs/fase4/SPEC.md`](docs/fase4/SPEC.md) (spec) · [`docs/fase4/contracts/`](docs/fase4/contracts) (names, messages, internal REST, DDL) · [`docs/fase4/tasks/`](docs/fase4/tasks) (task cards)
 - Agent rules: [`.ai/`](.ai/README.md) · [`CLAUDE.md`](CLAUDE.md) · [`AGENTS.md`](AGENTS.md)
 
 ## Architecture
