@@ -233,6 +233,42 @@ services:
         condition: service_completed_successfully
     networks: [auto-repair-shop-net]
 
+  # ---- Customer login (POST /auth/customer-login) -----------------------------------------------------------
+  # lambda: the real lambda handler on the Runtime Interface Emulator (internal port 8080, not published).
+  # lambda-adapter: HTTP -> API Gateway v2 event translator; the gateway's LAMBDA_UPSTREAM points here.
+
+  lambda:
+    build:
+      context: ./services/auto-repair-shop-lambda-auth
+      dockerfile: ../../local/lambda/Dockerfile
+    environment:
+      <<: *service-env
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: lambda_auth_ro
+      DB_NAME: customer
+      APP_SECRET_ID: auto-repair-shop-local/lambda-auth
+      JWT_EXPIRES_IN: 24h
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-customer:
+        condition: service_completed_successfully
+      aws-init:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  lambda-adapter:
+    build: ./local/lambda/adapter
+    environment:
+      PORT: "9001"
+      LAMBDA_INVOKE_URL: http://lambda:8080/2015-03-31/functions/function/invocations
+    ports:
+      - "9001:9001"
+    depends_on:
+      - lambda
+    networks: [auto-repair-shop-net]
+
   # ---- Gateway (the only public entry point; its build context is this repository) ----------------------------
 
   gateway:
@@ -247,6 +283,7 @@ services:
       EXECUTION_UPSTREAM: http://execution-service:8084
       HISTORY_UPSTREAM: http://history-service:8085
       SERVICE_ORDER_UPSTREAM: http://service-order-service:8086
+      LAMBDA_UPSTREAM: http://lambda-adapter:9001
     ports:
       - "8080:8080"
     depends_on:
@@ -256,6 +293,7 @@ services:
       - execution-service
       - history-service
       - service-order-service
+      - lambda-adapter
     networks: [auto-repair-shop-net]
 
 networks:
