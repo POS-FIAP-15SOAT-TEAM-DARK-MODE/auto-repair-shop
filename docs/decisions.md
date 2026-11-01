@@ -52,6 +52,7 @@ Este repositório (`auto-repair-shop`) é o ponto de entrada do sistema: o gatew
 | R7 | Compensações são **fire-and-forget** e idempotentes; a saga é marcada `COMPENSATED` ao publicar os comandos. |
 | R8 | Documentos (CPF/CNPJ) são armazenados **sem formatação**; o seed usa os mesmos IDs fixos em todos os ambientes. |
 | R9 | Work inativo é tratado como não encontrado pela OS. `RemoveSupply` libera a reserva **depois** de gravar a remoção do vínculo (falha conservadora: estoque fica reservado). |
+| R10 | **O cliente não vê o pagamento da própria OS.** `GET /v1/payments/:serviceOrderId` é restrito a `Attendant` e `Admin` (o pagamento é uma operação do balcão); o cliente vê apenas o orçamento (`GET /v1/budgets/:serviceOrderId`, com checagem de dono) e o status da OS. |
 
 ## Decisões de engenharia
 
