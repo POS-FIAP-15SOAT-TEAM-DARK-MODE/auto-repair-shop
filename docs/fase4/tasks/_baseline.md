@@ -57,7 +57,7 @@ Verificação: `yq` ou `python -c 'import yaml…'` parseando o YAML; `grep -n '
 ## B5 — `.github/workflows/ci.yml`
 Manter os jobs `pre-commit`, `build`, `unit-tests`, `sonarqube` do original e **acrescentar**:
 - `integration-tests`: `services:` `postgres:15-alpine` (env `POSTGRES_USER/PASSWORD/DB` do serviço, `--health-cmd pg_isready`) e, se o serviço usa mensageria, `ministack: ministackorg/ministack` (porta 4566); rodar migrations (`migrate` CLI ou `go run`) antes; `go test -tags=integration ./internal/integration/... -v` com `AWS_ENDPOINT_URL=http://localhost:4566`, `AWS_ACCESS_KEY_ID=test`, `AWS_SECRET_ACCESS_KEY=test`, `AWS_REGION=us-east-1`.
-- `coverage`: `go test ./... -coverprofile=coverage.out` + gate: `COV=$(go tool cover -func=coverage.out | awk '/^total:/ {gsub("%","",$3); print $3}')` e `awk -v c="$COV" 'BEGIN{exit !(c>=80)}'` (falha se < 80). Publicar o percentual em `$GITHUB_STEP_SUMMARY`.
+- `coverage`: `go test ./... -coverprofile=coverage.out`, **excluindo mocks gerados** (`grep -v '/mocks/' coverage.out > coverage.filtered.out`, mesma exclusão do `sonar.exclusions`) + gate sobre o arquivo filtrado: `COV=$(go tool cover -func=coverage.filtered.out | awk '/^total:/ {gsub("%","",$3); print $3}')` e `awk -v c="$COV" 'BEGIN{exit !(c>=80)}'` (falha se < 80). Publicar o percentual em `$GITHUB_STEP_SUMMARY`.
 Nomes de job **exatos**: `pre-commit`, `build`, `unit-tests`, `integration-tests`, `sonarqube`, `coverage` (usados na proteção de branch no S7).
 
 ## B6 — `k8s/manifests`

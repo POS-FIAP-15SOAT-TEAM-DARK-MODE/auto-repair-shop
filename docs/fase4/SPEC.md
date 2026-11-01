@@ -228,6 +228,7 @@ Regras de convivência dentro de uma onda:
 - **Mensageria:** publica comandos em `saga-commands` e `ServiceOrderStatusChanged` em `so-events` (outbox); consome `so-saga-replies`. Implementa a tabela de §3.2 e o job de *deadline*.
 - **Config:** `PORT`, `POSTGRES_*`, `JWT_SECRET`, `INTERNAL_TOKEN`, `CUSTOMER_URL`, `CATALOG_URL`, `AWS_ENDPOINT_URL`, `SO_SAGA_REPLIES_QUEUE_URL`, `SAGA_COMMANDS_TOPIC_ARN`, `SO_EVENTS_TOPIC_ARN`, `SAGA_STEP_TIMEOUT`, `SAGA_PAYMENT_TIMEOUT`.
 - **Compose isolado:** stubs de Customer e Catalog; Billing/Execution simulados por um *responder* de teste que publica as respostas esperadas (fixtures), até F10.
+- **Pendência herdada do F2:** `DELETE /v1/customers/:id` deixou de checar OS (a tabela agora é do Service Order). Expor `GET /internal/service-orders/exists?customer_id={id}` (e `vehicle_id`) neste serviço e fazer o Customer chamá-lo antes de excluir (`409` se existir).
 
 ### F7 — `auto-repair-shop-infra-db` (tudo de dados) — ficha: `docs/fase4/tasks/F7-infra-db.md`
 - **Mantém** a instância RDS única, o master `postgres` e o secret legado `${name}/app`; o plano **só adiciona** recursos.
