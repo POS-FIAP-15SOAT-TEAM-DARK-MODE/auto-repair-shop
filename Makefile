@@ -57,6 +57,9 @@ smoke: ## One service order through the gateway, from login to the execution que
 reset: ## Remove the containers and their volumes, then start again
 	sh scripts/start.sh reset
 
+validate: ## Start the ecosystem, run the e2e suite and print a PASS/FAIL checklist
+	sh scripts/validate-local.sh
+
 up-all: start ## Alias of make start
 
 down-all: ## Stop the ecosystem and remove its volumes
@@ -68,4 +71,4 @@ logs: ## Follow the logs of the ecosystem
 e2e: ## Run the BDD end-to-end suite (godog) against E2E_BASE_URL
 	cd e2e && E2E_BASE_URL=$(E2E_BASE_URL) go test ./... -count=1 -v
 
-.PHONY: clone build-all start status smoke reset up-all down-all logs e2e
+.PHONY: clone build-all start status smoke reset validate up-all down-all logs e2e
