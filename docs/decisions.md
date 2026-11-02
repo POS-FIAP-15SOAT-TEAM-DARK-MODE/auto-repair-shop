@@ -70,3 +70,4 @@ Este repositório (`auto-repair-shop`) é o ponto de entrada do sistema: o gatew
 | P1c | Formato dos logs não é uniforme entre os serviços | mesmo conjunto de campos JSON (`request_id`, `service`, `saga_id`, `service_order_id`, `message_id`) (tarefa A4) |
 | P2 | Exclusão de cliente/veículo não verifica OS vinculadas desde a separação | Customer chamar `GET /internal/service-orders/exists` (tarefa A3) |
 | P3 | Checks obrigatórios nas branches protegidas | adicionar depois que a CI tiver rodado em `develop` (tarefa A6) |
+| P4 | O Dependabot propõe só atualizações de versão (nenhum alerta de segurança aberto): módulos Go, imagem `golang` 1.27 e GitHub Actions com saltos de versão maior | aplicar na onda 5 em PRs consolidadas, validando as ações de deploy no F11 (tarefa A8) |
