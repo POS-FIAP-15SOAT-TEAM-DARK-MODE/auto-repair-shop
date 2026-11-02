@@ -15,7 +15,7 @@ func TestWriteError_UsesEnvelope(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadGateway, rec.Code)
 	assert.Equal(t, "application/json; charset=utf-8", rec.Header().Get("Content-Type"))
-	assert.JSONEq(t, `{"code":502,"errors":["upstream unavailable"]}`, rec.Body.String())
+	assert.JSONEq(t, `{"code":502,"error":"upstream unavailable"}`, rec.Body.String())
 }
 
 func TestWriteJSON_WritesStatusAndBody(t *testing.T) {

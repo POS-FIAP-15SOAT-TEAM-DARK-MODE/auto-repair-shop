@@ -50,7 +50,7 @@ func TestNew_SkipsUnconfiguredUpstreams(t *testing.T) {
 
 	rec := serve(p, "lambda", httptest.NewRequest(http.MethodGet, "/x", nil))
 	assert.Equal(t, http.StatusBadGateway, rec.Code)
-	assert.JSONEq(t, `{"code":502,"errors":["upstream unavailable"]}`, rec.Body.String())
+	assert.JSONEq(t, `{"code":502,"error":"upstream unavailable"}`, rec.Body.String())
 }
 
 func TestForward_PreservesMethodPathQueryBodyAndHeaders(t *testing.T) {
@@ -137,7 +137,7 @@ func TestForward_UnavailableUpstreamIsBadGatewayWithoutCause(t *testing.T) {
 	var body web.ErrorBody
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.Equal(t, http.StatusBadGateway, body.Code)
-	assert.Equal(t, []string{"upstream unavailable"}, body.Errors)
+	assert.Equal(t, "upstream unavailable", body.Error)
 	assert.NotContains(t, rec.Body.String(), "refused")
 	assert.NotContains(t, rec.Body.String(), "127.0.0.1")
 	assert.Equal(t, []string{"rid-9"}, rec.Header().Values(web.RequestIDHeader))
@@ -155,7 +155,7 @@ func TestForward_SlowUpstreamIsGatewayTimeoutWithoutCause(t *testing.T) {
 	rec := serve(p, "catalog", httptest.NewRequest(http.MethodGet, "/v1/works", nil))
 
 	assert.Equal(t, http.StatusGatewayTimeout, rec.Code)
-	assert.JSONEq(t, `{"code":504,"errors":["upstream timeout"]}`, rec.Body.String())
+	assert.JSONEq(t, `{"code":504,"error":"upstream timeout"}`, rec.Body.String())
 }
 
 func TestForward_UnknownUpstreamIsBadGateway(t *testing.T) {

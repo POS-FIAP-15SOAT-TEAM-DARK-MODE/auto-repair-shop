@@ -48,11 +48,9 @@ paths:
                   code:
                     type: integer
                     example: 503
-                  errors:
-                    type: array
-                    items:
-                      type: string
-                    example: ["upstreams not ready"]
+                  error:
+                    type: string
+                    example: upstreams not ready
                   upstreams:
                     type: array
                     items:

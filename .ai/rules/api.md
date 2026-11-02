@@ -7,17 +7,17 @@ The gateway exposes its own endpoints and proxies the business API of the servic
 | Method and path | Behaviour |
 |---|---|
 | `GET /ping` | `200 {"message":"pong"}` |
-| `GET /ready` | `200 {"message":"ready"}`, or `503 {"code":503,"errors":["upstreams not ready"],"upstreams":[names]}` |
+| `GET /ready` | `200 {"message":"ready"}`, or `503 {"code":503,"error":"upstreams not ready","upstreams":[names]}` |
 | `GET /metrics` | Prometheus exposition |
 | `GET /swagger.yaml` | Gateway OpenAPI document (`docs/swagger.yaml`) |
 | `GET /swagger/index.html` | Static index page (`docs/index.html`) |
 | `GET /docs/<service>/swagger.yaml` | Proxied OpenAPI document of one documented service |
 
-Any other path or method goes through the routing table. Unmatched or blocked requests answer `404 {"code":404,"errors":["route not found"]}`.
+Any other path or method goes through the routing table. Unmatched or blocked requests answer `404 {"code":404,"error":"route not found"}`.
 
 ## Error envelope
 
-Every error the gateway writes uses `internal/pkg/web`: `{"code": <status>, "errors": [<message>...]}`. Upstream responses are not rewritten, so the services' own envelopes reach the client as they are.
+Every error the gateway writes uses `internal/pkg/web`: `{"code": <status>, "error": "<fixed message>"}`. The gateway has no validation errors, so there is no `errors` list. Upstream responses are not rewritten, so the services' own envelopes reach the client as they are.
 
 | Status | Message | When |
 |---|---|---|

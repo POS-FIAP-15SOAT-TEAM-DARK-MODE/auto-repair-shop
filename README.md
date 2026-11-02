@@ -34,7 +34,7 @@ The routing table is [`config/routes.yaml`](config/routes.yaml), embedded in the
 | any | `/v1/service-order*` (the rest) | `service_order` |
 | POST | `/auth/customer-login` (optional) | `lambda`, only when `LAMBDA_UPSTREAM` is set |
 
-Patterns: a `:param` matches one non-empty segment; a trailing `*` matches any suffix. Requests that match nothing, or that match a blocked route, answer `404 {"code":404,"errors":["route not found"]}`.
+Patterns: a `:param` matches one non-empty segment; a trailing `*` matches any suffix. Requests that match nothing, or that match a blocked route, answer `404 {"code":404,"error":"route not found"}`.
 
 ## Gateway endpoints
 
@@ -51,7 +51,7 @@ Patterns: a `:param` matches one non-empty segment; a trailing `*` matches any s
 
 - Method, path, query, body and headers are forwarded, `Authorization` included. `X-Forwarded-For`, `-Host` and `-Proto` are added.
 - `X-Request-Id` is kept when the client sends a valid one (up to 128 characters from `A-Z a-z 0-9 - _ . :`), otherwise generated. It is returned in the response, sent to the upstream and written in every log line.
-- An upstream that does not answer its headers within `UPSTREAM_TIMEOUT` gives `504 {"code":504,"errors":["upstream timeout"]}`. An upstream that cannot be reached gives `502 {"code":502,"errors":["upstream unavailable"]}`. The cause is logged on the server and never sent to the client.
+- An upstream that does not answer its headers within `UPSTREAM_TIMEOUT` gives `504 {"code":504,"error":"upstream timeout"}`. An upstream that cannot be reached gives `502 {"code":502,"error":"upstream unavailable"}`. The cause is logged on the server and never sent to the client.
 - Any response from an upstream, 4xx and 5xx included, is passed through unchanged.
 - Logs are JSON, one line per request, with `request_id`, `method`, `path`, `upstream`, `status` and `duration_ms`. The query string is not logged, because it can carry a customer document.
 

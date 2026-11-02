@@ -157,7 +157,7 @@ func TestSwaggerIndex(t *testing.T) {
 
 	rec := do(t, h, http.MethodGet, "/swagger/other.html")
 	assert.Equal(t, http.StatusNotFound, rec.Code)
-	assert.JSONEq(t, `{"code":404,"errors":["route not found"]}`, rec.Body)
+	assert.JSONEq(t, `{"code":404,"error":"route not found"}`, rec.Body)
 }
 
 func TestDocs_ProxiesServiceSwagger(t *testing.T) {
@@ -212,11 +212,12 @@ func TestReady_ListsFailingUpstreamNamesOnly(t *testing.T) {
 	assert.Equal(t, http.StatusServiceUnavailable, rec.Code)
 	var body struct {
 		Code      int      `json:"code"`
-		Errors    []string `json:"errors"`
+		Error     string   `json:"error"`
 		Upstreams []string `json:"upstreams"`
 	}
 	require.NoError(t, json.Unmarshal([]byte(rec.Body), &body))
 	assert.Equal(t, http.StatusServiceUnavailable, body.Code)
+	assert.Equal(t, "upstreams not ready", body.Error)
 	assert.ElementsMatch(t, []string{"catalog", "billing"}, body.Upstreams)
 	assert.NotContains(t, rec.Body, "127.0.0.1", "URLs are never listed")
 }
@@ -295,7 +296,7 @@ func TestProxy_InternalRoutesAreNeverForwarded(t *testing.T) {
 	for _, target := range []string{"/internal/resource/1", "/internal/other/1"} {
 		rec := do(t, h, http.MethodGet, target)
 		assert.Equal(t, http.StatusNotFound, rec.Code, target)
-		assert.JSONEq(t, `{"code":404,"errors":["route not found"]}`, rec.Body)
+		assert.JSONEq(t, `{"code":404,"error":"route not found"}`, rec.Body)
 	}
 	for name, s := range seens {
 		assert.False(t, s.called(), "upstream %s must not see internal paths", name)
@@ -342,7 +343,7 @@ func TestProxy_UpstreamDownIsBadGatewayWithoutCause(t *testing.T) {
 	rec := do(t, h, http.MethodGet, "/v1/works")
 
 	assert.Equal(t, http.StatusBadGateway, rec.Code)
-	assert.JSONEq(t, `{"code":502,"errors":["upstream unavailable"]}`, rec.Body)
+	assert.JSONEq(t, `{"code":502,"error":"upstream unavailable"}`, rec.Body)
 	assert.NotContains(t, rec.Body, "refused")
 }
 
@@ -361,7 +362,7 @@ func TestProxy_SlowUpstreamIsGatewayTimeout(t *testing.T) {
 	rec := do(t, h, http.MethodGet, "/v1/works")
 
 	assert.Equal(t, http.StatusGatewayTimeout, rec.Code)
-	assert.JSONEq(t, `{"code":504,"errors":["upstream timeout"]}`, rec.Body)
+	assert.JSONEq(t, `{"code":504,"error":"upstream timeout"}`, rec.Body)
 }
 
 func TestProxy_UpstreamErrorsPassThrough(t *testing.T) {

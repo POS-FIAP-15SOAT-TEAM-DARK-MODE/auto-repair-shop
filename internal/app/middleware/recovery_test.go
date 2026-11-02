@@ -20,7 +20,7 @@ func TestRecovery_PanicBecomesGenericInternalError(t *testing.T) {
 	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/boom", nil))
 
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-	assert.JSONEq(t, `{"code":500,"errors":["internal server error"]}`, rec.Body.String())
+	assert.JSONEq(t, `{"code":500,"error":"internal server error"}`, rec.Body.String())
 	assert.NotContains(t, rec.Body.String(), "secret")
 }
 
