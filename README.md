@@ -1,8 +1,41 @@
 # Auto Repair Shop: gateway e ambiente de execução
 
-Este repositório tem o **gateway** (ponto de entrada público do sistema, um proxy reverso em Go) e o **ambiente local** que sobe o sistema inteiro com Docker: o gateway, os seis microsserviços, a Lambda de login do cliente, um PostgreSQL e um MiniStack (emulador de SNS, SQS, DynamoDB e Secrets Manager). Também contém o e2e BDD que percorre uma ordem de serviço do começo ao fim.
+Este é o **repositório principal** do Auto Repair Shop (FIAP Pós 15SOAT, Tech Challenge Fase 4). Ele tem o **gateway** (ponto de entrada público, um proxy reverso em Go), o **ambiente local** que sobe o sistema inteiro com Docker (gateway, seis microsserviços, Lambda de login, PostgreSQL e MiniStack, o emulador de SNS, SQS, DynamoDB e Secrets Manager) e o **e2e BDD** que percorre uma ordem de serviço do começo ao fim.
 
-Este guia é para quem nunca viu o projeto: siga a ordem das seções. Decisões de arquitetura estão em [`docs/adr/`](docs/adr) e [`docs/decisions.md`](docs/decisions.md); a especificação da Fase 4 está em [`docs/fase4/SPEC.md`](docs/fase4/SPEC.md).
+Este guia é para quem nunca viu o projeto. **Início rápido:** com o Docker rodando, `make start` sobe tudo e `make validate` prova que funciona (seção 2).
+
+## 0. Visão geral
+
+```
+Cliente ──► API Gateway (AWS) ──► POST /auth/customer-login ──► Lambda ──► customer (PostgreSQL)
+                  │
+                  └──────────────► gateway (este repo, :8080)
+                                      ├─► customer-service      :8081  PostgreSQL  usuários, clientes, veículos
+                                      ├─► catalog-service       :8082  PostgreSQL  serviços, peças, estoque
+                                      ├─► billing-service       :8083  PostgreSQL  orçamento e pagamento
+                                      ├─► execution-service     :8084  PostgreSQL  fila de execução
+                                      ├─► history-service       :8085  DynamoDB    linha do tempo e relatório
+                                      └─► service-order-service :8086  PostgreSQL  OS e orquestrador da saga
+
+Serviços ◄── comandos e respostas da saga (SNS/SQS, outbox + consumidor idempotente) ──► Service Order
+```
+
+A criação e o andamento da OS são uma **saga orquestrada** pelo Service Order: reserva de estoque, orçamento, pagamento e execução, com compensação em ordem inversa quando algo falha. Os serviços não acessam o banco uns dos outros.
+
+| Repositório | Papel |
+|---|---|
+| [`auto-repair-shop`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop) (este) | gateway, ambiente local, e2e, documentação da arquitetura |
+| [`auto-repair-shop-customer-service`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-customer-service) | usuários, papéis, clientes, veículos, login de staff |
+| [`auto-repair-shop-catalog-service`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-catalog-service) | serviços (`work`), peças e reservas de estoque |
+| [`auto-repair-shop-billing-service`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-billing-service) | orçamento e pagamento |
+| [`auto-repair-shop-execution-service`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-execution-service) | fila de execução e progresso dos works |
+| [`auto-repair-shop-history-service`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-history-service) | histórico da OS e tempo médio (DynamoDB) |
+| [`auto-repair-shop-service-order-service`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-service-order-service) | OS e orquestrador da saga |
+| [`auto-repair-shop-lambda-auth`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth) | login do cliente por CPF (Lambda) |
+| [`auto-repair-shop-infra-db`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) | RDS PostgreSQL (um database por serviço), DynamoDB, segredos |
+| [`auto-repair-shop-infra-k8s`](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) | EKS, SNS/SQS, ECR, API Gateway, observabilidade |
+
+Decisões de arquitetura estão em [`docs/decisions.md`](docs/decisions.md) e [`docs/adr/`](docs/adr); a especificação da Fase 4 está em [`docs/fase4/SPEC.md`](docs/fase4/SPEC.md), com os contratos em [`docs/fase4/contracts/`](docs/fase4/contracts).
 
 ## 1. Pré-requisitos
 
@@ -52,6 +85,7 @@ Os clones que faltarem são criados nesse diretório. Caminhos relativos são re
 |---|---|
 | `make start` | sobe o ambiente (ver acima) |
 | `make status` | estado de cada contêiner, `/ping` de cada serviço e `/ready` do gateway; sai com código diferente de zero se algo falhar |
+| `make validate` | sobe o ambiente, roda o e2e completo e imprime um checklist PASS/FAIL (sai com o número de falhas) |
 | `make smoke` | um fluxo de ordem de serviço em cerca de um minuto, sem o godog (seção 4) |
 | `make e2e` | a suíte BDD completa contra o gateway (seção 6) |
 | `make logs` | segue os logs de todos os contêineres |
@@ -168,7 +202,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST $G/v1/payments/$PAY/confirm -H 
 curl -s $G/v1/execution/queue -H "Authorization: Bearer $MEC" | jq ".items[] | select(.serviceOrderId==\"$SO\")"
 ```
 
-Sem token, uma rota protegida responde `401` do serviço (não do gateway). O formato alvo é `{"code":401,"error":"Unauthorized"}`; enquanto a mudança de erros não chega aos repositórios dos serviços, o corpo ainda é `{"error":"Unauthorized"}` (seção 7). O histórico da OS está em `GET /v1/service-order/$SO/history`, com o mesmo token do atendente.
+Sem token, uma rota protegida responde `401` do serviço (não do gateway), com o corpo `{"code":401,"error":"Unauthorized"}`. O histórico da OS está em `GET /v1/service-order/$SO/history`, com o mesmo token do atendente.
 
 ## 5. Parar, limpar e reiniciar
 
@@ -225,7 +259,6 @@ Para o e2e, o ambiente precisa estar pronto: `make start` já espera por isso. E
 - **`bind: address already in use` na porta 5432 (ou outra da lista)**: há um PostgreSQL local rodando. Pare-o ou troque o mapeamento de porta no `docker-compose.yml`.
 - **Um serviço não sobe ou sai com erro**: `docker compose logs <serviço>`. As migrações rodam antes dos serviços; se `migrate-<serviço>` falhou, o log dele mostra o motivo.
 - **Serviço clonado no branch errado**: `SERVICES_BRANCH=<branch> sh scripts/clone-services.sh` atualiza os clones existentes (`git pull --ff-only`). Para usar clones locais, veja `SERVICES_DIR` na seção 2.
-- **`body code is 401` falha no e2e**: o 401 vem do serviço, não do gateway. Enquanto os serviços clonados responderem `{"error":"Unauthorized"}` (sem `code`), o cenário `security` falha nesse único passo. A correção é a tarefa de erros nos repositórios dos serviços; o gateway já repassa o corpo sem alterar.
 - **Clone falha**: a clonagem é por HTTPS sem credenciais; os repositórios de serviço precisam ser públicos.
 
 ## 8. Referência do gateway
@@ -259,6 +292,19 @@ Valor inválido impede o gateway de subir, e a mensagem de erro nunca mostra a U
 - `k8s/manifests/overlays/lab`: Service `LoadBalancer` (AWS Academy Learner Lab, sem controlador de Ingress).
 - `k8s/manifests/overlays/stg` e `prd`: Ingress (ALB), limites de HPA e nível de log; `components/observability` adiciona o `ServiceMonitor`.
 - `.github/workflows/docker.yml` constrói e publica a imagem, aplica o overlay e espera o rollout. No lab, publica o host do load balancer no SSM (`/auto-repair-shop/<env>/app-backend-host`), que o API Gateway da AWS lê.
+
+### Teste remoto (STG)
+
+O deploy no EKS é feito pelo workflow `Docker` de cada repositório e depende dos **secrets da organização** `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` e `AWS_SESSION_TOKEN` (credenciais do AWS Academy Learner Lab, que expiram a cada sessão) e `SONAR_TOKEN` (job `sonarqube`). Para atualizá-los:
+
+```bash
+gh secret set AWS_ACCESS_KEY_ID     --org POS-FIAP-15SOAT-TEAM-DARK-MODE --visibility all
+gh secret set AWS_SECRET_ACCESS_KEY --org POS-FIAP-15SOAT-TEAM-DARK-MODE --visibility all
+gh secret set AWS_SESSION_TOKEN     --org POS-FIAP-15SOAT-TEAM-DARK-MODE --visibility all
+gh secret set SONAR_TOKEN           --org POS-FIAP-15SOAT-TEAM-DARK-MODE --visibility all
+```
+
+Ordem de provisionamento e deploy: `infra-k8s` (rede, EKS, SNS/SQS) → `infra-db` (RDS, DynamoDB) → `lambda-auth` → serviços → gateway → API Gateway da AWS. Depois do deploy, aponte o e2e para o endereço público: `E2E_BASE_URL=https://<api-gateway> make e2e`.
 
 ## 10. Estrutura
 
