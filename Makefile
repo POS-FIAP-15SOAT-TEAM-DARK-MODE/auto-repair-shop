@@ -36,6 +36,8 @@ docker-build: ## Build the gateway image
 # Needs Docker. The services are cloned into services/ (see scripts/clone-services.sh).
 COMPOSE ?= docker compose
 E2E_BASE_URL ?= http://localhost:8080
+LOCAL_LAMBDA_DOCKERFILE ?= $(CURDIR)/local/lambda/Dockerfile
+export LOCAL_LAMBDA_DOCKERFILE
 
 clone: ## Clone the service repositories (or fast-forward the existing clones)
 	sh scripts/clone-services.sh
@@ -43,11 +45,19 @@ clone: ## Clone the service repositories (or fast-forward the existing clones)
 build-all: ## Build the images one at a time (building them in parallel exhausts a small Docker VM)
 	for s in customer-service catalog-service billing-service execution-service history-service service-order-service lambda lambda-adapter gateway; do $(COMPOSE) build $$s || exit 1; done
 
-up-all: ## Clone what is missing, build and start the whole ecosystem, wait for /ping and /ready
-	sh scripts/clone-services.sh --if-missing
-	$(MAKE) build-all
-	$(COMPOSE) up -d
-	sh scripts/wait-ready.sh 180
+start: ## Start the ecosystem: checks, clones what is missing, builds one image at a time, waits for ready
+	sh scripts/start.sh
+
+status: ## State of the containers, /ping of every service and /ready of the gateway
+	sh scripts/start.sh status
+
+smoke: ## One service order through the gateway, from login to the execution queue (about a minute)
+	sh scripts/start.sh smoke
+
+reset: ## Remove the containers and their volumes, then start again
+	sh scripts/start.sh reset
+
+up-all: start ## Alias of make start
 
 down-all: ## Stop the ecosystem and remove its volumes
 	$(COMPOSE) down -v
@@ -58,4 +68,4 @@ logs: ## Follow the logs of the ecosystem
 e2e: ## Run the BDD end-to-end suite (godog) against E2E_BASE_URL
 	cd e2e && E2E_BASE_URL=$(E2E_BASE_URL) go test ./... -count=1 -v
 
-.PHONY: clone build-all up-all down-all logs e2e
+.PHONY: clone build-all start status smoke reset up-all down-all logs e2e

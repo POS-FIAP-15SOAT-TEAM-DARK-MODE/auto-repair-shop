@@ -5,12 +5,14 @@
 #   sh scripts/clone-services.sh --if-missing  clone only the repositories whose directory does not exist yet
 #
 # SERVICES_BRANCH selects the branch to check out (default: develop). GITHUB_ORG changes the owner.
+# SERVICES_DIR changes the destination (absolute, or relative to the repository; default: services/).
 set -eu
 
 ORG="${GITHUB_ORG:-POS-FIAP-15SOAT-TEAM-DARK-MODE}"
 BRANCH="${SERVICES_BRANCH:-develop}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DEST="$ROOT/services"
+DEST="${SERVICES_DIR:-$ROOT/services}"
+case "$DEST" in /*) ;; *) DEST="$ROOT/$DEST" ;; esac
 
 IF_MISSING=0
 case "${1:-}" in

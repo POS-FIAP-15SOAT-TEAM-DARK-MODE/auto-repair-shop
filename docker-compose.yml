@@ -75,37 +75,37 @@ services:
   migrate-customer:
     <<: *migrate
     volumes:
-      - ./services/auto-repair-shop-customer-service/migrations:/migrations:ro
+      - ${SERVICES_DIR:-./services}/auto-repair-shop-customer-service/migrations:/migrations:ro
     command: ["-path=/migrations", "-database", "postgres://customer_app:local-dev-only@postgres:5432/customer?sslmode=disable", "up"]
 
   migrate-catalog:
     <<: *migrate
     volumes:
-      - ./services/auto-repair-shop-catalog-service/migrations:/migrations:ro
+      - ${SERVICES_DIR:-./services}/auto-repair-shop-catalog-service/migrations:/migrations:ro
     command: ["-path=/migrations", "-database", "postgres://catalog_app:local-dev-only@postgres:5432/catalog?sslmode=disable", "up"]
 
   migrate-billing:
     <<: *migrate
     volumes:
-      - ./services/auto-repair-shop-billing-service/migrations:/migrations:ro
+      - ${SERVICES_DIR:-./services}/auto-repair-shop-billing-service/migrations:/migrations:ro
     command: ["-path=/migrations", "-database", "postgres://billing_app:local-dev-only@postgres:5432/billing?sslmode=disable", "up"]
 
   migrate-execution:
     <<: *migrate
     volumes:
-      - ./services/auto-repair-shop-execution-service/migrations:/migrations:ro
+      - ${SERVICES_DIR:-./services}/auto-repair-shop-execution-service/migrations:/migrations:ro
     command: ["-path=/migrations", "-database", "postgres://execution_app:local-dev-only@postgres:5432/execution?sslmode=disable", "up"]
 
   migrate-service-order:
     <<: *migrate
     volumes:
-      - ./services/auto-repair-shop-service-order-service/migrations:/migrations:ro
+      - ${SERVICES_DIR:-./services}/auto-repair-shop-service-order-service/migrations:/migrations:ro
     command: ["-path=/migrations", "-database", "postgres://service_order_app:local-dev-only@postgres:5432/service_order?sslmode=disable", "up"]
 
   # ---- Services -------------------------------------------------------------------------------------------------
 
   customer-service:
-    build: ./services/auto-repair-shop-customer-service
+    build: ${SERVICES_DIR:-./services}/auto-repair-shop-customer-service
     environment:
       <<: *service-env
       PORT: "8081"
@@ -126,7 +126,7 @@ services:
     networks: [auto-repair-shop-net]
 
   catalog-service:
-    build: ./services/auto-repair-shop-catalog-service
+    build: ${SERVICES_DIR:-./services}/auto-repair-shop-catalog-service
     environment:
       <<: *service-env
       PORT: "8082"
@@ -148,7 +148,7 @@ services:
     networks: [auto-repair-shop-net]
 
   billing-service:
-    build: ./services/auto-repair-shop-billing-service
+    build: ${SERVICES_DIR:-./services}/auto-repair-shop-billing-service
     environment:
       <<: *service-env
       PORT: "8083"
@@ -171,7 +171,7 @@ services:
     networks: [auto-repair-shop-net]
 
   execution-service:
-    build: ./services/auto-repair-shop-execution-service
+    build: ${SERVICES_DIR:-./services}/auto-repair-shop-execution-service
     environment:
       <<: *service-env
       PORT: "8084"
@@ -193,7 +193,7 @@ services:
     networks: [auto-repair-shop-net]
 
   history-service:
-    build: ./services/auto-repair-shop-history-service
+    build: ${SERVICES_DIR:-./services}/auto-repair-shop-history-service
     environment:
       <<: *service-env
       PORT: "8085"
@@ -207,7 +207,7 @@ services:
     networks: [auto-repair-shop-net]
 
   service-order-service:
-    build: ./services/auto-repair-shop-service-order-service
+    build: ${SERVICES_DIR:-./services}/auto-repair-shop-service-order-service
     environment:
       <<: *service-env
       PORT: "8086"
@@ -239,8 +239,8 @@ services:
 
   lambda:
     build:
-      context: ./services/auto-repair-shop-lambda-auth
-      dockerfile: ../../local/lambda/Dockerfile
+      context: ${SERVICES_DIR:-./services}/auto-repair-shop-lambda-auth
+      dockerfile: ${LOCAL_LAMBDA_DOCKERFILE:-../../local/lambda/Dockerfile}
     environment:
       <<: *service-env
       DB_HOST: postgres
