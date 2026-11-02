@@ -1,2 +1,0 @@
-ALTER TABLE service_order_status_history
-DROP CONSTRAINT uq_service_order_status_history_service_order_id_new_status;

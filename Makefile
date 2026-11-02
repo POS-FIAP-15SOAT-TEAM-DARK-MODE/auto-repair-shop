@@ -1,87 +1,61 @@
 -include .env
 export
 
-# Detect if running on Windows
-ifeq ($(OS),Windows_NT)
-    USE_WINDOWS := 1
-else
-    USE_WINDOWS :=
-endif
+GO ?= go
+BIN ?= bin/gateway
 
-run:
-	go run cmd/service/main.go
+.PHONY: run build test coverage vet fmt check docker-build
 
-test:
-ifeq ($(USE_WINDOWS),1)
-	set LOG_LEVEL=PANIC && go test ./... -v
-else
-	LOG_LEVEL=PANIC go test ./... --race -v
-endif
+run: ## Run the gateway on $$PORT (default 8080)
+	$(GO) run ./cmd/service
 
-test-integration:
-ifeq ($(USE_WINDOWS),1)
-	set BCRYPT_COST=4 && go test -tags=integration ./internal/integration/... -v
-else
-	BCRYPT_COST=4 go test -tags=integration ./internal/integration/... -v
-endif
+build: ## Compile the gateway binary
+	CGO_ENABLED=0 $(GO) build -trimpath -o $(BIN) ./cmd/service
 
-coverage:
-ifeq ($(USE_WINDOWS),1)
-	set LOG_LEVEL=PANIC && go test ./... --coverprofile=coverage.out
-	go tool cover -html=coverage.out
-else
-	LOG_LEVEL=PANIC go test ./... --coverprofile=coverage.out
-	go tool cover -html=coverage.out
-endif
+test: ## Unit tests with the race detector
+	LOG_LEVEL=PANIC $(GO) test ./... --race -count=1
 
-sonarqube-run: coverage
-	sonar-scanner \
-	  -Dsonar.projectKey=auto-repair-shop \
-	  -Dsonar.sources=. \
-	  -Dsonar.host.url=http://localhost:9000 \
-	  -Dsonar.token=${SONARQUBE_PROJECT_TOKEN}
+coverage: ## Coverage profile (generated mocks excluded) and HTML report
+	LOG_LEVEL=PANIC $(GO) test ./... -coverprofile=coverage.out
+	grep -v '/mocks/' coverage.out > coverage.filtered.out
+	$(GO) tool cover -func=coverage.filtered.out | tail -1
+	$(GO) tool cover -html=coverage.out
 
-docker-up:
-	docker-compose up --build
+vet: ## go vet
+	$(GO) vet ./...
 
-docker-down:
-	docker-compose down
+fmt: ## Fail if any file is not gofmt-formatted
+	@test -z "$$(gofmt -l .)" || (gofmt -l . && exit 1)
 
-migrate-install:
-	go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+check: fmt vet test ## Everything CI runs locally, except the linter
 
-migrate-up:
-	@type migrate >/dev/null 2>&1 || { $(MAKE) migrate-install; }
-	migrate -path migrations -database "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/autorepairshop?sslmode=disable" up
+docker-build: ## Build the gateway image
+	docker build -t auto-repair-shop:dev .
 
-migrate-down:
-	@type migrate >/dev/null 2>&1 || { $(MAKE) migrate-install; }
-	migrate -path migrations -database "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/autorepairshop?sslmode=disable" down
+# ---- Local ecosystem (docker compose) and end-to-end tests ----------------------------------
+# Needs Docker. The services are cloned into services/ (see scripts/clone-services.sh).
+COMPOSE ?= docker compose
+E2E_BASE_URL ?= http://localhost:8080
 
-migrate-status:
-	@type migrate >/dev/null 2>&1 || { $(MAKE) migrate-install; }
-	migrate -path migrations -database "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@localhost:5432/autorepairshop?sslmode=disable" version
+clone: ## Clone the service repositories (or fast-forward the existing clones)
+	sh scripts/clone-services.sh
 
-mockgen:
-	go generate ./...
+build-all: ## Build the images one at a time (building them in parallel exhausts a small Docker VM)
+	for s in customer-service catalog-service billing-service execution-service history-service service-order-service lambda lambda-adapter gateway; do $(COMPOSE) build $$s || exit 1; done
 
-# =====================================================================
-# Kubernetes / Infra (k8s/) — 100% Docker-only
-#   The host needs ONLY Docker. These targets run the real work inside the
-#   toolbox container (kind/kubectl/terraform/aws) via the mounted Docker
-#   socket. For anything ad hoc (kubectl, logs, terraform, aws) use k8s-shell.
-#   See README "Infrastructure (k8s/)".
-# =====================================================================
+up-all: ## Clone what is missing, build and start the whole ecosystem, wait for /ping and /ready
+	sh scripts/clone-services.sh --if-missing
+	$(MAKE) build-all
+	$(COMPOSE) up -d
+	sh scripts/wait-ready.sh 180
 
-K8S_TOOLBOX := ./k8s/toolbox/run.sh
+down-all: ## Stop the ecosystem and remove its volumes
+	$(COMPOSE) down -v
 
-.PHONY: k8s-up k8s-down k8s-shell
+logs: ## Follow the logs of the ecosystem
+	$(COMPOSE) logs -f --tail=100
 
-k8s-up: ## Bring up the full local environment (Kind + app + HPA)
-	@$(K8S_TOOLBOX) up
+e2e: ## Run the BDD end-to-end suite (godog) against E2E_BASE_URL
+	cd e2e && E2E_BASE_URL=$(E2E_BASE_URL) go test ./... -count=1 -v
 
-k8s-down: ## Tear down the local environment (delete the Kind cluster)
-	@$(K8S_TOOLBOX) down
-
-k8s-shell: ## Shell into the toolbox for anything else (kubectl/kind/terraform/aws)
-	@$(K8S_TOOLBOX) shell
+.PHONY: clone build-all up-all down-all logs e2e

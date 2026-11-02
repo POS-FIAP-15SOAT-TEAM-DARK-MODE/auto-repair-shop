@@ -1,90 +1,303 @@
+# Local ecosystem of the Auto Repair Shop: the gateway, the six services, the login lambda (adapter + Runtime
+# Interface Emulator), one PostgreSQL with one database per service, and one MiniStack (SNS/SQS/DynamoDB/Secrets Manager).
+#
+# Prerequisite: the service repositories cloned into services/ (make clone, or make up-all which clones what is missing).
+# Every credential below is a fixed development value (not a secret). Do not reuse them anywhere else.
+name: auto-repair-shop-local
+
+x-service-env: &service-env
+  LOG_LEVEL: INFO
+  AWS_REGION: us-east-1
+  AWS_ENDPOINT_URL: http://ministack:4566
+  AWS_ACCESS_KEY_ID: test
+  AWS_SECRET_ACCESS_KEY: test
+  JWT_SECRET: local-dev-jwt-secret
+  INTERNAL_TOKEN: local-dev-internal-token
+
+x-migrate: &migrate
+  image: migrate/migrate:v4.17.1
+  depends_on:
+    postgres:
+      condition: service_healthy
+  networks: [auto-repair-shop-net]
+
 services:
-  app:
-    build: .
-    env_file:
-      - .env
-    ports:
-      - "${PORT:-8080}:${PORT:-8080}"
-    environment:
-      - BCRYPT_COST=${BCRYPT_COST:-10}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-autorepairshop}
-      - POSTGRES_HOST=${POSTGRES_HOST:-db}
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
-      - BCRYPT_COST=${BCRYPT_COST:-12}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    restart: unless-stopped
-    networks:
-      - backend
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
+  # ---- Infrastructure -------------------------------------------------------------------------------------------
 
-  migrate:
-    image: migrate/migrate
-    volumes:
-      - ./migrations:/migrations
-    command:
-      - "-path=/migrations"
-      - "-database=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-autorepairshop}?sslmode=disable"
-      - "up"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - backend
-
-  db:
+  postgres:
     image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_DB=autorepairshop
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks:
-      - backend
+      # Runs once, on the first start of an empty volume: roles, one database per service, lambda grants.
+      - ./local/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d autorepairshop"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [auto-repair-shop-net]
 
-  sonarqube:
-    image: sonarqube:latest
+  ministack:
+    image: ministackorg/ministack
     ports:
-      - "9000:9000"
-    networks:
-      - backend
-    environment:
-      - SONARQUBE_JDBC_USERNAME=${SONARQUBE_USERNAME}
-      - SONARQUBE_JDBC_PASSWORD=${SONARQUBE_PASSWORD}
-      - SONARQUBE_JDBC_URL=postgressql://db:5432/sonar
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:4566/_ministack/health')\" || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [auto-repair-shop-net]
 
-volumes:
-  postgres_data:
-  sonarqube_data:
-  sonarqube_extensions:
+  aws-init:
+    image: amazon/aws-cli
+    entrypoint: ["/bin/sh", "/init/init-aws.sh"]
+    volumes:
+      - ./local:/init:ro
+    environment:
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://ministack:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      JWT_SECRET: local-dev-jwt-secret
+      LAMBDA_DB_PASSWORD: local-dev-only
+    depends_on:
+      ministack:
+        condition: service_healthy
+    networks: [auto-repair-shop-net]
+
+  # ---- Migrations (one per relational service; each runs as the service role) -----------------------------------
+
+  migrate-customer:
+    <<: *migrate
+    volumes:
+      - ./services/auto-repair-shop-customer-service/migrations:/migrations:ro
+    command: ["-path=/migrations", "-database", "postgres://customer_app:local-dev-only@postgres:5432/customer?sslmode=disable", "up"]
+
+  migrate-catalog:
+    <<: *migrate
+    volumes:
+      - ./services/auto-repair-shop-catalog-service/migrations:/migrations:ro
+    command: ["-path=/migrations", "-database", "postgres://catalog_app:local-dev-only@postgres:5432/catalog?sslmode=disable", "up"]
+
+  migrate-billing:
+    <<: *migrate
+    volumes:
+      - ./services/auto-repair-shop-billing-service/migrations:/migrations:ro
+    command: ["-path=/migrations", "-database", "postgres://billing_app:local-dev-only@postgres:5432/billing?sslmode=disable", "up"]
+
+  migrate-execution:
+    <<: *migrate
+    volumes:
+      - ./services/auto-repair-shop-execution-service/migrations:/migrations:ro
+    command: ["-path=/migrations", "-database", "postgres://execution_app:local-dev-only@postgres:5432/execution?sslmode=disable", "up"]
+
+  migrate-service-order:
+    <<: *migrate
+    volumes:
+      - ./services/auto-repair-shop-service-order-service/migrations:/migrations:ro
+    command: ["-path=/migrations", "-database", "postgres://service_order_app:local-dev-only@postgres:5432/service_order?sslmode=disable", "up"]
+
+  # ---- Services -------------------------------------------------------------------------------------------------
+
+  customer-service:
+    build: ./services/auto-repair-shop-customer-service
+    environment:
+      <<: *service-env
+      PORT: "8081"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: customer_app
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: customer
+      POSTGRES_SSLMODE: disable
+      JWT_EXPIRES_IN: 24h
+      BCRYPT_COST: "10"
+      SEED_ENABLED: "true"
+    ports:
+      - "8081:8081"
+    depends_on:
+      migrate-customer:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  catalog-service:
+    build: ./services/auto-repair-shop-catalog-service
+    environment:
+      <<: *service-env
+      PORT: "8082"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: catalog_app
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: catalog
+      POSTGRES_SSLMODE: disable
+      SEED_ENABLED: "true"
+      CATALOG_QUEUE_URL: http://ministack:4566/000000000000/auto-repair-shop-local-catalog-queue
+    ports:
+      - "8082:8082"
+    depends_on:
+      migrate-catalog:
+        condition: service_completed_successfully
+      aws-init:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  billing-service:
+    build: ./services/auto-repair-shop-billing-service
+    environment:
+      <<: *service-env
+      PORT: "8083"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: billing_app
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: billing
+      POSTGRES_SSLMODE: disable
+      BILLING_QUEUE_URL: http://ministack:4566/000000000000/auto-repair-shop-local-billing-queue
+      BILLING_EVENTS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:auto-repair-shop-local-billing-events
+      PAYMENT_MODE: manual
+    ports:
+      - "8083:8083"
+    depends_on:
+      migrate-billing:
+        condition: service_completed_successfully
+      aws-init:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  execution-service:
+    build: ./services/auto-repair-shop-execution-service
+    environment:
+      <<: *service-env
+      PORT: "8084"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: execution_app
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: execution
+      POSTGRES_SSLMODE: disable
+      EXECUTION_QUEUE_URL: http://ministack:4566/000000000000/auto-repair-shop-local-execution-queue
+      EXECUTION_EVENTS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:auto-repair-shop-local-execution-events
+    ports:
+      - "8084:8084"
+    depends_on:
+      migrate-execution:
+        condition: service_completed_successfully
+      aws-init:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  history-service:
+    build: ./services/auto-repair-shop-history-service
+    environment:
+      <<: *service-env
+      PORT: "8085"
+      HISTORY_QUEUE_URL: http://ministack:4566/000000000000/auto-repair-shop-local-history-queue
+      DYNAMODB_TABLE: auto-repair-shop-local-history
+    ports:
+      - "8085:8085"
+    depends_on:
+      aws-init:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  service-order-service:
+    build: ./services/auto-repair-shop-service-order-service
+    environment:
+      <<: *service-env
+      PORT: "8086"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: service_order_app
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: service_order
+      POSTGRES_SSLMODE: disable
+      CUSTOMER_URL: http://customer-service:8081
+      CATALOG_URL: http://catalog-service:8082
+      SO_SAGA_REPLIES_QUEUE_URL: http://ministack:4566/000000000000/auto-repair-shop-local-so-saga-replies
+      SAGA_COMMANDS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:auto-repair-shop-local-saga-commands
+      SO_EVENTS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:auto-repair-shop-local-so-events
+      SAGA_STEP_TIMEOUT: 2m
+      SAGA_PAYMENT_TIMEOUT: 24h
+    ports:
+      - "8086:8086"
+    depends_on:
+      migrate-service-order:
+        condition: service_completed_successfully
+      aws-init:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  # ---- Customer login (POST /auth/customer-login) -----------------------------------------------------------
+  # lambda: the real lambda handler on the Runtime Interface Emulator (internal port 8080, not published).
+  # lambda-adapter: HTTP -> API Gateway v2 event translator; the gateway's LAMBDA_UPSTREAM points here.
+
+  lambda:
+    build:
+      context: ./services/auto-repair-shop-lambda-auth
+      dockerfile: ../../local/lambda/Dockerfile
+    environment:
+      <<: *service-env
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: lambda_auth_ro
+      DB_NAME: customer
+      # The local Postgres serves no TLS; the lambda defaults to sslmode=require (AWS).
+      DB_SSLMODE: disable
+      APP_SECRET_ID: auto-repair-shop-local/lambda-auth
+      JWT_EXPIRES_IN: 24h
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate-customer:
+        condition: service_completed_successfully
+      aws-init:
+        condition: service_completed_successfully
+    networks: [auto-repair-shop-net]
+
+  lambda-adapter:
+    build: ./local/lambda/adapter
+    environment:
+      PORT: "9001"
+      LAMBDA_INVOKE_URL: http://lambda:8080/2015-03-31/functions/function/invocations
+    ports:
+      - "9001:9001"
+    depends_on:
+      - lambda
+    networks: [auto-repair-shop-net]
+
+  # ---- Gateway (the only public entry point; its build context is this repository) ----------------------------
+
+  gateway:
+    build: .
+    environment:
+      PORT: "8080"
+      LOG_LEVEL: INFO
+      UPSTREAM_TIMEOUT: 30s
+      CUSTOMER_UPSTREAM: http://customer-service:8081
+      CATALOG_UPSTREAM: http://catalog-service:8082
+      BILLING_UPSTREAM: http://billing-service:8083
+      EXECUTION_UPSTREAM: http://execution-service:8084
+      HISTORY_UPSTREAM: http://history-service:8085
+      SERVICE_ORDER_UPSTREAM: http://service-order-service:8086
+      LAMBDA_UPSTREAM: http://lambda-adapter:9001
+    ports:
+      - "8080:8080"
+    depends_on:
+      - customer-service
+      - catalog-service
+      - billing-service
+      - execution-service
+      - history-service
+      - service-order-service
+      - lambda-adapter
+    networks: [auto-repair-shop-net]
 
 networks:
-  backend:
-    driver: bridge
+  auto-repair-shop-net:
+    name: auto-repair-shop-net

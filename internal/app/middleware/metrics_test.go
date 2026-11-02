@@ -1,12 +1,10 @@
-package middleware_test
+package middleware
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/middleware"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
@@ -14,46 +12,77 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func sampleCount(t *testing.T, method, route, status string) uint64 {
+// durationSeries returns the label sets recorded for http_request_duration_seconds.
+func durationSeries(t *testing.T) []map[string]string {
 	t.Helper()
+	families, err := prometheus.DefaultGatherer.Gather()
+	require.NoError(t, err)
 
-	hist, ok := metrics.HTTPRequestDuration.WithLabelValues(method, route, status).(prometheus.Histogram)
-	require.True(t, ok)
-
-	var m dto.Metric
-	require.NoError(t, hist.Write(&m))
-	return m.GetHistogram().GetSampleCount()
+	var series []map[string]string
+	for _, fam := range families {
+		if fam.GetName() != "http_request_duration_seconds" {
+			continue
+		}
+		for _, m := range fam.GetMetric() {
+			series = append(series, labelMap(m))
+		}
+	}
+	return series
 }
 
-func TestMetricsMiddleware_ObservesMatchedRoute(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Metrics())
-	router.GET("/metrics-test", func(c *gin.Context) {
-		c.Status(http.StatusOK)
+func labelMap(m *dto.Metric) map[string]string {
+	out := make(map[string]string, len(m.GetLabel()))
+	for _, l := range m.GetLabel() {
+		out[l.GetName()] = l.GetValue()
+	}
+	return out
+}
+
+func hasSeries(series []map[string]string, want map[string]string) bool {
+	for _, s := range series {
+		match := true
+		for k, v := range want {
+			if s[k] != v {
+				match = false
+				break
+			}
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+func TestMetrics_LabelsUseRouteTemplateAndUpstream(t *testing.T) {
+	r := gin.New()
+	r.Use(Metrics())
+	r.GET("/ping", func(c *gin.Context) { c.Status(http.StatusOK) })
+	r.GET("/docs/*path", func(c *gin.Context) {
+		c.Set("upstream", "catalog")
+		c.Status(http.StatusNotFound)
+	})
+	r.NoRoute(func(c *gin.Context) {
+		if c.Request.URL.Path == "/v1/works/1" {
+			c.Set("route", "/v1/works*")
+			c.Set("upstream", "catalog")
+			c.Status(http.StatusBadGateway)
+			return
+		}
+		c.Status(http.StatusNotFound)
 	})
 
-	before := sampleCount(t, http.MethodGet, "/metrics-test", "200")
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/ping", nil))
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/docs/catalog/swagger.yaml", nil))
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/v1/works/1", nil))
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/unknown", nil))
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("FROBNICATE", "/unknown", nil))
 
-	req := httptest.NewRequest(http.MethodGet, "/metrics-test", nil)
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, before+1, sampleCount(t, http.MethodGet, "/metrics-test", "200"))
-}
-
-func TestMetricsMiddleware_UnmatchedRouteUsesFallbackLabel(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Metrics())
-
-	before := sampleCount(t, http.MethodGet, "unmatched", "404")
-
-	req := httptest.NewRequest(http.MethodGet, "/does-not-exist", nil)
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusNotFound, rec.Code)
-	assert.Equal(t, before+1, sampleCount(t, http.MethodGet, "unmatched", "404"))
+	series := durationSeries(t)
+	assert.True(t, hasSeries(series, map[string]string{"method": "GET", "route": "/ping", "upstream": "gateway", "status": "200"}))
+	assert.True(t, hasSeries(series, map[string]string{"method": "GET", "route": "/docs/*path", "upstream": "catalog", "status": "404"}))
+	assert.True(t, hasSeries(series, map[string]string{"method": "GET", "route": "/v1/works*", "upstream": "catalog", "status": "502"}))
+	assert.True(t, hasSeries(series, map[string]string{"method": "GET", "route": "unmatched", "upstream": "gateway", "status": "404"}))
+	assert.True(t, hasSeries(series, map[string]string{"method": "OTHER", "route": "unmatched", "upstream": "gateway", "status": "404"}),
+		"unknown methods are reported as OTHER to bound the label cardinality")
 }

@@ -1,61 +1,36 @@
-package middleware_test
+package middleware
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRecoveryMiddleware(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Recovery())
-	router.GET("/panic", func(c *gin.Context) {
-		panic(errors.New("test panic"))
+func TestRecovery_PanicBecomesGenericInternalError(t *testing.T) {
+	r := gin.New()
+	r.Use(Recovery())
+	r.GET("/boom", func(c *gin.Context) {
+		panic("secret internal detail")
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/panic", nil)
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/boom", nil))
 
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-	assert.Contains(t, rec.Body.String(), "internal server error")
+	assert.JSONEq(t, `{"code":500,"errors":["internal server error"]}`, rec.Body.String())
+	assert.NotContains(t, rec.Body.String(), "secret")
 }
 
-func TestErrorHandlerMiddleware(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.ErrorHandler())
-	router.GET("/error", func(c *gin.Context) {
-		_ = c.Error(errors.New("custom error"))
-		c.Status(http.StatusBadRequest)
-	})
+func TestRecovery_PassesThroughWithoutPanic(t *testing.T) {
+	r := gin.New()
+	r.Use(Recovery())
+	r.GET("/ok", func(c *gin.Context) { c.Status(http.StatusTeapot) })
 
-	req := httptest.NewRequest(http.MethodGet, "/error", nil)
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/ok", nil))
 
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-	assert.Contains(t, rec.Body.String(), "custom error")
-}
-
-func TestErrorHandlerMiddleware_NoErrors(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.ErrorHandler())
-	router.GET("/no-error", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/no-error", nil)
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Empty(t, rec.Body.String())
+	assert.Equal(t, http.StatusTeapot, rec.Code)
 }

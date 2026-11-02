@@ -1,34 +1,17 @@
 # Go Conventions
 
-## Tech Stack
-Go 1.26 · Gin · PostgreSQL 15 · `lib/pq` (raw SQL, no ORM) · `golang-migrate` · `golang-jwt/jwt/v5` · Zap · Testify · Mockery v2 · `shopspring/decimal` · `google/uuid` · `oklog/ulid/v2`
+## Stack
 
-## ID Types
-- `google/uuid` — all entity IDs except service orders.
-- `oklog/ulid/v2` — `ServiceOrder` and `ServiceOrderHistory` IDs (sortable by creation time).
+Go 1.26 · Gin (own endpoints and middlewares only) · `net/http/httputil.ReverseProxy` · `gopkg.in/yaml.v3` · Zap (JSON logs) · `prometheus/client_golang` · Testify · `google/uuid` (request ids).
 
-## Monetary Values
-Always use `shopspring/decimal.Decimal`, never `float64` or `float32`. DB column type: `NUMERIC(10,2)`.
+## Idioms
 
-## No Framework Leakage
-- Domain structs: zero imports from `gin`, `pq`, or any `infra` package.
-- Service layer: only imports domain interfaces and `uow` package.
-- Gin types are confined to `infra/handler/`.
+- Errors are returned, wrapped with `%w` where the caller may test them, and never include configured URLs or credentials.
+- Configuration is read once, at startup. Invalid configuration is an error returned from `bootstrap`, which `main` logs before exiting.
+- Packages under `internal/gateway/` do not share state through globals. Dependencies are passed to constructors (`handlers.New`, `proxy.New`, `match.New`).
+- Context values carry the request-scoped logger (`internal/pkg/logger`) and nothing else.
+- `go vet`, `gofmt` and golangci-lint must be clean. Fix errcheck findings (for example `resp.Body.Close()`) instead of ignoring them.
 
-## Mock Generation
-Mocks live in `internal/domain/mocks/` and are generated via `//go:generate` directives on interface files:
-```go
-//go:generate go run github.com/vektra/mockery/v2 --name=CustomerRepository
-```
-Run `make mockgen` to regenerate. Never edit generated mock files manually.
+## Dependencies
 
-## Error Patterns
-- Domain errors: `var ErrXxx = errors.New("...")` in the domain package.
-- Services return domain errors; handlers map them to HTTP codes via a type switch.
-- Never expose internal error details in HTTP responses.
-
-## In-Memory Implementations
-Every domain has both `postgres.go` and `in_memory.go` in `infra/repository/<domain>/`. The in-memory variant is used exclusively for unit tests.
-
-## Configuration
-All env vars via `internal/pkg/env/`: `DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `BCRYPT_COST`, `PORT` (default `8080`). Makefile reads from `.env` and exports automatically.
+Keep the module small. A new dependency needs a reason that the standard library cannot cover in a few lines. Run `go mod tidy` after removing code.

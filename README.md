@@ -1,658 +1,192 @@
-# Auto Repair Shop
+# Auto Repair Shop — API Gateway
 
-Backend for an auto repair shop management system, organized by domain following a clean/hexagonal architecture. Manages service orders (SO), customers, vehicles, parts/stock, and administrative operations.
+The single public entry point of the Auto Repair Shop. It is a reverse proxy written in Go (Gin and `net/http/httputil.ReverseProxy`): it sends each request to the service that owns it, and nothing else. It validates no token, reads no database and holds no secret. Each service validates its own tokens.
 
-**Stack:** Go · Gin · PostgreSQL · JWT · Swagger
-
-> This is one of 4 repositories that make up the system (Tech Challenge Fase
-> 3). This repo holds the application; infrastructure lives in its own repos:
-> - [auto-repair-shop-infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) — Kubernetes cluster (EKS/VPC/add-ons)
-> - [auto-repair-shop-infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) — managed database (RDS)
-> - [auto-repair-shop-lambda-auth](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth) - JWT Generator (Lambda Function)
-## Domain
-
-- **SO (Service Order)** — Service order, the central aggregate
-- **Customer** — Customer identified by CPF (individual) or CNPJ (company)
-- **Vehicle** — Vehicle (plate, brand, model, year), linked to a Customer
-- **Work** — Billable service item (name, description, unit price), exposed under `/v1/works`
-- **Part/Supply** — Part or supply with stock quantity and unit price
-- **Budget** — Budget, auto-calculated from services and parts on a SO
-- **Stock** — Stock/inventory of Parts
-
-## SO Status Lifecycle
-
-```
-NEW → RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED
-  └──────────────────────────────────────────────────────────────────────────→ CANCELLED
-                               AWAITING_APPROVAL → REJECTED
-```
-
-`REJECTED` is a terminal state reached when the customer rejects the budget (from `AWAITING_APPROVAL`).
-`CANCELLED` is a terminal state available from cancelable statuses.
-
-## Work Status Lifecycle (within a Service Order)
-
-Each work item linked to a service order follows its own lifecycle:
-
-```
-AWAITING_START → IN_PROGRESS → COMPLETED
-                     ↓               ↓
-                 CANCELLED       CANCELLED  (can cancel from any non-terminal status)
-```
-
-| Status           | Description                            |
-|------------------|----------------------------------------|
-| `AWAITING_START` | Work linked to the SO, not yet started |
-| `IN_PROGRESS`    | Work is being executed by the mechanic |
-| `COMPLETED`      | Work was successfully finished         |
-| `CANCELLED`      | Work was cancelled (terminal state)    |
-
-Every status change is recorded as an immutable entry in `work_service_order_status_history`, preserving the full audit trail.
-
-## Project Structure
-
-Each business domain is a self-contained package under `internal/`, wired together
-by `internal/app`. Shared, domain-agnostic helpers live in `internal/pkg`.
-
-```
-cmd/
-  service/              # Application entrypoint
-internal/
-  app/                  # Application wiring & HTTP layer
-    bootstrap/          # Startup sequence
-    container/          # Handler & middleware containers
-    middleware/         # Auth, logger, recovery
-    routing/            # Route definitions
-    server.go, db.go, seed.go, ...
-  auth/                 # Domain package (auth, customer, supply, vehicle,
-  customer/             #   work, service_order, service_order_history)
-  supply/               #   Each contains:
-  vehicle/              #     domain/      — models & errors (framework-free)
-  work/                 #     interfaces/  — service/repo/controller ports + mocks
-  service_order/        #     adapters/    — request/response DTOs
-  service_order_history/#     repository/  — postgres + in-memory implementations
-  ...                   #     controller.go, service.go, di.go
-  integration/          # Integration test suite
-  pkg/                  # Shared utilities (db, uow, logger, web, auth, env, ...)
-```
+- Port: `8080` · Namespace `auto-repair-shop` · Kubernetes name `auto-repair-shop`
+- Decisions: [`docs/adr/`](docs/adr) (ADR 0005 explains why this repository is the gateway; ADR 0006 is the overall architecture)
+- Phase 4 documentation: [`docs/decisions.md`](docs/decisions.md) (decision register) · [`docs/fase4/SPEC.md`](docs/fase4/SPEC.md) (spec) · [`docs/fase4/contracts/`](docs/fase4/contracts) (names, messages, internal REST, DDL) · [`docs/fase4/tasks/`](docs/fase4/tasks) (task cards)
+- Agent rules: [`.ai/`](.ai/README.md) · [`CLAUDE.md`](CLAUDE.md) · [`AGENTS.md`](AGENTS.md)
 
 ## Architecture
 
-The same Go workload runs in three interchangeable ways: **(1)** locally with just
-Docker Compose (no Kubernetes), **(2)** on a local **Kind** cluster that simulates
-the full Kubernetes behavior end-to-end (no AWS needed), and **(3)** on **AWS
-(EKS + RDS)** provisioned by Terraform. Paths (2) and (3) apply the *same*
-Kustomize manifests — only the overlay changes.
-
-### Application components
-
-```mermaid
-flowchart LR
-    client([HTTP client])
-
-    subgraph ns["Kubernetes namespace: auto-repair-shop"]
-        app["Deployment<br/>auto-repair-shop (Go / Gin)<br/>probes on /ping"]
-        svc["Service<br/>NodePort local · LoadBalancer lab · ClusterIP+Ingress stg/prd"]
-        cm[["ConfigMap<br/>DB host/port, non-sensitive config"]]
-        sec[["Secret<br/>POSTGRES_PASSWORD · JWT_SECRET"]]
-        hpa["HPA<br/>1→5 · 70% CPU / 80% mem"]
-        job["Job: db-migrate<br/>waits for DB → golang-migrate up"]
-
-        svc --> app
-        cm -.envFrom.-> app
-        sec -.envFrom.-> app
-        hpa -.scales.-> app
-    end
-
-    db[("PostgreSQL")]
-    client -->|":8080 REST · JWT · Swagger"| svc
-    app -->|"SQL :5432"| db
-    job -->|"applies schema"| db
+```
+client ─► AWS API Gateway ─┬─ POST /auth/customer-login ─► lambda-auth
+                           └─ everything else ─► auto-repair-shop (this gateway, :8080)
+                                                   │ reverse proxy, ClusterIP upstreams
+     ┌──────────┬──────────┬──────────┬───────────┬─────────┬─────────────┐
+  customer   catalog    billing   execution    history  service-order
+  :8081      :8082      :8083     :8084        :8085    :8086
 ```
 
-### Provisioned infrastructure (Terraform — AWS)
-
-> **This repository no longer contains the Terraform for AWS.** As part of
-> Tech Challenge Fase 3's 4-repository requirement, provisioning moved to
-> three sibling repos:
-> - [**auto-repair-shop-infra-k8s**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) — `bootstrap` (state bucket), `shared` (ECR, GitHub OIDC, IAM roles), `aws` (VPC, EKS), `addons` (ALB Controller, metrics-server, External Secrets, **kube-prometheus-stack + Loki/Promtail — see [Observability](#observability) below**), `gateway` (AWS API Gateway — see [Authentication](#authentication) below).
-> - [**auto-repair-shop-infra-db**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) — RDS PostgreSQL + Secrets Manager, placed into the VPC provisioned by `infra-k8s` (read via `terraform_remote_state`).
-> - [**auto-repair-shop-lambda-auth**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth) — Function Serverless that issues JWTs for CPF-only customer login, fronted by `infra-k8s`'s API Gateway.
->
-> This repo only builds and deploys the application **onto** infra those repos
-> already provisioned — see [Deploy the app](#deploy-the-app) below.
-
-### Authentication
-
-Two ways to get a token, same middleware, same secret:
-- **Staff / existing accounts**: `POST /v1/auth/login` (email/password) — this repo, unchanged.
-- **Customer, CPF-only**: `POST /auth/customer-login` on `infra-k8s`'s API
-  Gateway, proxied to `auto-repair-shop-lambda-auth`, which looks up the
-  customer by CPF and issues a JWT with the same claim shape and
-  `JWT_SECRET`. This app's `internal/app/middleware/auth.go` accepts either
-  token unmodified — no second auth mechanism exists on this side.
-
-Everything else (all routes below) is reached the same way regardless of
-which login path issued the token; the Gateway proxies every other route
-straight through to this app's own LoadBalancer.
-
-### Observability
-
-- **Metrics**: this app exposes `/metrics` (Prometheus format) via
-  `internal/pkg/metrics` + a `Metrics()` Gin middleware — API latency by
-  route, service-order counters, status-transition durations. A
-  `ServiceMonitor` (`k8s/manifests/components/observability`, only on the
-  `lab`/`stg`/`prd` overlays — see below) tells the Prometheus in
-  `infra-k8s` to scrape it. Grafana there ships a custom "Auto Repair Shop —
-  App Metrics" dashboard alongside the cluster's own CPU/memory dashboards.
-- **Logs**: structured JSON (Zap), every line correlated by a `request_id`
-  (`internal/app/middleware/logger.go`) — shipped by Promtail into Loki
-  (also in `infra-k8s`), queryable from the same Grafana.
-- **Alerting**: not implemented — a deliberate scope cut, see `infra-k8s`'s
-  ADR on the observability add-ons.
-
-The diagram below is still the accurate deployed topology for this slice
-(app + cluster + database) — it is now split across repositories instead of
-one; the API Gateway + Lambda in front of it are covered in
-[Authentication](#authentication) above.
-
-```mermaid
-flowchart TB
-    gha["GitHub Actions"]
-    inet([Internet])
-
-    subgraph aws["AWS account"]
-        iam["IAM roles"]
-        ecr["ECR<br/>app images"]
-        sm["Secrets Manager<br/>app secret"]
-
-        subgraph vpc["VPC"]
-            subgraph pub["public subnets"]
-                igw["IGW / NAT"]
-                alb["ALB (public)"]
-            end
-            subgraph priv["private subnets"]
-                eks["EKS managed node group<br/>app pods"]
-                rds[("RDS PostgreSQL<br/>multi-AZ in prd")]
-            end
-            alb --> eks
-            eks -->|":5432 · SG: EKS nodes only"| rds
-        end
-
-        sm -->|"External Secrets Operator"| eks
-        ecr -.image pull.-> eks
-    end
-
-    gha -->|"OIDC (no static keys)"| iam
-    inet --> alb
-```
-
-Locally, the `overlays/local` Kustomize overlay stands in for all of this: an
-in-cluster PostgreSQL replaces RDS, a NodePort replaces the ALB, and a static
-Secret replaces Secrets Manager — so Kind reproduces the AWS topology with zero
-cloud dependency.
-
-### Deploy flow (GitHub Actions)
-
-This repo's CI/CD only builds and deploys the app image — Terraform
-plan/apply for the cluster and the database run in their own workflows, in
-the [infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s)
-and [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db)
-repos.
-
-```mermaid
-flowchart TB
-    pr["Pull Request"] --> ci["ci.yml<br/>lint · build · unit · integration · SonarCloud"]
-
-    dev["push develop"] --> docker
-    main["push main"] --> docker
-    docker["docker.yml"] --> stg{{"develop → STG"}}
-    docker --> prd{{"main → PRD"}}
-    stg --> steps
-    prd --> steps
-    steps["build image → push ECR → kubectl apply -k overlay<br/>→ set image (rollout) → wait for rollout<br/>(AWS auth via OIDC · migrations synced as ConfigMap)"]
-```
-
-## Prerequisites
-
-- [Go 1.26+](https://go.dev/dl/)
-- [Docker & Docker Compose](https://docs.docker.com/get-docker/)
-- Make
-
-## Contributing
-
-To contribute to the project you should install pre-commit:
-
-```bash
-# 1. Make sure you have Python installed
-python3 --version # or (on Windows) python --version
-
-# 1.1 If you do not have Python installed:
-brew install python # or (on Windows) download from https://www.python.org/downloads/
-
-# 2. Install pre-commit using pip
-pip install pre-commit
-
-# 3. Install the pre-commit hooks for this repository
-pre-commit install
-```
-
-## Getting Started
-
-There are three ways to run this project — pick the one that fits what you want to do:
-
-| # | Path | Needs | Use when | Jump to |
-|---|---|---|---|---|
-| 1 | **Local (Docker Compose)** | Docker only, **no Kubernetes/infra** | Run the app + DB fast, for development | [Setup with Docker](#2-setup-with-docker) |
-| 2 | **Kubernetes on Kind** | Docker only (toolbox) | Exercise the *full* k8s workload locally (Deployment, HPA, migrate Job, Service) — a faithful stand-in for AWS | [Full environment on Kind](#bring-up-the-full-environment-locally-docker-only) |
-| 3 | **AWS (real deploy)** | Cloud infra already provisioned by [infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s) + [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db) | Deploy the app for real, onto an existing EKS cluster + RDS | [AWS (stg / prd)](#aws-stg--prd--driven-from-github) |
-
-> Paths 2 and 3 deploy the **same** Kustomize manifests — Kind locally reproduces the
-> AWS topology, so you can validate the entire Kubernetes behavior without any cloud cost.
-
-### 1) Environment Variables
-
-Create a local `.env` file before running the project:
-
-```bash
-cp .env.example .env
-```
-
-### 2) Setup with Docker
-
-```bash
-# Start all services (app, migrations, and database)
-make docker-up
-```
-
-API URL: `http://localhost:8080`
-
-### 3) Local Development (app outside Docker)
-
-Use this flow when you want to run only the database in Docker and the app directly with Go:
-
-```bash
-# Start only PostgreSQL
-# (in a separate terminal, from repository root)
-docker-compose up -d db
-
-# Install migration tool (first time only)
-make migrate-install
-
-# Run all pending migrations
-make migrate-up
-
-# Start the application locally
-make run
-```
-
-### Useful Commands
-
-```bash
-# Run tests
-make test
-
-# Generate coverage report
-make coverage
-
-# Stop Docker containers
-make docker-down
-```
-
-The server starts on port `${PORT:-8080}` (default: 8080).
-
-## API Collection (Swagger UI)
-
-Once the app is running locally (`make docker-up` or `make k8s-up`), the interactive
-API collection is served by the built-in Swagger UI — use it to browse and execute
-every endpoint directly against the running server:
-
-**➡️ http://localhost:8080/swagger/index.html**
-
-The UI loads the OpenAPI specification from `/swagger.yaml` (source: `docs/swagger.yaml`)
-and lets you fire requests without any external tool (Postman/Insomnia not required).
-
-## Database Migrations
-
-Migrations are managed using `golang-migrate` and stored in the `/migrations` directory. Each migration consists of `.up.sql` (apply) and `.down.sql` (rollback) files.
-
-### Migration Commands
-
-```bash
-# Install golang-migrate CLI (first time only)
-make migrate-install
-
-# Apply all pending migrations
-make migrate-up
-
-# Rollback the last applied migration
-make migrate-down
-
-# Check current migration version
-make migrate-status
-```
-
-When adding schema changes, create migration files following the naming convention:
-```
-NNNNNN_description.up.sql
-NNNNNN_description.down.sql
-```
-
-Where `NNNNNN` is a sequential 6-digit number (e.g., `000002_add_customer_status.up.sql`).
-
-## Infrastructure (`k8s/`)
-
-`k8s/` now holds only the app's **workload** — the Kubernetes cluster and the
-database are provisioned by the sibling
-[infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s)
-and [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db)
-repos (Terraform config lives there, not here).
-
-- **`k8s/manifests/`** — the app's Kubernetes workload (Deployment, Service,
-  ConfigMap, Secret, HPA, migration Job) as Kustomize overlays.
-- **`k8s/kind/`** — local Kind cluster config, for the Docker-only full-stack
-  local environment below (never touches AWS).
-- **`k8s/toolbox/`** — Docker-only runner (`kind`/`kubectl` in a container) that
-  builds the app image and deploys it onto the local Kind cluster.
-
-```
-k8s/
-├── manifests/
-│   ├── base/        # Deployment, Service, ConfigMap, HPA, migrate Job
-│   └── overlays/
-│       ├── local/   # + static Secret + in-cluster Postgres, NodePort, dev values
-│       ├── lab/     # AWS Academy Learner Lab: LabRole, public ELB, static Secret
-│       ├── stg/     # RDS host, ECR image, ALB Ingress, External Secrets, HPA 2-6
-│       └── prd/     # same as stg with prod values (HPA 3-10)
-├── kind/            # local Kind cluster config
-└── toolbox/         # Docker-only runner (kind/kubectl in a container)
-```
-
-### Bring up the full environment locally (Docker-only)
-
-**The only requirement on your machine is Docker.** `kind` and `kubectl` run
-inside a toolbox container that drives the host Docker daemon
-(Docker-outside-of-Docker) — nothing else is installed. Three commands:
-
-```bash
-make k8s-up      # Kind cluster -> build+load image -> deploy -> smoke -> metrics-server (HPA)
-make k8s-down    # tear everything down (delete the Kind cluster)
-make k8s-shell   # shell inside the toolbox for anything else
-```
-
-After `make k8s-up` the app is reachable from the host:
-
-```bash
-curl http://localhost:8080/ping   # -> {"message":"pong"}
-```
-
-Anything else is plain `kubectl`/`kind` from the toolbox shell:
-
-```bash
-make k8s-shell
-# then, inside the container:
-kubectl -n auto-repair-shop get pods,svc,job,hpa
-kubectl -n auto-repair-shop logs -l app=auto-repair-shop -f
-```
-
-How it works: with the Docker socket mounted, Kind and the app image land on the
-host daemon. The toolbox joins the `kind` network and reaches the cluster by the
-control-plane container name (works on macOS, where `--network host` is
-unreliable), while the `30080 -> localhost:8080` mapping lets you hit the app
-from the host. Locally Postgres runs in-cluster (stand-in for RDS), so there is
-no AWS dependency at all.
-
-### AWS (stg / prd) — driven from GitHub
-
-No AWS tooling is needed on your machine; the app is deployed by GitHub
-Actions in **this** repo, but it needs an already-provisioned cluster and
-database. Provisioning (bootstrap, VPC/EKS, add-ons, RDS) lives entirely in
-the two infra repos — follow their READMEs first:
-
-1. [**auto-repair-shop-infra-k8s**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s#readme) —
-   one-time bootstrap (state bucket, GitHub OIDC, ECR), then `aws` (VPC+EKS)
-   and `addons` (ALB Controller, metrics-server, External Secrets) per
-   environment (`stg`/`prd`).
-2. [**auto-repair-shop-infra-db**](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db#readme) —
-   RDS PostgreSQL, applied after step 1 (it reads the VPC from infra-k8s's
-   state).
-
-**GitHub config in *this* repo** (Settings → Environments `STG` and `PRD`):
-
-| Variable | Source |
+## Routes
+
+The routing table is [`config/routes.yaml`](config/routes.yaml), embedded in the binary. Routes are tried in order and the first match (method and path) wins.
+
+| Method | Path | Upstream |
+|---|---|---|
+| any | `/internal/*` | blocked, 404 |
+| PUT | `/v1/service-order/:id/work/:workId/next`, `.../cancel`, `/v1/service-order/:id/finish` | `execution` |
+| GET | `/v1/execution/*` | `execution` |
+| GET | `/v1/service-order/:id/history`, `/v1/reports/*` | `history` |
+| any | `/v1/auth/*`, `/v1/users/*`, `/v1/customers*`, `/v1/vehicles*` | `customer` |
+| any | `/v1/works*`, `/v1/supplies*` | `catalog` |
+| any | `/v1/budgets*`, `/v1/payments*` | `billing` |
+| any | `/v1/service-order*` (the rest) | `service_order` |
+| POST | `/auth/customer-login` (optional) | `lambda`, only when `LAMBDA_UPSTREAM` is set |
+
+Patterns: a `:param` matches one non-empty segment; a trailing `*` matches any suffix. Requests that match nothing, or that match a blocked route, answer `404 {"code":404,"errors":["route not found"]}`.
+
+## Gateway endpoints
+
+| Endpoint | Result |
 |---|---|
-| `AWS_REGION` | `us-east-1` |
-| `AWS_DEPLOY_ROLE_ARN` | infra-k8s `shared` output `deploy_role_arns` (STG / PRD) |
-| `EKS_CLUSTER_NAME` | infra-k8s `aws` output `cluster_name` (per workspace) |
-| `RDS_HOST` | infra-db output `db_host` (per workspace) |
+| `GET /ping` | `200 {"message":"pong"}` (liveness and readiness probes) |
+| `GET /ready` | `200` when every configured upstream answers `/ping` within 2 s; otherwise `503` listing the failing upstream names |
+| `GET /metrics` | Prometheus metrics, `http_request_duration_seconds{method,route,upstream,status}` |
+| `GET /swagger.yaml` | OpenAPI document of the gateway itself |
+| `GET /swagger/index.html` | Page with links to the documentation of each service |
+| `GET /docs/<service>/swagger.yaml` | Proxied `swagger.yaml` of the service (`customer`, `catalog`, `billing`, `execution`, `history`, `service_order`) |
 
-### Deploy the app
+## Proxy behaviour
 
-Push to `develop` (→ STG) or `main` (→ PRD): the Docker workflow builds,
-pushes to ECR and applies the matching Kustomize overlay onto the cluster
-provisioned by the infra repos.
+- Method, path, query, body and headers are forwarded, `Authorization` included. `X-Forwarded-For`, `-Host` and `-Proto` are added.
+- `X-Request-Id` is kept when the client sends a valid one (up to 128 characters from `A-Z a-z 0-9 - _ . :`), otherwise generated. It is returned in the response, sent to the upstream and written in every log line.
+- An upstream that does not answer its headers within `UPSTREAM_TIMEOUT` gives `504 {"code":504,"errors":["upstream timeout"]}`. An upstream that cannot be reached gives `502 {"code":502,"errors":["upstream unavailable"]}`. The cause is logged on the server and never sent to the client.
+- Any response from an upstream, 4xx and 5xx included, is passed through unchanged.
+- Logs are JSON, one line per request, with `request_id`, `method`, `path`, `upstream`, `status` and `duration_ms`. The query string is not logged, because it can carry a customer document.
 
-#### Restricted accounts (AWS Academy Learner Lab)
+## Configuration
 
-On a Learner Lab account, the *provisioning* side (IAM/OIDC skipped, `LabRole`
-reused, no ALB Controller/External Secrets) is handled entirely in the two
-infra repos — see their READMEs. On the **deploy** side (this repo),
-`docker.yml` auto-detects lab mode from `aws sts get-caller-identity` (a
-`voclabs`/`LabRole` caller) and, when active:
-- applies the `lab` overlay (public ELB, `kubectl port-forward`-friendly)
-  instead of the ALB `Ingress`;
-- creates the app `Secret` directly from Secrets Manager (no External Secrets
-  Operator in lab mode) instead of relying on the synced one.
+| Variable | Default | Meaning |
+|---|---|---|
+| `PORT` | `8080` | Listening port |
+| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO` or `PANIC` |
+| `UPSTREAM_TIMEOUT` | `30s` | Wait for the upstream response headers |
+| `CUSTOMER_UPSTREAM` | `http://customer-service:8081` | Base URL of the customer service |
+| `CATALOG_UPSTREAM` | `http://catalog-service:8082` | Base URL of the catalog service |
+| `BILLING_UPSTREAM` | `http://billing-service:8083` | Base URL of the billing service |
+| `EXECUTION_UPSTREAM` | `http://execution-service:8084` | Base URL of the execution service |
+| `HISTORY_UPSTREAM` | `http://history-service:8085` | Base URL of the history service |
+| `SERVICE_ORDER_UPSTREAM` | `http://service-order-service:8086` | Base URL of the service order service |
+| `LAMBDA_UPSTREAM` | unset | Base URL of the login Lambda adapter; unset disables `POST /auth/customer-login` |
 
-Add secrets `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN`
-to **this** repo too (the lab's temporary credentials — refresh them each
-session, they expire) so `docker.yml` can authenticate. `AWS_AUTH_MODE` /
-`MANAGE_IAM` / `EXECUTION_ROLE_ARN` are still honoured as explicit repo
-variable overrides if you need them.
+Invalid values stop the gateway at startup, and the error never includes the configured URL.
 
-**Recovery after a lab restart** — if the lab stops/starts, nodes cycle and
-CoreDNS can be stranded on a dead node, breaking DNS. Reschedule it and restart
-the app:
-
-```bash
-kubectl -n kube-system rollout restart deploy/coredns
-kubectl -n auto-repair-shop rollout restart deploy/auto-repair-shop
-```
-
-**Tear down** the cluster/database — see the *Tear down* sections in the
-[infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s#readme)
-and [infra-db](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-db#readme)
-READMEs — delete the app's `LoadBalancer`/`Ingress` Service first from this
-side if one was created, so it doesn't block VPC deletion:
+## Run
 
 ```bash
-aws eks update-kubeconfig --region us-east-1 --name auto-repair-shop-stg-eks
-kubectl -n auto-repair-shop delete svc auto-repair-shop --ignore-not-found
+cp .env.example .env   # optional, for make run on the host
+make run               # go run ./cmd/service
+make test              # unit tests with the race detector
+make coverage          # coverage profile and HTML report
+make docker-build      # image from the Dockerfile
 ```
 
-### Accessing the app on AWS
+## Local ecosystem
 
-The app is exposed by an **ALB**, created automatically by the AWS Load Balancer
-Controller from the `Ingress` (the controller is installed by the `addons`
-state). Terraform provisions the VPC routing (route tables, IGW, NAT) and installs
-the controller; the ALB itself is created at deploy time from the Ingress.
+`docker-compose.yml` runs the gateway, the six services, the login lambda and the shared infrastructure on `auto-repair-shop-net`:
+
+```
+            host :8080
+                │
+            gateway ──────────────┬─ customer-service     :8081  ─┐
+                │                 ├─ catalog-service      :8082   │
+                │                 ├─ billing-service      :8083   │  one PostgreSQL (postgres:15-alpine),
+                │                 ├─ execution-service    :8084   │  one database per service (local/postgres-init)
+                │                 ├─ history-service      :8085   │  one MiniStack (SNS, SQS, DynamoDB, Secrets Manager)
+                │                 ├─ service-order-service:8086   │
+                │                 └─ lambda-adapter :9001 ─► lambda (RIE) ─┘
+```
+
+The service repositories are not part of this repository. `scripts/clone-services.sh` clones them into `services/` (the directory is git-ignored), on the branch given by `SERVICES_BRANCH` (default `develop`).
 
 ```bash
-make k8s-shell        # or use your own kubectl against the cluster
-aws eks update-kubeconfig --region us-east-1 --name auto-repair-shop-stg-eks
-kubectl -n auto-repair-shop get ingress auto-repair-shop
-# ADDRESS = k8s-autorepa-....elb.amazonaws.com  <- the ALB DNS name
+make up-all      # clone what is missing, docker compose up -d --build, wait for /ping and /ready
+make logs        # follow the logs
+make down-all    # stop and remove the volumes
+make e2e         # run the BDD scenarios against http://localhost:8080 (E2E_BASE_URL)
 ```
 
-The Ingress has a `host:` rule (`auto-repair-shop-stg.example.com`), so the ALB
-only routes requests carrying that Host header. To actually reach it either:
-- point a DNS record (Route 53) for that host at the ALB DNS name, then browse
-  `http://auto-repair-shop-stg.example.com/ping`; or
-- for a quick test, send the header: `curl -H 'Host: auto-repair-shop-stg.example.com' http://<alb-dns>/ping`.
+Prerequisite: Docker with Compose v2. Ports used on the host: 8080 (gateway), 8081-8086 (services), 9001 (lambda adapter), 4566 (MiniStack), 5432 (PostgreSQL).
 
-> **Notes:** the static Secret in `k8s/manifests/overlays/local/secret.yaml` holds
-> dev-only values and is used only by Kind. On AWS the `stg`/`prd` overlays get
-> `POSTGRES_PASSWORD` / `JWT_SECRET` from Secrets Manager via the External Secrets
-> Operator — the values are generated and mirrored into Secrets Manager by
-> `auto-repair-shop-infra-db`'s Terraform, real values are never committed here.
-> The `.github/workflows/docker.yml` `publish`/`deploy` jobs are fully implemented
-> (build → push to ECR → `kubectl apply -k` → image rollout).
+### Security of the local credentials
 
-## Environment Variables
+Every password and secret in `docker-compose.yml`, `local/postgres-init/` and `local/init-aws.sh` (for example `local-dev-only`, `local-dev-jwt-secret`, the seed passwords `attendant123` and `mechanic123`) is a **fixed local development value**. They are not secrets and must never be used outside this ecosystem. The lambda secret `auto-repair-shop-local/lambda-auth` lives only in MiniStack.
 
-| Variable                  | Description                                         |
-|---------------------------|-----------------------------------------------------|
-| `SONARQUBE_USERNAME`      | SonarQube username                                  |
-| `SONARQUBE_PASSWORD`      | SonarQube password                                  |
-| `SONARQUBE_PROJECT_TOKEN` | SonarQube project token                             |
-| `POSTGRES_USER`           | PostgreSQL username                                 |
-| `POSTGRES_PASSWORD`       | PostgreSQL password                                 |
-| `POSTGRES_DB`             | PostgreSQL database name                            |
-| `POSTGRES_HOST`           | PostgreSQL host (`db` in Docker, `localhost` local) |
-| `POSTGRES_PORT`           | PostgreSQL port (default: 5432)                     |
-| `JWT_SECRET`              | Secret key for JWT signing                          |
-| `JWT_EXPIRES_IN`          | Token expiration duration (e.g. `24h`)              |
-| `BCRYPT_COST`             | bcrypt hashing cost factor (min 12 in production)   |
+### What the ecosystem creates
 
-## API Endpoints
+- `local/postgres-init/`: one role and one database per service (`customer`, `catalog`, `billing`, `execution`, `service_order`), the read-only role `lambda_auth_ro` with its `ALTER DEFAULT PRIVILEGES` on the `customer` database, and the revoke of `CONNECT` from `PUBLIC`.
+- `migrate-<service>` containers apply each relational service's `migrations/` as the service role.
+- `local/init-aws.sh` (idempotent) creates on MiniStack, with the `auto-repair-shop-local-` prefix: 4 topics, 10 queues (5 queues and their 5 DLQs), 8 subscriptions (raw delivery, `target` filters on the saga commands), the table `auto-repair-shop-local-history` and the secret `auto-repair-shop-local/lambda-auth`.
+- `PAYMENT_MODE=manual`: the attendant approves or rejects payments (`POST /v1/payments/{id}/confirm|reject`).
 
-### Public
+### Login lambda locally
 
-| Method | Path                           | Description          |
-|--------|--------------------------------|----------------------|
-| POST   | `/v1/auth/login`               | Get JWT (email/password) |
-| GET    | `/v1/service-order/:id/status` | Customer SO tracking |
+`local/lambda/Dockerfile` builds the lambda repository's `cmd/lambda` as `bootstrap` on `public.ecr.aws/lambda/provided:al2023`, whose Runtime Interface Emulator listens on port 8080 inside the network. `local/lambda/adapter` is a standard-library HTTP adapter: it turns `POST /auth/customer-login` into an API Gateway HTTP API v2 event, invokes the emulator and returns the response. It also answers `GET /ping`, which the gateway's `/ready` uses. The gateway reaches it through `LAMBDA_UPSTREAM=http://lambda-adapter:9001`. The request body (a CPF) is never logged.
 
-There is a **second way to get a JWT**, for customers only, by CPF instead of
-email/password: `POST /auth/customer-login` — not a route on this app, but on
-the **API Gateway** in front of it (provisioned by
-[auto-repair-shop-infra-k8s](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-infra-k8s)'s
-`gateway` state), which proxies that one path to a
-[Lambda](https://github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop-lambda-auth)
-and everything else straight through to this app. The token it issues has the
-same claim shape and signing secret as this app's own `/v1/auth/login`, so the
-auth middleware below accepts either one unmodified — see the [Two ways to
-authenticate](#two-ways-to-authenticate) note under Architecture.
+## End-to-end tests
 
-### Users
+`e2e/` is a separate Go module (`github.com/cucumber/godog`). `features/*.feature` hold the scenarios; the steps talk **only to the gateway**, through the routes of `config/routes.yaml`.
 
-| Method | Path                  | Roles |
-|--------|-----------------------|-------|
-| POST   | `/v1/auth/register`   | ADMIN |
-| PATCH  | `/v1/users/:id/role`  | ADMIN |
+| Feature | Scenarios |
+|---|---|
+| `happy_path` | order received, diagnosed, budget sent, accepted, paid, executed, finished and delivered; history with work transitions; execution-time report |
+| `payment_rejected` | attendant rejects the payment: order `REJECTED`, stock back to the initial value |
+| `execution_failed` | every work cancelled: order `CANCELLED`, payment `REFUNDED`, stock back |
+| `budget_rejected` | customer rejects the budget: order `REJECTED`, stock back |
+| `customer_login` | known CPF gets a token accepted by a service (`accept`); unknown CPF gets `404` |
+| `security` | `/internal/*` gives `404` through the gateway; a protected route without token gives `401` from the service |
+| `idempotency` | accept and payment confirmation sent again answer `409` and do not duplicate the execution task |
 
-### Customers
+Asynchronous saga results are awaited with bounded polling (20 s). The fixed identifiers are the seed IDs of the contracts (works, supply, customer A, vehicle A).
 
-| Method | Path                | Roles            |
-|--------|---------------------|------------------|
-| POST   | `/v1/customers`     | ADMIN, ATTENDANT |
-| GET    | `/v1/customers`     | ADMIN, ATTENDANT |
-| GET    | `/v1/customers/:id` | ADMIN, ATTENDANT |
-| PUT    | `/v1/customers/:id` | ADMIN, ATTENDANT |
-| DELETE | `/v1/customers/:id` | ADMIN, ATTENDANT |
+The CI job `e2e` (`.github/workflows/ci.yml`) runs the same sequence on pull requests: `make clone`, `docker compose up -d --build`, wait for `/ready`, `make e2e`, logs on failure, `docker compose down -v` always.
 
-### Works
+### Status of this change
 
-| Method | Path            | Roles                      |
-|--------|-----------------|----------------------------|
-| GET    | `/v1/works`     | ADMIN, ATTENDANT, MECHANIC |
-| POST   | `/v1/works`     | ADMIN, ATTENDANT           |
-| PUT    | `/v1/works/:id` | ADMIN, ATTENDANT           |
-| DELETE | `/v1/works/:id` | ADMIN, ATTENDANT           |
+The ecosystem was brought up with Docker and the suite was run against it (2026-11-01), using the service branches of the wave 2 and 3 pull requests (the services were cloned from local branches because `develop` of the service repositories is still empty):
 
-### Vehicles
+- **9 scenarios, 120 steps, all passed.** The happy path (create, receive, diagnose, send, approve, pay, execute, deliver, with the history and the average-time report), the rejected payment, the execution failure with refund and stock return, the rejected budget, the duplicated `accept`/`confirm`, the customer login through the lambda (known and unknown CPF) and the blocked `/internal/*` route.
+- After the run: no error line in any service log, every queue and dead-letter queue empty, and no pending outbox row in Billing, Execution and Service Order.
+- The login lambda needs `DB_SSLMODE=disable` locally (its default is `sslmode=require`, the AWS behaviour); the compose sets it.
+- Scenario 5 proves token acceptance with `PUT /v1/service-order/{id}/accept`, because `GET /v1/service-order/{id}/status` is public.
+- The services answer a missing token with the body `{"error":"Unauthorized"}` (inherited from the monolith middleware), which differs from the `{"code","errors"}` body of other errors; the suite asserts only the `401` status.
+- `scripts/clone-services.sh` clones over HTTPS without credentials: the service repositories must be public for the CI job (or the job needs a token).
 
-| Method | Path                         | Roles                      |
-|--------|------------------------------|----------------------------|
-| GET    | `/v1/vehicles`               | ADMIN, ATTENDANT, MECHANIC |
-| POST   | `/v1/vehicles`               | ADMIN, ATTENDANT           |
-| PUT    | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
-| DELETE | `/v1/vehicles/:id`           | ADMIN, ATTENDANT           |
+### Troubleshooting
 
-`GET /v1/vehicles` accepts optional `customerId`, `plate`, `page` and `pageSize` query filters.
+- **`go.mod requires go >= 1.26.5 (running go 1.26.4)`**: your local `golang:1.26-alpine` image is stale. Run `docker pull golang:1.26-alpine` and build again.
+- **`ResourceExhausted` while building**: the Docker VM ran out of memory building several images at once. `make up-all` builds one image at a time; if it still happens, raise the memory of Docker Desktop.
+- **A service shows `unhealthy` forever**: check `docker compose logs <service>`; the MiniStack image has no `wget`/`curl`, so health checks use `python3`.
 
-### Supplies
+## Quality gates
 
-| Method | Path               | Roles                      |
-|--------|--------------------|----------------------------|
-| GET    | `/v1/supplies`     | ADMIN, ATTENDANT, MECHANIC |
-| POST   | `/v1/supplies`     | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/supplies/:id` | ADMIN, ATTENDANT, MECHANIC |
-| DELETE | `/v1/supplies/:id` | ADMIN, ATTENDANT, MECHANIC |
+- Total coverage at least 80 % (generated mocks excluded); the route matcher at least 90 %. Both are enforced by the `coverage` CI job.
+- Lint: golangci-lint in the `pre-commit` job, plus `go vet` and `gofmt`.
+- Unit tests run with `-race` in the `unit-tests` job. The `sonarqube` job publishes the analysis.
 
-### Service Orders (SO)
+## Deploy
 
-| Method | Path                                       | Roles                      |
-|--------|--------------------------------------------|----------------------------|
-| POST   | `/v1/service-order`                        | ADMIN, ATTENDANT           |
-| GET    | `/v1/service-order`                        | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/service-order/:id`                    | ADMIN, ATTENDANT, MECHANIC |
-| PUT    | `/v1/service-order/:id/received`           | ADMIN, ATTENDANT           |
-| PUT    | `/v1/service-order/:id/start-diagnosis`    | ADMIN, MECHANIC            |
-| PUT    | `/v1/service-order/:id/send`               | ADMIN, MECHANIC            |
-| PUT    | `/v1/service-order/:id/accept`             | CUSTOMER (own SO only)     |
-| PUT    | `/v1/service-order/:id/reject`             | CUSTOMER (own SO only)     |
-| PUT    | `/v1/service-order/:id/finish`             | ADMIN, MECHANIC            |
-| PUT    | `/v1/service-order/:id/deliver`            | ADMIN, ATTENDANT           |
-| PUT    | `/v1/service-order/:id/cancel`             | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/service-order/:id/history`            | ADMIN, ATTENDANT, MECHANIC |
-| GET    | `/v1/service-order/:id/works`              | ADMIN, ATTENDANT, MECHANIC |
-| POST   | `/v1/service-order/:id/works`              | ADMIN, ATTENDANT           |
-| DELETE | `/v1/service-order/:id/works/:serviceId`   | ADMIN, ATTENDANT           |
-| GET    | `/v1/service-order/:id/supplies`           | ADMIN, ATTENDANT, MECHANIC |
-| POST   | `/v1/service-order/:id/supplies`           | ADMIN, MECHANIC            |
-| DELETE | `/v1/service-order/:id/supplies/:supplyId` | ADMIN, MECHANIC            |
+- `k8s/manifests/base`: Deployment, ClusterIP Service, HPA and the `app-config` ConfigMap with the upstream addresses. The gateway has no secrets, no database and no migrations.
+- `k8s/manifests/overlays/lab`: LoadBalancer Service (AWS Academy Learner Lab, no Ingress controller).
+- `k8s/manifests/overlays/stg` and `prd`: Ingress (ALB), HPA limits and log level. `components/observability` adds the `ServiceMonitor`.
+- `.github/workflows/docker.yml` builds and pushes the image, deploys the overlay and waits for the rollout. On lab it publishes the load balancer host to SSM (`/auto-repair-shop/<env>/app-backend-host`), which the AWS API Gateway reads.
 
-### Work Status Transitions (within a SO)
+## Layout
 
-| Method | Path                                        | Roles            |
-|--------|---------------------------------------------|------------------|
-| PUT    | `/v1/service-order/:id/work/:workId/next`   | ADMIN, MECHANIC  |
-| PUT    | `/v1/service-order/:id/work/:workId/cancel` | ADMIN, MECHANIC  |
-
-### Admin
-
-| Method | Path                                 | Roles            |
-|--------|--------------------------------------|------------------|
-| POST   | `/v1/auth/register`                  | ADMIN            |
-| PATCH  | `/v1/users/:id/role`                 | ADMIN            |
-
-### Reports
-
-| Method | Path                                 | Roles            |
-|--------|--------------------------------------|------------------|
-| GET    | `/v1/reports/average-execution-time` | ADMIN, ATTENDANT |
-
-## RBAC Roles
-
-| Role       | Description                                                                  |
-|------------|------------------------------------------------------------------------------|
-| ADMIN      | Full access, including user management and role updates                      |
-| ATTENDANT  | Customers, vehicles, works, service orders, supplies, and execution reports  |
-| MECHANIC   | Service order execution flow, supplies, and work status transitions          |
-| CUSTOMER   | Own service order status tracking and budget approve/reject only             |
-
-## Password Encryption
-
-User passwords are protected using bcrypt (`golang.org/x/crypto/bcrypt`).
-
-Key details:
-- **Type:** one-way hash (not reversible). The output includes an internal salt and metadata.
-- **Implementation:** `bcrypt.GenerateFromPassword` is used when creating or updating passwords; `bcrypt.CompareHashAndPassword` is used for validation.
-- **Cost factor:** controlled by the `BCRYPT_COST` environment variable (see Environment Variables). A minimum cost of 12 is recommended in production — increase it according to your infrastructure capacity.
-
-Notes:
-- For automatically created customers, the default password (CPF/CNPJ) is immediately hashed before being persisted.
-- bcrypt applies a salt securely by default; there is no need to manage salts manually.
-
-## License
-
-This project is part of the FIAP 15SOAT postgraduate program.
-
-## Members
-
-- Caetano Agostinho de Freitas - RM371006
-- Emanuel Jesus Santos - RM371184
-- Diogo Estevão Ferreira - RM371059
-- Giusier Ferreira Soares - RM371064
-- Guilherme Ferreira Santos - RM374002
+```
+cmd/service                  entrypoint
+config                       embedded routing table (routes.yaml)
+internal/app                 HTTP server, bootstrap, Gin middlewares (logger, recovery, metrics)
+internal/gateway/config      environment and routing table loading and validation
+internal/gateway/match       method and path matcher (no framework dependency)
+internal/gateway/proxy       httputil.ReverseProxy per upstream, timeouts, 502/504 mapping
+internal/gateway/handlers    gateway endpoints, NoRoute proxying, router
+internal/pkg                 env, logger, metrics, app lifecycle, web (error envelope)
+docs                         gateway swagger.yaml, documentation index page (embedded)
+k8s/manifests                Kustomize base and overlays
+e2e                          BDD end-to-end suite (godog), own Go module
+local                        ecosystem: postgres-init, init-aws.sh, lambda image and adapter
+scripts                      clone-services.sh, wait-ready.sh
+docker-compose.yml           local ecosystem (see "Local ecosystem")
+```
