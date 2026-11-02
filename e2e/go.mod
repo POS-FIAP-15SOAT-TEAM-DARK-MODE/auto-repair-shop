@@ -1,6 +1,6 @@
 module github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/e2e
 
-go 1.26.5
+go 1.27.3
 
 require github.com/cucumber/godog v0.16.0
 

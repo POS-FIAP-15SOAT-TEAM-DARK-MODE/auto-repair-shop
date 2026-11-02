@@ -73,7 +73,7 @@ func (g *Gateway) Ready(c *gin.Context) {
 	if len(down) > 0 {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"code":      http.StatusServiceUnavailable,
-			"errors":    []string{"upstreams not ready"},
+			"error":     "upstreams not ready",
 			"upstreams": down,
 		})
 		return

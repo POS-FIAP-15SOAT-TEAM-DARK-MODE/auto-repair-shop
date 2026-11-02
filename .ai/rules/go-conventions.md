@@ -2,7 +2,7 @@
 
 ## Stack
 
-Go 1.26 · Gin (own endpoints and middlewares only) · `net/http/httputil.ReverseProxy` · `gopkg.in/yaml.v3` · Zap (JSON logs) · `prometheus/client_golang` · Testify · `google/uuid` (request ids).
+Go 1.27 · Gin (own endpoints and middlewares only) · `net/http/httputil.ReverseProxy` · `gopkg.in/yaml.v3` · Zap (JSON logs) · `prometheus/client_golang` · Testify · `google/uuid` (request ids).
 
 ## Idioms
 

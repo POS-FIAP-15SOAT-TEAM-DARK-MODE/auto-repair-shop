@@ -10,15 +10,15 @@ import (
 const RequestIDHeader = "X-Request-Id"
 
 // ErrorBody is the error envelope returned by the gateway, for example
-// {"code":502,"errors":["upstream unavailable"]}.
+// {"code":502,"error":"upstream unavailable"}.
 type ErrorBody struct {
-	Code   int      `json:"code"`
-	Errors []string `json:"errors"`
+	Code  int    `json:"code"`
+	Error string `json:"error"`
 }
 
-// WriteError writes an ErrorBody with the given status and messages.
-func WriteError(w http.ResponseWriter, status int, messages ...string) {
-	WriteJSON(w, status, ErrorBody{Code: status, Errors: messages})
+// WriteError writes an ErrorBody with the given status and fixed message.
+func WriteError(w http.ResponseWriter, status int, message string) {
+	WriteJSON(w, status, ErrorBody{Code: status, Error: message})
 }
 
 // WriteJSON writes body as JSON with the given status.

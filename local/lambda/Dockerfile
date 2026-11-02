@@ -2,7 +2,7 @@
 # Built with the lambda repository as the build context (services/auto-repair-shop-lambda-auth, see docker-compose.yml).
 # The public provided:al2023 image ships the Lambda Runtime Interface Emulator (RIE): when it runs outside AWS it
 # serves POST /2015-03-31/functions/function/invocations on port 8080, which the adapter calls.
-FROM golang:1.26-alpine AS builder
+FROM golang:1.27-alpine AS builder
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
