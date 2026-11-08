@@ -121,7 +121,7 @@ func TestRoutesFile_CompilesAndIsWellFormed(t *testing.T) {
 	require.NoError(t, err)
 
 	routes := cfg.Routes
-	require.Len(t, routes, 17, "every line of config/routes.yaml is an active route when lambda is configured")
+	require.Len(t, routes, 18, "every line of config/routes.yaml is an active route when lambda is configured")
 
 	_, err = match.New(routes)
 	require.NoError(t, err)

@@ -58,11 +58,13 @@ func TestEmbeddedRoutingTable(t *testing.T) {
 		{"budgets", "GET", "/v1/budgets/so-1", "billing", false},
 		// line 15: payments
 		{"payments confirm", "POST", "/v1/payments/p-1/confirm", "billing", false},
-		// line 16: generic service-order, including the lifecycle routes not listed above
+		// line 16: Mercado Pago webhook, public (Billing verifies the signature); only POST
+		{"mercadopago webhook", "POST", "/v1/webhooks/mercadopago", "billing", false},
+		// line 17: generic service-order, including the lifecycle routes not listed above
 		{"service-order accept", "PUT", "/v1/service-order/so-1/accept", "service_order", false},
 		{"service-order status", "GET", "/v1/service-order/so-1/status", "service_order", false},
 		{"service-order create", "POST", "/v1/service-order", "service_order", false},
-		// line 17: customer login through the lambda
+		// line 18: customer login through the lambda
 		{"customer login", "POST", "/auth/customer-login", "lambda", false},
 	}
 
@@ -86,4 +88,25 @@ func TestEmbeddedRoutingTable_LambdaRouteIsOffWithoutUpstream(t *testing.T) {
 
 	_, ok := m.Match("POST", "/auth/customer-login")
 	assert.False(t, ok, "without LAMBDA_UPSTREAM the login route is not served")
+}
+
+// TestMercadoPagoWebhookRouteIsOnlyThePostOfThatPath checks the route is not wider than it needs to be:
+// the webhook is public, so nothing else under /v1/webhooks and no other method may reach Billing.
+func TestMercadoPagoWebhookRouteIsOnlyThePostOfThatPath(t *testing.T) {
+	clearUpstreamEnv(t)
+	t.Setenv("LAMBDA_UPSTREAM", "http://lambda:8080")
+	cfg, err := config.Load(rootconfig.RoutesYAML)
+	require.NoError(t, err)
+	m, err := match.New(cfg.Routes)
+	require.NoError(t, err)
+
+	for _, tc := range []struct{ method, path string }{
+		{"GET", "/v1/webhooks/mercadopago"},
+		{"PUT", "/v1/webhooks/mercadopago"},
+		{"POST", "/v1/webhooks/other"},
+		{"POST", "/v1/webhooks"},
+	} {
+		_, ok := m.Match(tc.method, tc.path)
+		assert.False(t, ok, "%s %s must not be routed", tc.method, tc.path)
+	}
 }
