@@ -257,6 +257,7 @@ Regras de convivência dentro de uma onda:
 | `/v1/auth/*`, `/v1/users/*`, `/v1/customers*`, `/v1/vehicles*` | `customer-service:8081` |
 | `/v1/works*`, `/v1/supplies*` | `catalog-service:8082` |
 | `/v1/budgets*`, `/v1/payments*` | `billing-service:8083` |
+| `POST /v1/webhooks/mercadopago` | `billing-service:8083` (pública; assinatura validada pelo Billing) |
 | `/v1/execution/*`, `PUT /v1/service-order/:id/work/:workId/{next,cancel}`, `PUT /v1/service-order/:id/finish` | `execution-service:8084` |
 | `GET /v1/service-order/:id/history`, `/v1/reports/*` | `history-service:8085` |
 | `/v1/service-order*` (demais) | `service-order-service:8086` |

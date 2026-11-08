@@ -138,6 +138,7 @@ A tabela está em [`config/routes.yaml`](config/routes.yaml), embutida no binár
 | qualquer | `/v1/auth/*`, `/v1/users/*`, `/v1/customers*`, `/v1/vehicles*` | `customer` |
 | qualquer | `/v1/works*`, `/v1/supplies*` | `catalog` |
 | qualquer | `/v1/budgets*`, `/v1/payments*` | `billing` |
+| POST | `/v1/webhooks/mercadopago` (pública: o Billing valida a assinatura) | `billing` |
 | qualquer | `/v1/service-order*` (o restante) | `service_order` |
 | POST | `/auth/customer-login` | `lambda` (ativa só com `LAMBDA_UPSTREAM`; o ambiente local a liga) |
 

@@ -17,5 +17,6 @@ routes:
   - {methods: ["*"],   path: "/v1/supplies*",                                upstream: catalog}
   - {methods: ["*"],   path: "/v1/budgets*",                                 upstream: billing}
   - {methods: ["*"],   path: "/v1/payments*",                                upstream: billing}
+  - {methods: ["POST"], path: "/v1/webhooks/mercadopago",                upstream: billing}   # Mercado Pago notification; the signature is checked by Billing
   - {methods: ["*"],   path: "/v1/service-order*",                           upstream: service_order}
   - {methods: ["POST"], path: "/auth/customer-login",                        upstream: lambda, optional: true}
