@@ -83,3 +83,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 .terraform.lock.hcl
+
+# Service repositories cloned by scripts/clone-services.sh
+services/

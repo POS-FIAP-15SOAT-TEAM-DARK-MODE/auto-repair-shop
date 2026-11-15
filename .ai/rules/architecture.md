@@ -1,39 +1,24 @@
 # Architecture
 
-## Layer Map
+The repository is an HTTP reverse proxy. Requests come in, a routing table decides the upstream, and the request is forwarded. The gateway has no business logic, no database and no secrets.
 
-```
-HTTP → Handler (infra/handler/*) → Service (internal/services/*) → Repository (infra/repository/*) → PostgreSQL
-                                         ↕
-                               Domain (internal/domain/*)
-```
+## Packages and their allowed imports
 
-## Layer Contracts
-- **Handler**: parse + validate HTTP input, call service, return response — zero business logic.
-- **Service**: all business logic, status enforcement, stock checks, budget recalc.
-- **Repository**: all SQL via `lib/pq` — no queries outside repositories.
-- **Domain**: framework-free structs + validation methods + service/repository interfaces.
+| Package | Responsibility | Framework allowed |
+|---|---|---|
+| `internal/gateway/match` | Method and path matching against the ordered table | none (standard library only) |
+| `internal/gateway/config` | Environment and routing table loading and validation | none |
+| `internal/gateway/proxy` | `httputil.ReverseProxy` per upstream, timeouts, 502/504 mapping | `net/http` only |
+| `internal/gateway/handlers` | Gateway endpoints, `NoRoute` proxying, router | Gin |
+| `internal/app/middleware` | Request id and logging, panic recovery, metrics | Gin |
+| `internal/app/bootstrap` | Wiring only: config, matcher, proxy, handlers, server | all of the above |
+| `internal/pkg/*` | env, logger, metrics, lifecycle, error envelope | none beyond logging and metrics libraries |
+| `config` | Embeds `routes.yaml` | `embed` |
 
-## DI Root
-`internal/infra/factory/http.go` — single wiring file: creates DB, repos, services, handlers, passes into `HandlersWrapper`. All constructor injection happens here.
+## Rules
 
-## Repository DB Connection Pattern
-Repositories hold no `*sql.DB`. Connection comes from context, injected by UoW:
-- **Mutating ops** (inside tx): `postgres.GetTransaction(ctx)` → returns `*sql.Tx` stored by UoW `OnStart` hook.
-- **Read-only ops**: `postgres.GetOneTimeTransaction(ctx)` → opens a fresh `*sql.DB` connection.
-
-## Unit of Work
-```go
-uow.Execute(ctx, func1, func2, ...)
-```
-UoW begins a transaction, injects it into context, runs all steps, then commits or rolls back. Services must wrap all mutating repository calls in `uow.Execute`.
-
-## Dynamic SQL
-Use `db.QueryBuilder(baseQuery)` from `internal/pkg/db/`:
-```go
-qb := db.QueryBuilder(base)
-qb.Add("column =", value)
-qb.OrderBy(field, db.ASC)
-qb.AddPagination(limit, offset)
-query, args := qb.Build()
-```
+- Routing decisions happen in `match` and nowhere else. Handlers call the matcher and do not inspect paths themselves.
+- Gin registers only the gateway's own endpoints. Proxied routes are never registered in Gin (see `api.md`).
+- The proxy never parses or rewrites bodies. It only adds `X-Forwarded-*` and the request id.
+- `bootstrap` contains no decisions: a new behaviour belongs to the package that owns it.
+- Shared helpers in `internal/pkg` stay small and free of gateway policy.

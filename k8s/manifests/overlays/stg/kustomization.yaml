@@ -3,11 +3,9 @@ kind: Kustomization
 
 namespace: auto-repair-shop
 
-# No in-cluster Postgres — the database is RDS (Terraform). The app Secret is
-# produced by the External Secrets Operator from Secrets Manager (secrets.yaml).
+# The gateway has no database and no secrets: only environment-specific settings.
 resources:
   - ../../base
-  - secrets.yaml
   - ingress.yaml
 
 components:

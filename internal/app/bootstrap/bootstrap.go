@@ -1,57 +1,43 @@
+// Package bootstrap wires the gateway: configuration, routing table, proxy,
+// handlers and HTTP server.
 package bootstrap
 
 import (
-	"context"
-	"database/sql"
+	"fmt"
 
+	rootconfig "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/config"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/container"
 	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/middleware"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/routing"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/auth"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/customer"
-	serviceOrder "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order"
-	serviceOrderHistory "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order_history"
-	soHistoryRepository "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/service_order_history/repository"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/supply"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/vehicle"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/work"
-	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/env"
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/metrics"
+	gatewayconfig "github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/gateway/config"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/gateway/handlers"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/gateway/match"
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/gateway/proxy"
 )
 
-func HTTPServer() app.Server {
-	prometheus.MustRegister(metrics.NewStatusDurationCollector(soHistoryRepository.NewMetricsRepository()))
-
-	middlewares := middlewaresContainer()
-	db := app.DBConnect()
-	app.RunSeed(context.Background(), db)
-	routes := httpContainer(db)
-	router := routing.SetupRouter(routes, middlewares)
-
-	port := env.GetString("PORT", "8080")
-	return app.NewHTTPServer("http-api", ":"+port, router)
-}
-
-func middlewaresContainer() *container.Middlewares {
-	return &container.Middlewares{
-		"Logger":       middleware.Logger(),
-		"Recovery":     middleware.Recovery(),
-		"Metrics":      middleware.Metrics(),
-		"ErrorHandler": middleware.ErrorHandler(),
+// HTTPServer builds the gateway HTTP server from the environment and the
+// embedded routing table. It fails when the configuration is invalid.
+func HTTPServer() (app.Server, error) {
+	cfg, err := gatewayconfig.Load(rootconfig.RoutesYAML)
+	if err != nil {
+		return nil, fmt.Errorf("gateway configuration: %w", err)
 	}
-}
 
-func httpContainer(db *sql.DB) *container.HandlersWrapper {
-	return &container.HandlersWrapper{
-		UserHandler:                auth.NewHTTPController(db),
-		CustomerHandler:            customer.NewHTTPController(db),
-		WorkHandler:                work.NewHTTPController(db),
-		VehicleHandler:             vehicle.NewHTTPController(db),
-		SupplyHandler:              supply.NewHTTPController(db),
-		ServiceOrderHandler:        serviceOrder.NewHTTPController(db),
-		ServiceOrderHistoryHandler: serviceOrderHistory.NewHTTPController(db),
+	matcher, err := match.New(cfg.Routes)
+	if err != nil {
+		return nil, fmt.Errorf("routing table: %w", err)
 	}
+
+	reverseProxy, err := proxy.New(cfg.Upstreams, cfg.UpstreamTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("proxy: %w", err)
+	}
+
+	gateway := handlers.New(cfg, matcher, reverseProxy)
+	router := handlers.NewRouter(gateway,
+		middleware.Logger(),
+		middleware.Recovery(),
+		middleware.Metrics(),
+	)
+
+	return app.NewHTTPServer("gateway", ":"+cfg.Port, router), nil
 }

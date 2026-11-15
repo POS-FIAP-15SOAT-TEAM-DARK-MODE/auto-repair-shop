@@ -1,93 +1,76 @@
-package middleware_test
+package middleware
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/app/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/POS-FIAP-15SOAT-TEAM-DARK-MODE/auto-repair-shop/internal/pkg/web"
 )
 
-func TestLoggerMiddleware(t *testing.T) {
+func init() {
 	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Logger())
-	router.GET("/test", func(c *gin.Context) {
+}
+
+func TestLogger_GeneratesRequestIDWhenMissing(t *testing.T) {
+	var seenByHandler string
+	r := gin.New()
+	r.Use(Logger())
+	r.GET("/x", func(c *gin.Context) {
+		seenByHandler = c.Request.Header.Get(web.RequestIDHeader)
 		c.Status(http.StatusOK)
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/x", nil))
 
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.NotEmpty(t, rec.Header().Get("X-Request-ID"))
+	id := rec.Header().Get(web.RequestIDHeader)
+	require.NotEmpty(t, id)
+	assert.Equal(t, id, seenByHandler, "the id is propagated to the upstream request")
 }
 
-func TestLoggerMiddleware_ReusesIncomingRequestID(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Logger())
-	router.GET("/test", func(c *gin.Context) {
+func TestLogger_KeepsValidIncomingRequestID(t *testing.T) {
+	r := gin.New()
+	r.Use(Logger())
+	r.GET("/x", func(c *gin.Context) { c.Status(http.StatusOK) })
+
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.Header.Set(web.RequestIDHeader, "abc-123_x.y:z")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, "abc-123_x.y:z", rec.Header().Get(web.RequestIDHeader))
+}
+
+func TestAcceptedRequestID(t *testing.T) {
+	assert.Equal(t, "", acceptedRequestID(""))
+	assert.Equal(t, "req-1", acceptedRequestID("req-1"))
+	assert.Equal(t, "", acceptedRequestID("line\nbreak"), "control characters are rejected")
+	assert.Equal(t, "", acceptedRequestID("has space"))
+	assert.Equal(t, "", acceptedRequestID(strings.Repeat("a", maxRequestIDLength+1)), "too long")
+	assert.Equal(t, strings.Repeat("a", maxRequestIDLength), acceptedRequestID(strings.Repeat("a", maxRequestIDLength)))
+}
+
+func TestUpstreamLabel_DefaultsToGateway(t *testing.T) {
+	r := gin.New()
+	var labels []string
+	r.Use(func(c *gin.Context) {
+		c.Next()
+		labels = append(labels, upstreamLabel(c))
+	})
+	r.GET("/own", func(c *gin.Context) { c.Status(http.StatusOK) })
+	r.GET("/proxied", func(c *gin.Context) {
+		c.Set("upstream", "catalog")
 		c.Status(http.StatusOK)
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set("X-Request-Id", "upstream-request-id-123")
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/own", nil))
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/proxied", nil))
 
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "upstream-request-id-123", rec.Header().Get("X-Request-ID"))
-}
-
-func TestLoggerMiddleware_Swagger(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Logger())
-	router.GET("/swagger/index.html", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/swagger/index.html", nil)
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Empty(t, rec.Header().Get("X-Request-ID"))
-}
-
-func TestLoggerMiddleware_WithErrors(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Logger())
-	router.GET("/test-error", func(c *gin.Context) {
-		_ = c.Error(errors.New("something went wrong"))
-		c.Status(http.StatusInternalServerError)
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/test-error", nil)
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-}
-
-func TestErrorHandlerMiddleware_StatusOKWithErrors(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.ErrorHandler())
-	router.GET("/ok-with-error", func(c *gin.Context) {
-		_ = c.Error(errors.New("silent error"))
-	})
-
-	req := httptest.NewRequest(http.MethodGet, "/ok-with-error", nil)
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-	assert.Contains(t, rec.Body.String(), "silent error")
+	assert.Equal(t, []string{"gateway", "catalog"}, labels)
 }

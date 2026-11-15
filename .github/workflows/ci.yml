@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: "1.26.5"
+  GO_VERSION: "1.27.3"
 
 jobs:
   pre-commit:
@@ -20,16 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.x"
 
@@ -43,10 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -66,10 +66,10 @@ jobs:
     needs: build
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -79,24 +79,39 @@ jobs:
           LOG_LEVEL: PANIC
         run: go test ./... --race -v
 
-  integration-tests:
-    name: Integration Tests
+  coverage:
+    name: Coverage gate
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run integration tests
+      - name: Run tests with coverage
         env:
-          BCRYPT_COST: "4"
-        run: go test -tags=integration ./internal/integration/... -v
+          LOG_LEVEL: PANIC
+        run: go test ./... -coverprofile=coverage.out
+
+      - name: Enforce total coverage >= 80% (generated mocks excluded)
+        run: |
+          grep -v '/mocks/' coverage.out > coverage.filtered.out
+          COV=$(go tool cover -func=coverage.filtered.out | awk '/^total:/ {gsub("%","",$3); print $3}')
+          echo "Total coverage: ${COV}%" | tee -a "$GITHUB_STEP_SUMMARY"
+          awk -v c="$COV" 'BEGIN{exit !(c>=80)}'
+
+      - name: Enforce route matcher coverage >= 90%
+        env:
+          LOG_LEVEL: PANIC
+        run: |
+          go test ./internal/gateway/match/ -cover | tee /dev/stderr | awk '
+            /coverage:/ { pct=$5; gsub("%","",pct); print "internal/gateway/match", pct"%" >> ENVIRON["GITHUB_STEP_SUMMARY"]; if (pct+0 < 90) bad=1 }
+            END { exit bad }'
 
   sonarqube:
     name: SonarQube Cloud
@@ -105,12 +120,12 @@ jobs:
     steps:
       - name: Checkout
         # Full history so SonarQube can resolve blame and PR analysis.
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
@@ -121,7 +136,45 @@ jobs:
         run: go test ./... -coverprofile=coverage.out
 
       - name: SonarQube Cloud scan
-        uses: SonarSource/sonarqube-scan-action@2f77a1ec69fb1d595b06f35ab27e97605bdef703 # v5
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
+
+  e2e:
+    name: E2E (local ecosystem)
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      # The services' develop branch must already contain the F3-F6 work (waves 2 and 3) for this job to pass.
+      SERVICES_BRANCH: develop
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: e2e/go.sum
+
+      - name: Clone the service repositories
+        run: make clone
+
+      - name: Start the local ecosystem
+        run: docker compose up -d --build
+
+      - name: Wait for the services and the gateway (ready, up to 3 minutes)
+        run: sh scripts/wait-ready.sh 180
+
+      - name: Run the e2e scenarios
+        run: make e2e
+
+      - name: Dump the ecosystem logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=300
+
+      - name: Tear the ecosystem down
+        if: always()
+        run: docker compose down -v

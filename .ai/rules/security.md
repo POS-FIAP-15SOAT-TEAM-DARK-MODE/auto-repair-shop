@@ -1,32 +1,15 @@
 # Security
 
-## JWT
-- All protected endpoints require `Authorization: Bearer <JWT>` — return 401 if missing/invalid.
-- Public endpoints (no auth): `POST /v1/auth/login` and the ping endpoint only.
-- JWT payload must include: `roles` (array) and `customerId` (when applicable).
-- Auth middleware must not make extra DB calls — rely entirely on the JWT payload.
-- Expiry configurable via `JWT_EXPIRES_IN` env var.
+The gateway is the only public port of the system. Its job is to forward credentials untouched and to leak nothing about the internals.
 
-## RBAC Enforcement
-- Map roles from the JWT payload; reject out-of-scope access with 403.
-- `ADMIN` is exclusive — a user with ADMIN cannot have other roles.
-- Role constants and groups live in `internal/domain/roles.go`.
-- Groups: `AttendantRoles`, `MechanicRoles`, `CustomerRoles`, `AttendantAndMechanicRoles`.
+## Rules
 
-## Passwords
-- bcrypt, default cost factor 10 (`bcrypt.DefaultCost`), configurable via `BCRYPT_COST` env var.
-- Default customer password = their CPF or CNPJ.
-- Never log or return password hashes.
-
-## PII — Never Expose or Log
-CPF, CNPJ, passwords, and JWT tokens must never appear in:
-- HTTP response bodies or headers.
-- Log entries (centralized redaction handled in `internal/pkg/logger/logger.go`).
-- Error messages returned to clients.
-
-Avoid `zap.Any` for domain/request objects that may contain PII — use explicit safe fields instead.
-
-## Input Sanitization
-- Validate all user input at handler layer before passing to service.
-- Use domain validation methods (`customer.Validate()`, etc.) — never trust raw strings.
-- Never expose stack traces or internal error details in production responses.
+- The gateway does not validate tokens and does not read a database. Each service validates its own JWT. `Authorization` is forwarded as is.
+- Never log or return the `Authorization` header, a token, a password, a CPF or a CNPJ. The logger redacts sensitive field names, but code must not pass them in the first place.
+- The query string is not logged: it can carry a customer document (`GET /v1/customers?document=...`).
+- `/internal/*` is blocked at the edge and never forwarded, whatever the method. Service-to-service REST is not part of the public API.
+- Upstream errors are mapped to fixed messages (`upstream timeout`, `upstream unavailable`). The cause (addresses, refused connections, DNS names) stays in the server log.
+- Panics answer a generic `internal server error`; the panic value and stack go to the server log only.
+- Client-supplied `X-Request-Id` is accepted only when it has at most 128 characters from `A-Z a-z 0-9 - _ . :`, so logs cannot be forged with line breaks.
+- Upstream URLs must be absolute `http` or `https` URLs. Invalid values are rejected at startup without echoing them.
+- The metrics `method` label is bounded: unknown methods are reported as `OTHER`.

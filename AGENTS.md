@@ -1,24 +1,25 @@
 # AGENTS.md
 
 > **Single source of truth: `.ai/`**
-> Only this file is auto-loaded by Codex / GitHub Copilot. All linked files must be opened on demand — never loaded automatically.
+> Only this file is auto-loaded by Codex and GitHub Copilot. All linked files must be opened on demand — never loaded automatically.
 > Never duplicate rule content here.
 
 ## Always-Applied Rules
 
 ### 1. Security
-- Never log or expose CPF, CNPJ, passwords, or JWT tokens in any response, log entry, or error message.
-- bcrypt min cost 12; auth middleware must not make extra DB calls — rely entirely on JWT payload.
-- Validate all input at handler layer; never trust raw strings inside services or domain.
+- Never log or expose CPF, CNPJ, passwords, JWT tokens or the `Authorization` header, in any log entry, response or error message.
+- The gateway validates no tokens and reads no database: forward credentials untouched, and let each service validate its own.
+- `/internal/*` is blocked at the edge and never forwarded.
+- Upstream failures answer fixed messages (`upstream timeout`, `upstream unavailable`); causes stay in the server log.
 
 ### 2. Git Conventions
 All commits must follow Conventional Commits: `<type>(<scope>): <description>`.
-Types: `feat fix refactor test chore docs perf style revert` — scopes in `.ai/rules/workflow.md`.
+Types: `feat fix refactor test chore docs perf style revert ci` — scopes in `.ai/rules/workflow.md`.
 
 ### 3. Layer Contract (verify after every edit)
-- Handlers: zero business logic.
-- Services: zero SQL.
-- Domain models: zero framework imports (no Gin, no `lib/pq`).
+- Routing decisions live only in `internal/gateway/match`, which imports the standard library only.
+- Handlers call the matcher and the proxy; they hold no business logic.
+- The proxy never parses or rewrites bodies; Gin is confined to `internal/gateway/handlers` and `internal/app`.
 
 ---
 
@@ -26,14 +27,12 @@ Types: `feat fix refactor test chore docs perf style revert` — scopes in `.ai/
 
 | Task type | Files to read |
 |---|---|
-| New feature or domain change | `.ai/rules/architecture.md` · `.ai/rules/domain.md` · `.ai/rules/go-conventions.md` |
-| Database schema or migration | `.ai/rules/database.md` · `.ai/rules/go-conventions.md` |
-| API endpoint | `.ai/rules/api.md` · `.ai/rules/architecture.md` · `.ai/rules/security.md` |
-| Auth, RBAC, or security | `.ai/rules/security.md` · `.ai/rules/domain.md` |
+| New route or routing change | `.ai/rules/routing.md` · `.ai/rules/architecture.md` · `.ai/rules/testing.md` |
+| New gateway endpoint | `.ai/rules/api.md` · `.ai/rules/architecture.md` · `.ai/rules/security.md` |
+| Proxy, timeouts or errors | `.ai/rules/architecture.md` · `.ai/rules/security.md` · `.ai/rules/observability.md` |
 | Tests | `.ai/rules/testing.md` · `.ai/rules/architecture.md` |
 | Logging or observability | `.ai/rules/observability.md` · `.ai/rules/security.md` |
 | Git workflow | `.ai/rules/workflow.md` |
-| Scaffold new domain | `.ai/commands/new-domain.md` |
-| Add migration | `.ai/commands/add-migration.md` |
+| Expose a service endpoint | `.ai/commands/add-route.md` |
 
 All rule files: `.ai/rules/` · All commands: `.ai/commands/` · Index: `.ai/README.md`
